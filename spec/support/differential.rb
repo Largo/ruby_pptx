@@ -51,6 +51,22 @@ module Pptx
         result
       end
 
+      SIMPLE_TYPE_ORACLE = File.expand_path("../../tools/simple_type_oracle.py", __dir__)
+
+      # Evaluate a batch of simple-type conversions with python-pptx.
+      #
+      # @param cases [Array<Hash>] each {type:, op:, value:}
+      # @return [Array<Hash>] {"ok" => true, "kind" =>, "value" =>} or
+      #   {"ok" => false, "error" => "ValueError"}
+      def python_simple_types(cases)
+        out, err, status = Open3.capture3(
+          "python3", SIMPLE_TYPE_ORACLE, stdin_data: JSON.dump(cases)
+        )
+        raise "simple-type oracle failed (#{status.exitstatus}): #{err}" if out.empty?
+
+        JSON.parse(out)
+      end
+
       # Reduce a .pptx this gem wrote to the same manifest shape.
       def ruby_pptx_manifest(path)
         entries = []
