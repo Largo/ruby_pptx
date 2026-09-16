@@ -176,8 +176,15 @@ module Pptx
       # stale. Staying in one document keeps node identity intact.
       def build(nsptag)
         pfx, local = Ns.split_tag(nsptag)
+        uri = Ns.nsuri(pfx)
         child = Nokogiri::XML::Node.new(local, @node.document)
-        child.namespace = namespace_for(child, pfx)
+        # Resolve against this element's scope, not the detached child's, so
+        # the new element joins an existing declaration instead of introducing
+        # a second one. Where the parent holds the namespace as its *default*
+        # -- as .rels and [Content_Types].xml do -- the child is created
+        # unprefixed to match, which matters because C14N preserves prefixes.
+        child.namespace = inherited_namespace(pfx, uri) ||
+                          child.add_namespace_definition(pfx, uri)
         Element.wrap(child)
       end
 
@@ -265,6 +272,14 @@ module Pptx
         return nil unless attr_name.to_s.include?(":")
 
         Ns.split_tag(attr_name.to_s)
+      end
+
+      # An in-scope declaration for +uri+, preferring one bound to +prefix+ but
+      # accepting any -- including a default (unprefixed) declaration.
+      def inherited_namespace(prefix, uri)
+        scopes = @node.namespace_scopes
+        scopes.find { |ns| ns.href == uri && ns.prefix == prefix } ||
+          scopes.find { |ns| ns.href == uri }
       end
 
       # Reuse an in-scope namespace declaration when there is one, so the

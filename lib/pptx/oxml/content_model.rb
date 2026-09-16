@@ -22,6 +22,11 @@ module Pptx
     # | `zero_or_more`      | `name_list`, `add_name`, `new_name`, `insert_name`    |
     # | `one_or_more`       | as `zero_or_more`                                    |
     # | `zero_or_one_choice`| `name`, `remove_name`, plus per-choice accessors and `get_or_change_to_x` |
+    #
+    # python-pptx generates a private `_add_x` and, for repeating elements, a
+    # separate public `add_x`. Here they are one `add_x` taking keyword
+    # arguments, which is simpler but means a hand-written convenience wrapper
+    # cannot reuse the name -- call it something like `add_x_for` instead.
     module ContentModel
       # A member of an `EG_*` element group, for {#zero_or_one_choice}.
       Choice = Struct.new(:nsptag) do
