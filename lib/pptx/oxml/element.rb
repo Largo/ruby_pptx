@@ -196,6 +196,25 @@ module Pptx
         Element.wrap(fragment.first)
       end
 
+      # -- text content ----------------------------------------------------
+
+      # @return [String] the element's text content
+      def text = @node.text
+
+      def text=(value)
+        @node.content = value.to_s
+        value
+      end
+
+      # Declare +prefix+ on this element even if nothing uses it yet.
+      #
+      # Needed where a descendant carries a namespaced attribute but the
+      # declaration belongs on the root, which is where PowerPoint puts it.
+      def declare_namespace(prefix)
+        namespace_for(@node, prefix)
+        self
+      end
+
       # -- attributes ------------------------------------------------------
 
       # Attribute names may be prefixed ("r:embed") or not ("cstate").

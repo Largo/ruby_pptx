@@ -122,11 +122,43 @@ Findings from M2:
   checked to stay inside the package directory -- a `.rels` target is
   untrusted input.
 
-### M3 — Presentation, parts, slides
+### M3 — Presentation, parts, slides *(complete)*
 
-`package.py` (222), `presentation.py` (113), `slide.py` (498),
-`parts/*` (1090), `oxml/slide.py` (347), `oxml/presentation.py` (130),
-`oxml/coreprops.py` (288).
+| Upstream | LOC | Ruby | Status |
+|---|---:|---|---|
+| `presentation.py` + `api.py` | 162 | `Pptx::Presentation` | done |
+| `slide.py` | 498 | `Pptx::{Slide,Slides,SlideLayout,SlideLayouts,SlideMaster,SlideMasters}` | done |
+| `package.py` | 222 | `Pptx::Package` | done |
+| `shared.py` | 82 | `Pptx::{ElementProxy,ParentedElementProxy,PartElementProxy}` | done |
+| `parts/presentation.py`, `parts/slide.py`, `parts/coreprops.py` | 590 | `Pptx::Parts::*` | done |
+| `oxml/presentation.py`, `oxml/slide.py`, `oxml/coreprops.py` | 765 | `Pptx::Oxml::CT_*` | done |
+
+**Exit criterion met**: opening a package, editing slide size and core
+properties, and saving produces a package python-pptx considers identical.
+Unlike M2 this exercises real re-serialization -- the presentation, slide,
+layout and master parts are now XML parts rebuilt from their element trees
+rather than blobs passed straight through.
+
+**Deferred to M4**: `Slides#add`, which must clone the layout's placeholders
+and so needs the shape layer. It raises `NotImplementedError` with that
+explanation rather than being silently absent. Slide background (`_Background`)
+waits on `FillFormat` in M5.
+
+Findings from M3:
+
+- **Ruby's `strptime` matches a prefix where Python's requires the whole
+  string.** Looping through W3CDTF formats the way python-pptx does would let
+  `"%Y"` swallow `"2003-12-31T10:14:55"` and silently yield 2003-01-01. Each
+  format must now consume the entire value.
+- **`dcterms:created` and `dcterms:modified` need `xsi:type`, declared on the
+  *root*.** C14N renders a namespace declaration where it is declared, so
+  putting it on the child would diverge. A package that already has core
+  properties usually declares `xsi` on the root already, which masks the bug --
+  it only shows on a part built from scratch, so that path has its own test.
+- **A constant assigned inside `RSpec.describe` lands on `Object`.** Two spec
+  files both defining `ORACLE` clobbered each other, and core-properties specs
+  ran against the *enum* oracle. Ruby only warns; `spec_helper` now turns
+  "already initialized constant" into an error.
 
 ### M4 — Shapes
 
@@ -198,6 +230,7 @@ Three oracles under `tools/` expose python-pptx to the specs:
 | `generate_opc_constants.py` | (generator) content types and relationship types |
 | `simple_type_oracle.py` | every simple-type conversion, including the failures |
 | `enum_oracle.py` | every enum member's name, MS API value and XML value |
+| `coreprops_oracle.py` | a core-properties part built from scratch |
 
 `spec/support/differential.rb` drives the same operation through python-pptx
 (importable on this box) and through the gem, then diffs the resulting package:

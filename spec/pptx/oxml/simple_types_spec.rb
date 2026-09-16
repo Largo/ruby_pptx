@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 RSpec.describe Pptx::Oxml::SimpleTypes do
-  ST = Pptx::Oxml::SimpleTypes
+  simple_types = Pptx::Oxml::SimpleTypes
+  define_method(:st) { Pptx::Oxml::SimpleTypes }
 
   # Every case is checked against python-pptx itself, so these assert real
   # upstream behaviour rather than a transcription of it.
-  CASES = [
+  cases = [
     # angles are 60000ths of a degree, exposed as float degrees
     ["ST_Angle", :from_xml, "2700000"],
     ["ST_Angle", :to_xml, 45.0],
@@ -76,16 +77,17 @@ RSpec.describe Pptx::Oxml::SimpleTypes do
     ["ST_LineWidth", :to_xml, 20_116_801],
     ["ST_SlideSizeCoordinate", :to_xml, 100]
   ].freeze
+  define_method(:cases) { cases }
 
   describe "agreement with python-pptx" do
     before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
 
     it "converts every case identically" do
       expected = python_simple_types(
-        CASES.map { |type, op, value| { type: type, op: op, value: value } }
+        cases.map { |type, op, value| { type: type, op: op, value: value } }
       )
 
-      mismatches = CASES.each_with_index.filter_map do |(type, op, value), i|
+      mismatches = cases.each_with_index.filter_map do |(type, op, value), i|
         ours = evaluate(type, op, value)
         theirs = normalize_python(expected[i])
         next if comparable?(ours, theirs)
@@ -100,7 +102,7 @@ RSpec.describe Pptx::Oxml::SimpleTypes do
   # Invoke our simple type, reducing a raised error to a marker so a case that
   # must fail on both sides can be compared like any other.
   def evaluate(type_name, op, value)
-    result = ST.const_get(type_name).public_send(op, value)
+    result = st.const_get(type_name).public_send(op, value)
     result.is_a?(Pptx::Length) ? result.emu : result
   rescue StandardError
     :error
@@ -120,26 +122,26 @@ RSpec.describe Pptx::Oxml::SimpleTypes do
 
   describe "Ruby-side affordances" do
     it "accepts a Length wherever EMU integers are expected" do
-      expect(ST::ST_Coordinate.to_xml(Pptx.inches(1))).to eq("914400")
+      expect(st::ST_Coordinate.to_xml(Pptx.inches(1))).to eq("914400")
     end
 
     it "returns Length from length-typed attributes" do
-      expect(ST::ST_Coordinate.from_xml("914400")).to eq(Pptx.inches(1))
-      expect(ST::ST_TextSpacingPoint.from_xml("1800").pt).to eq(18.0)
+      expect(st::ST_Coordinate.from_xml("914400")).to eq(Pptx.inches(1))
+      expect(st::ST_TextSpacingPoint.from_xml("1800").pt).to eq(18.0)
     end
 
     it "exposes enumeration members as constants and validates against them" do
       aggregate_failures do
-        expect(ST::ST_BarDir::COL).to eq("col")
-        expect(ST::ST_BarDir.to_xml("bar")).to eq("bar")
-        expect { ST::ST_BarDir.to_xml("sideways") }.to raise_error(ArgumentError, /must be one of/)
+        expect(st::ST_BarDir::COL).to eq("col")
+        expect(st::ST_BarDir.to_xml("bar")).to eq("bar")
+        expect { st::ST_BarDir.to_xml("sideways") }.to raise_error(ArgumentError, /must be one of/)
       end
     end
 
     it "rounds half-to-even like Python, not half-up like Ruby" do
       # 0.000005 * 100000 == 0.5 exactly; Ruby's default round would give 1.
-      expect(ST::ST_Percentage.to_xml(0.000005)).to eq("0")
-      expect(ST::ST_Percentage.to_xml(0.000015)).to eq("2")
+      expect(st::ST_Percentage.to_xml(0.000005)).to eq("0")
+      expect(st::ST_Percentage.to_xml(0.000015)).to eq("2")
     end
   end
 end

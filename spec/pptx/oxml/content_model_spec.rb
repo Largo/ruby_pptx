@@ -1,13 +1,17 @@
 # frozen_string_literal: true
 
 RSpec.describe Pptx::Oxml::ContentModel do
-  ST = Pptx::Oxml::SimpleTypes
 
   # A cut-down but faithful slice of the real schema: <a:xfrm> holds an
   # optional <a:off> then an optional <a:ext>, and carries a `rot` attribute.
   # These register themselves globally, so the registry is restored afterwards.
   module Schema
     ST = Pptx::Oxml::SimpleTypes
+
+    class CT_BodyPr < Pptx::Oxml::Element
+      tag "a:bodyPr"
+      optional_attr "anchor", type: Pptx::Enum::MSO_ANCHOR
+    end
 
     class CT_Point2D < Pptx::Oxml::Element
       tag "a:off"
@@ -49,9 +53,6 @@ RSpec.describe Pptx::Oxml::ContentModel do
     end
   end
 
-  CT_Point2D = Schema::CT_Point2D
-  CT_Transform2D = Schema::CT_Transform2D
-
   before(:all) { @registry = Pptx::Oxml::Registry.registered }
 
   after(:all) { Pptx::Oxml::Registry.reset!(@registry) }
@@ -64,7 +65,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
 
   describe "dispatch" do
     it "wraps a node in the class registered for its tag" do
-      expect(xfrm).to be_a(CT_Transform2D)
+      expect(xfrm).to be_a(Schema::CT_Transform2D)
     end
 
     it "wraps an unmodelled tag in the base Element" do
@@ -136,7 +137,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
   describe "zero_or_one" do
     it "returns nil when absent and the element when present" do
       expect(xfrm.off).to be_nil
-      expect(xfrm("<a:off x='0' y='0'/>").off).to be_a(CT_Point2D)
+      expect(xfrm("<a:off x='0' y='0'/>").off).to be_a(Schema::CT_Point2D)
     end
 
     it "get_or_add is idempotent" do
@@ -224,15 +225,6 @@ RSpec.describe Pptx::Oxml::ContentModel do
   # python-pptx uses its enumerations directly as attribute types; ours satisfy
   # the same from_xml/to_xml contract, so they drop straight into the DSL.
   describe "an enumeration used as an attribute type" do
-    before(:all) do
-      Object.const_set(:CT_BodyPr, Class.new(Pptx::Oxml::Element) do
-        tag "a:bodyPr"
-        optional_attr "anchor", type: Pptx::Enum::MSO_ANCHOR
-      end)
-    end
-
-    after(:all) { Object.send(:remove_const, :CT_BodyPr) }
-
     subject(:body_pr) { element(%(<a:bodyPr #{Pptx::Oxml::Ns.nsdecls('a')}/>)) }
 
     it "reads an XML value as the enum member" do

@@ -4,10 +4,10 @@ require "json"
 require "open3"
 
 RSpec.describe Pptx::Enum do
-  ORACLE = File.expand_path("../../tools/enum_oracle.py", __dir__)
+  def oracle_path = File.expand_path("../../tools/enum_oracle.py", __dir__)
 
   def python_enums
-    out, err, status = Open3.capture3("python3", ORACLE)
+    out, err, status = Open3.capture3("python3", oracle_path)
     raise "enum oracle failed (#{status.exitstatus}): #{err}" if out.empty?
 
     JSON.parse(out)

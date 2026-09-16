@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 RSpec.describe Pptx::Opc::OpcPackage do
-  FIXTURE = File.expand_path("../../fixtures/basic.pptx", __dir__)
+  def self.fixture = File.expand_path("../../fixtures/basic.pptx", __dir__)
+  def fixture = self.class.fixture
 
   describe "loading a real package" do
-    subject(:package) { described_class.open(FIXTURE) }
+    subject(:package) { described_class.open(fixture) }
 
     it "finds the presentation as the main document part" do
       aggregate_failures do
@@ -58,29 +59,29 @@ RSpec.describe Pptx::Opc::OpcPackage do
     # produce the same package python-pptx does, part for part.
     it "saves a package python-pptx would consider identical" do
       expect_same_package(
-        python: "prs = pptx.Presentation(#{FIXTURE.inspect}); prs.save(out)",
-        ruby: ->(path) { described_class.open(FIXTURE).save(path) }
+        python: "prs = pptx.Presentation(#{fixture.inspect}); prs.save(out)",
+        ruby: ->(path) { described_class.open(fixture).save(path) }
       )
     end
 
     it "round-trips through an IO stream as well as a path" do
       buffer = StringIO.new(+"", "w+b")
-      described_class.open(FIXTURE).save(buffer)
+      described_class.open(fixture).save(buffer)
       buffer.rewind
 
       reopened = described_class.open(buffer)
-      expect(reopened.parts.count).to eq(described_class.open(FIXTURE).parts.count)
+      expect(reopened.parts.count).to eq(described_class.open(fixture).parts.count)
     end
 
     it "is stable: saving twice produces the same package" do
-      first = Tempfile.create(["a", ".pptx"]) { |f| f.close; described_class.open(FIXTURE).save(f.path); ruby_pptx_manifest(f.path) }
-      second = Tempfile.create(["b", ".pptx"]) { |f| f.close; described_class.open(FIXTURE).save(f.path); ruby_pptx_manifest(f.path) }
+      first = Tempfile.create(["a", ".pptx"]) { |f| f.close; described_class.open(fixture).save(f.path); ruby_pptx_manifest(f.path) }
+      second = Tempfile.create(["b", ".pptx"]) { |f| f.close; described_class.open(fixture).save(f.path); ruby_pptx_manifest(f.path) }
       expect(first).to eq(second)
     end
   end
 
   describe "#next_partname" do
-    subject(:package) { described_class.open(FIXTURE) }
+    subject(:package) { described_class.open(fixture) }
 
     it "returns the next free number for a partname template" do
       expect(package.next_partname("/ppt/slides/slide%d.xml").to_s)
