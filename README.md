@@ -6,9 +6,9 @@ A port of [python-pptx](https://github.com/scanny/python-pptx) — the same
 battle-tested OOXML object model underneath, with a public API redesigned for
 Ruby. See [PORTING.md](PORTING.md) for the architecture and the milestone plan.
 
-> **Status: in progress.** Presentations, slides, shapes and text work and are
-> verified against python-pptx part-for-part. Pictures, tables and charts can
-> be read but not yet created. See [PORTING.md](PORTING.md).
+> **Status: in progress.** Presentations, slides, shapes, text, pictures and
+> tables work and are verified against python-pptx part-for-part. Charts and
+> video are not implemented yet. See [PORTING.md](PORTING.md).
 
 ```ruby
 require "ruby_pptx"
@@ -32,6 +32,13 @@ box = slide.shapes.add_shape(Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE,
 box.fill.solid
 box.fill.fore_color.rgb = Pptx::RGBColor["1F497D"]
 box.text_frame.text = "Next steps"
+
+slide.shapes.add_picture("logo.png", Pptx.inches(7), Pptx.inches(0.5),
+                         width: Pptx.inches(2))
+
+table = slide.shapes.add_table(2, 3, Pptx.inches(1), Pptx.inches(3),
+                               Pptx.inches(8), Pptx.inches(2)).table
+table.cell(0, 0).text = "Region"
 
 prs.save("out.pptx")
 ```

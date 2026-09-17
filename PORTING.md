@@ -208,10 +208,43 @@ Findings from M4:
 `text/fonts.py` (399, a TTF name-table parser — pure `struct`, ports cleanly),
 `text/layout.py` (325).
 
-### M6 — Tables, images, media
+### M6 — Tables and images *(mostly complete)*
 
-`table.py` (496), `oxml/table.py` (588), `parts/image.py` (275, needs our own
-PNG/JPEG/GIF/BMP/TIFF header reader in place of Pillow), `media.py` (197).
+| Upstream | LOC | Ruby | Status |
+|---|---:|---|---|
+| `oxml/table.py` | 588 | `Pptx::Oxml::CT_Table*` | done |
+| `table.py` | 496 | `Pptx::{Table,TableRow,TableColumn,Cell}` | done except merge |
+| `parts/image.py` | 275 | `Pptx::Image` + `Pptx::Parts::ImagePart` | done |
+| `oxml/shapes/picture.py`, `graphfrm.py` | 612 | picture and table frame creation | done |
+| `media.py` + `parts/media.py` | 234 | -- | not started (video) |
+
+**Exit criterion met**: adding pictures and tables produces the same package
+python-pptx does -- native and scaled pictures, image deduplication, every
+supported format, a formatted table, an indivisible table size, and a mixed
+deck combining all of it. Six differential assertions, mutation-tested.
+
+**Pillow is replaced by `Pptx::ImageHeader`**, which reads format, pixel size
+and resolution from PNG, JPEG, GIF, BMP and TIFF headers directly. It is
+checked against Pillow for every fixture, because the point of writing it was
+to drop the dependency, not to approximate it.
+
+Findings from M6:
+
+- **A BMP header normally carries 3780 pixels-per-metre rather than zero**, so
+  a BMP reports about 96 dpi where a GIF or a PNG without `pHYs` falls back to
+  72. Assuming 72 everywhere would have silently mis-sized every BMP.
+- **Resizing a row or column must resize the graphic frame** to the new total,
+  or the frame and the table disagree and PowerPoint shows the table clipped.
+  A mutation removing this is caught by the differential.
+- **Image parts are deduplicated by SHA-1, but scoped by relationship type.**
+  The package thumbnail is an image part too; matching against it would relate
+  a picture by the wrong reltype, so the search follows image relationships
+  rather than selecting by class.
+- A table size that does not divide evenly pushes the remainder into the last
+  row and column. An evenly-divisible fixture never exercises that, and the
+  mutation test escaped until a deliberately indivisible case was added --
+  a reminder that a unit spec asserting our own expectation is not the same as
+  a differential confirming upstream's.
 
 ### M7 — Charts
 

@@ -181,6 +181,33 @@ module Pptx
       shape_factory(sp)
     end
 
+    # Add a picture showing the image in +image_file+, which may be a path or
+    # an IO stream.
+    #
+    # Supplying neither +width+ nor +height+ uses the image's native size;
+    # supplying one scales the other to preserve the aspect ratio; supplying
+    # both stretches the image to fit.
+    #
+    # @return [Picture]
+    def add_picture(image_file, left, top, width: nil, height: nil)
+      image_part, r_id = part.get_or_add_image_part(image_file)
+      scaled_width, scaled_height = image_part.scale(width, height)
+      id = next_shape_id
+      pic = @sp_tree.add_pic(id, "Picture #{id - 1}", image_part.desc, r_id,
+                             left, top, scaled_width, scaled_height)
+      shape_factory(pic)
+    end
+
+    # Add a table of +rows+ by +cols+ filling the given position and size.
+    #
+    # @return [GraphicFrame] use its `#table` to reach the table itself
+    def add_table(rows, cols, left, top, width, height)
+      id = next_shape_id
+      frame = @sp_tree.add_graphic_frame_table(id, "Table #{id - 1}", rows, cols,
+                                               left, top, width, height)
+      shape_factory(frame)
+    end
+
     # Add an empty text box at the given position and size.
     #
     # @return [Shape]

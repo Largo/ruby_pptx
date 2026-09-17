@@ -29,7 +29,14 @@ RSpec.describe Pptx::Oxml::Registry do
     "a:srgbClr" => Pptx::Oxml::CT_SRgbColor,
     "a:schemeClr" => Pptx::Oxml::CT_SchemeColor,
     "a:solidFill" => Pptx::Oxml::CT_SolidColorFillProperties,
-    "a:ln" => Pptx::Oxml::CT_LineProperties
+    "a:ln" => Pptx::Oxml::CT_LineProperties,
+    "a:tbl" => Pptx::Oxml::CT_Table,
+    "a:tr" => Pptx::Oxml::CT_TableRow,
+    "a:tc" => Pptx::Oxml::CT_TableCell,
+    "a:gridCol" => Pptx::Oxml::CT_TableCol,
+    "p:pic" => Pptx::Oxml::CT_Picture,
+    "p:graphicFrame" => Pptx::Oxml::CT_GraphicalObjectFrame,
+    "p:nvPicPr" => Pptx::Oxml::CT_ShapeNonVisualCommon
   }.each do |nsptag, expected_class|
     it "dispatches #{nsptag} to #{expected_class}" do
       expect(described_class.class_for(Pptx::Oxml::Ns.qn(nsptag))).to eq(expected_class)

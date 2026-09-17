@@ -22,6 +22,16 @@ module Pptx
 
     def presentation_part = main_document_part
 
+    # The image part holding +image_file+, created if the package has no part
+    # with the same content.
+    #
+    # Images are matched by SHA-1 of their bytes, so the same picture used on
+    # several slides is stored once.
+    def get_or_add_image_part(image_file)
+      image = Image.from_file(image_file)
+      find_image_part(image.sha1) || Parts::ImagePart.new_image(self, image)
+    end
+
     # The next free `/ppt/media/imageN.<ext>` partname, reusing gaps.
     def next_image_partname(ext) = next_media_like_partname("image", ext)
 
@@ -29,6 +39,29 @@ module Pptx
     def next_media_partname(ext) = next_media_like_partname("media", ext)
 
     private
+
+    def find_image_part(sha1)
+      image_parts.find { |part| part.respond_to?(:sha1) && part.sha1 == sha1 }
+    end
+
+    # Parts reached by an image relationship, each once.
+    #
+    # Scoped by relationship rather than by class on purpose: the package
+    # thumbnail is also an image part, but it is related as a thumbnail, and
+    # matching a new picture against it would relate the picture by the wrong
+    # reltype.
+    def image_parts
+      seen = {}.compare_by_identity
+      each_rel.filter_map do |rel|
+        next if rel.external? || rel.reltype != Opc::RELATIONSHIP_TYPE::IMAGE
+
+        part = rel.target_part
+        next if seen.key?(part)
+
+        seen[part] = true
+        part
+      end
+    end
 
     def next_media_like_partname(stem, ext)
       prefix = "/ppt/media/#{stem}"
@@ -55,5 +88,13 @@ end
   Pptx::Opc::CONTENT_TYPE::PML_SLIDE_MASTER => Pptx::Parts::SlideMasterPart,
   Pptx::Opc::CONTENT_TYPE::PML_NOTES_MASTER => Pptx::Parts::NotesMasterPart,
   Pptx::Opc::CONTENT_TYPE::PML_NOTES_SLIDE => Pptx::Parts::NotesSlidePart,
-  Pptx::Opc::CONTENT_TYPE::OPC_CORE_PROPERTIES => Pptx::Parts::CorePropertiesPart
+  Pptx::Opc::CONTENT_TYPE::OPC_CORE_PROPERTIES => Pptx::Parts::CorePropertiesPart,
+  Pptx::Opc::CONTENT_TYPE::PNG => Pptx::Parts::ImagePart,
+  Pptx::Opc::CONTENT_TYPE::JPEG => Pptx::Parts::ImagePart,
+  Pptx::Opc::CONTENT_TYPE::GIF => Pptx::Parts::ImagePart,
+  Pptx::Opc::CONTENT_TYPE::BMP => Pptx::Parts::ImagePart,
+  Pptx::Opc::CONTENT_TYPE::TIFF => Pptx::Parts::ImagePart,
+  Pptx::Opc::CONTENT_TYPE::MS_PHOTO => Pptx::Parts::ImagePart,
+  Pptx::Opc::CONTENT_TYPE::X_EMF => Pptx::Parts::ImagePart,
+  Pptx::Opc::CONTENT_TYPE::X_WMF => Pptx::Parts::ImagePart
 }.each { |content_type, part_class| Pptx::Opc::PartFactory.register(content_type, part_class) }

@@ -12,6 +12,17 @@ module Pptx
     class BaseSlidePart < Opc::XmlPart
       # The internal name of this slide.
       def name = element.cSld.name
+
+      # The image part for +image_file+, related to this slide.
+      #
+      # Both the part and the relationship are reused when they already exist,
+      # so the same image added twice is stored once.
+      #
+      # @return [Array(Pptx::Parts::ImagePart, String)] the part and its rId
+      def get_or_add_image_part(image_file)
+        image_part = package.get_or_add_image_part(image_file)
+        [image_part, relate_to(image_part, Opc::RELATIONSHIP_TYPE::IMAGE)]
+      end
     end
 
     # A slide part, `/ppt/slides/slideN.xml`.

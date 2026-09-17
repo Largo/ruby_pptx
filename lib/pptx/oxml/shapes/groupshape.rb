@@ -2,6 +2,7 @@
 
 require "pptx/oxml/shapes/shared"
 require "pptx/oxml/shapes/autoshape"
+require "pptx/oxml/shapes/other"
 
 module Pptx
   module Oxml
@@ -59,6 +60,20 @@ module Pptx
         sp = adopt_xml(CT_Shape.new_autoshape_sp(id, name, prst, x, y, cx, cy))
         insert_element_before(sp, "p:extLst")
         sp
+      end
+
+      def add_pic(id, name, desc, r_id, x, y, cx, cy)
+        pic = adopt_xml(CT_Picture.new_pic(id, name, desc, r_id, x, y, cx, cy))
+        insert_element_before(pic, "p:extLst")
+        pic
+      end
+
+      def add_graphic_frame_table(id, name, rows, cols, x, y, cx, cy)
+        frame = adopt_xml(
+          CT_GraphicalObjectFrame.new_table_graphic_frame(id, name, rows, cols, x, y, cx, cy)
+        )
+        insert_element_before(frame, "p:extLst")
+        frame
       end
 
       def add_textbox(id, name, x, y, cx, cy)

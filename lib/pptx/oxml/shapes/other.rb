@@ -1,9 +1,19 @@
 # frozen_string_literal: true
 
 require "pptx/oxml/shapes/shared"
+require "pptx/oxml/table"
 
 module Pptx
   module Oxml
+    # The non-visual property groups of the non-`p:sp` shapes. They differ in
+    # what else they hold, but each starts with the `p:cNvPr` that carries the
+    # shape's id and name, which is all this library needs from them.
+    class CT_ShapeNonVisualCommon < Element
+      tag "p:nvPicPr", "p:nvCxnSpPr", "p:nvGraphicFramePr"
+      one_and_only_one "p:cNvPr"
+      zero_or_one "p:nvPr", successors: []
+    end
+
     # `p:pic`, a picture (or a movie, which is a picture with media relations).
     class CT_Picture < Element
       include BaseShapeElement
@@ -14,6 +24,40 @@ module Pptx
 
       # A movie is a `p:pic` whose non-visual properties name a video file.
       def movie? = !xpath("./p:nvPicPr/p:nvPr/a:videoFile").empty?
+
+      # A `p:pic` displaying the image related by +r_id+.
+      def self.new_pic(id, name, desc, r_id, x, y, cx, cy)
+        Element.parse(<<~XML)
+          <p:pic #{Ns.nsdecls('a', 'p', 'r')}>
+            <p:nvPicPr>
+              <p:cNvPr id="#{id}" name="#{escape(name)}" descr="#{escape(desc)}"/>
+              <p:cNvPicPr>
+                <a:picLocks noChangeAspect="1"/>
+              </p:cNvPicPr>
+              <p:nvPr/>
+            </p:nvPicPr>
+            <p:blipFill>
+              <a:blip r:embed="#{r_id}"/>
+              <a:stretch>
+                <a:fillRect/>
+              </a:stretch>
+            </p:blipFill>
+            <p:spPr>
+              <a:xfrm>
+                <a:off x="#{x.to_i}" y="#{y.to_i}"/>
+                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+              </a:xfrm>
+              <a:prstGeom prst="rect">
+                <a:avLst/>
+              </a:prstGeom>
+            </p:spPr>
+          </p:pic>
+        XML
+      end
+
+      def self.escape(text)
+        text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
+      end
     end
 
     # `p:cxnSp`, a connector.
@@ -46,6 +90,43 @@ module Pptx
 
       def table? = graphic_data_uri == URI_TABLE
       def chart? = graphic_data_uri == URI_CHART
+
+      # The `a:tbl` inside this frame, or nil when it holds something else.
+      def tbl = xpath("./a:graphic/a:graphicData/a:tbl").first
+
+      class << self
+        # An empty `p:graphicFrame`. It is not a valid shape until a graphical
+        # object such as a table is placed inside it.
+        def new_graphic_frame(id, name, x, y, cx, cy)
+          Element.parse(<<~XML)
+            <p:graphicFrame #{Ns.nsdecls('a', 'p')}>
+              <p:nvGraphicFramePr>
+                <p:cNvPr id="#{id}" name="#{CT_Picture.escape(name)}"/>
+                <p:cNvGraphicFramePr>
+                  <a:graphicFrameLocks noGrp="1"/>
+                </p:cNvGraphicFramePr>
+                <p:nvPr/>
+              </p:nvGraphicFramePr>
+              <p:xfrm>
+                <a:off x="#{x.to_i}" y="#{y.to_i}"/>
+                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+              </p:xfrm>
+              <a:graphic>
+                <a:graphicData/>
+              </a:graphic>
+            </p:graphicFrame>
+          XML
+        end
+
+        # A `p:graphicFrame` containing a table of +rows+ by +cols+.
+        def new_table_graphic_frame(id, name, rows, cols, x, y, cx, cy)
+          frame = new_graphic_frame(id, name, x, y, cx, cy)
+          graphic_data = frame.xpath("./a:graphic/a:graphicData").first
+          graphic_data.set("uri", URI_TABLE)
+          graphic_data.append(CT_Table.new_tbl(graphic_data, rows, cols, cx, cy))
+          frame
+        end
+      end
     end
 
     # `p:contentPart`, which this library carries through without modelling.

@@ -3,6 +3,7 @@
 require "pptx/shapes/base"
 require "pptx/text/text"
 require "pptx/dml/fill"
+require "pptx/table"
 
 module Pptx
   # A `p:sp`: an auto shape, a text box, or a placeholder.
@@ -62,6 +63,15 @@ module Pptx
   class GraphicFrame < BaseShape
     def table? = @element.table?
     def chart? = @element.chart?
+
+    # The table inside this frame.
+    #
+    # @raise [Error] when the frame holds something other than a table
+    def table
+      raise Error, "this graphic frame does not contain a table" unless table?
+
+      @table ||= Table.new(@element.tbl, self)
+    end
 
     def shape_type
       return Enum::MSO_SHAPE_TYPE::TABLE if table?
