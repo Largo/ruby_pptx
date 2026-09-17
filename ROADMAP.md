@@ -154,7 +154,7 @@ Remaining upstream code, measured:
 | Area | Upstream LOC | Notes |
 |---|---:|---|
 | Chart formatting — axes, plots, data labels, legend, marker | ~1,530 object model + ~1,250 oxml | Charts can be created but not restyled. Largest remaining item. |
-| Chart families — area, radar, XY, bubble | ~900 of `xmlwriter.py` | Same pattern as the four already done; mechanical. |
+| Chart families — ~~area~~, ~~radar~~, XY, bubble | ~900 of `xmlwriter.py` | Area and radar done. XY and bubble still open: they need their own data types, since a point is (x, y) or (x, y, size) rather than a value per category. |
 | Freeform shape building | 337 | Self-contained. |
 | Connectors and groups | 366 | Read works; creating and manipulating does not. |
 | ~~Hyperlinks / click actions~~ | ~~323~~ | **done** — `shape.hyperlink = url`, `run.hyperlink = url`, `click_action.target_slide = slide`. |

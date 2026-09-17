@@ -22,7 +22,9 @@ module Pptx
       line: %i[LINE LINE_STACKED LINE_STACKED_100
                LINE_MARKERS LINE_MARKERS_STACKED LINE_MARKERS_STACKED_100],
       pie: %i[PIE],
-      doughnut: %i[DOUGHNUT]
+      doughnut: %i[DOUGHNUT],
+      area: %i[AREA AREA_STACKED AREA_STACKED_100],
+      radar: %i[RADAR RADAR_MARKERS RADAR_FILLED]
     }.freeze
 
     module_function
@@ -37,6 +39,8 @@ module Pptx
       when :line then LineChartWriter.new(member, chart_data).xml
       when :pie then PieChartWriter.new(member, chart_data).xml
       when :doughnut then DoughnutChartWriter.new(member, chart_data).xml
+      when :area then AreaChartWriter.new(member, chart_data).xml
+      when :radar then RadarChartWriter.new(member, chart_data).xml
       end
     end
 
@@ -72,6 +76,14 @@ module Pptx
           </a:p>
         </c:txPr>
       XML
+
+      # Doughnut and area charts leave the language off the trailing run
+      # properties where every other family sets it. There is no reason for
+      # the difference beyond what the reference implementation writes, and a
+      # byte comparison is the only thing that notices.
+      TEXT_PROPERTIES_WITHOUT_LANG = TEXT_PROPERTIES.sub(
+        %(<a:endParaRPr lang="en-US"/>), "<a:endParaRPr/>"
+      )
 
       LEGEND = <<~XML
         <c:legend>
@@ -419,14 +431,200 @@ module Pptx
       def series_blocks = series_xml(chart_data.series.first)
     end
 
+    # `c:areaChart`, filled bands under each series.
+    class AreaChartWriter < Base
+      CAT_AX_ID = "-2101159928"
+      VAL_AX_ID = "-2100718248"
+
+      GROUPINGS = {
+        AREA: "standard", AREA_STACKED: "stacked", AREA_STACKED_100: "percentStacked"
+      }.freeze
+
+      def xml
+        <<~XML
+          #{Base::DECLARATION}
+          <c:chartSpace #{Base::CHART_SPACE_NS}>
+            <c:date1904 val="0"/>
+            <c:roundedCorners val="0"/>
+            <c:chart>
+              <c:autoTitleDeleted val="0"/>
+              <c:plotArea>
+                <c:layout/>
+                <c:areaChart>
+                  <c:grouping val="#{grouping}"/>
+                  <c:varyColors val="0"/>
+          #{indent(series_blocks, 8).chomp}
+                  <c:dLbls>
+                    <c:showLegendKey val="0"/>
+                    <c:showVal val="0"/>
+                    <c:showCatName val="0"/>
+                    <c:showSerName val="0"/>
+                    <c:showPercent val="0"/>
+                    <c:showBubbleSize val="0"/>
+                  </c:dLbls>
+                  <c:axId val="#{CAT_AX_ID}"/>
+                  <c:axId val="#{VAL_AX_ID}"/>
+                </c:areaChart>
+                <c:catAx>
+                  <c:axId val="#{CAT_AX_ID}"/>
+                  <c:scaling>
+                    <c:orientation val="minMax"/>
+                  </c:scaling>
+                  <c:delete val="0"/>
+                  <c:axPos val="b"/>
+                  <c:numFmt formatCode="General" sourceLinked="1"/>
+                  <c:majorTickMark val="out"/>
+                  <c:minorTickMark val="none"/>
+                  <c:tickLblPos val="nextTo"/>
+                  <c:crossAx val="#{VAL_AX_ID}"/>
+                  <c:crosses val="autoZero"/>
+                  <c:auto val="1"/>
+                  <c:lblAlgn val="ctr"/>
+                  <c:lblOffset val="100"/>
+                  <c:noMultiLvlLbl val="0"/>
+                </c:catAx>
+                <c:valAx>
+                  <c:axId val="#{VAL_AX_ID}"/>
+                  <c:scaling>
+                    <c:orientation val="minMax"/>
+                  </c:scaling>
+                  <c:delete val="0"/>
+                  <c:axPos val="l"/>
+                  <c:majorGridlines/>
+                  <c:numFmt formatCode="General" sourceLinked="1"/>
+                  <c:majorTickMark val="out"/>
+                  <c:minorTickMark val="none"/>
+                  <c:tickLblPos val="nextTo"/>
+                  <c:crossAx val="#{CAT_AX_ID}"/>
+                  <c:crosses val="autoZero"/>
+                  <c:crossBetween val="midCat"/>
+                </c:valAx>
+              </c:plotArea>
+          #{indent(Base::LEGEND, 4).chomp}
+              <c:plotVisOnly val="1"/>
+              <c:dispBlanksAs val="zero"/>
+              <c:showDLblsOverMax val="0"/>
+            </c:chart>
+          #{indent(Base::TEXT_PROPERTIES_WITHOUT_LANG, 2).chomp}
+          </c:chartSpace>
+        XML
+      end
+
+      private
+
+      def grouping = GROUPINGS.fetch(chart_type.name)
+
+      def series_blocks = all_series_xml { |series| series_xml(series) }
+    end
+
+    # `c:radarChart`, values plotted on spokes around a centre.
+    class RadarChartWriter < Base
+      CAT_AX_ID = "2073612648"
+      VAL_AX_ID = "-2112772216"
+
+      # A radar chart carries a style hint PowerPoint 2007 did not understand,
+      # so it is written inside an AlternateContent block with a plain
+      # fallback.
+      ALTERNATE_CONTENT = <<~XML
+        <mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+          <mc:Choice xmlns:c14="http://schemas.microsoft.com/office/drawing/2007/8/2/chart" Requires="c14">
+            <c14:style val="118"/>
+          </mc:Choice>
+          <mc:Fallback>
+            <c:style val="18"/>
+          </mc:Fallback>
+        </mc:AlternateContent>
+      XML
+
+      def xml
+        <<~XML
+          #{Base::DECLARATION}
+          <c:chartSpace #{Base::CHART_SPACE_NS}>
+            <c:date1904 val="0"/>
+            <c:roundedCorners val="0"/>
+          #{indent(ALTERNATE_CONTENT, 2).chomp}
+            <c:chart>
+              <c:autoTitleDeleted val="0"/>
+              <c:plotArea>
+                <c:layout/>
+                <c:radarChart>
+                  <c:radarStyle val="#{radar_style}"/>
+                  <c:varyColors val="0"/>
+          #{indent(series_blocks, 8).chomp}
+                  <c:axId val="#{CAT_AX_ID}"/>
+                  <c:axId val="#{VAL_AX_ID}"/>
+                </c:radarChart>
+                <c:catAx>
+                  <c:axId val="#{CAT_AX_ID}"/>
+                  <c:scaling>
+                    <c:orientation val="minMax"/>
+                  </c:scaling>
+                  <c:delete val="0"/>
+                  <c:axPos val="b"/>
+                  <c:majorGridlines/>
+                  <c:numFmt formatCode="m/d/yy" sourceLinked="1"/>
+                  <c:majorTickMark val="out"/>
+                  <c:minorTickMark val="none"/>
+                  <c:tickLblPos val="nextTo"/>
+                  <c:crossAx val="#{VAL_AX_ID}"/>
+                  <c:crosses val="autoZero"/>
+                  <c:auto val="1"/>
+                  <c:lblAlgn val="ctr"/>
+                  <c:lblOffset val="100"/>
+                  <c:noMultiLvlLbl val="0"/>
+                </c:catAx>
+                <c:valAx>
+                  <c:axId val="#{VAL_AX_ID}"/>
+                  <c:scaling>
+                    <c:orientation val="minMax"/>
+                  </c:scaling>
+                  <c:delete val="0"/>
+                  <c:axPos val="l"/>
+                  <c:majorGridlines/>
+                  <c:numFmt formatCode="General" sourceLinked="1"/>
+                  <c:majorTickMark val="cross"/>
+                  <c:minorTickMark val="none"/>
+                  <c:tickLblPos val="nextTo"/>
+                  <c:crossAx val="#{CAT_AX_ID}"/>
+                  <c:crosses val="autoZero"/>
+                  <c:crossBetween val="between"/>
+                </c:valAx>
+              </c:plotArea>
+              <c:plotVisOnly val="1"/>
+              <c:dispBlanksAs val="gap"/>
+              <c:showDLblsOverMax val="0"/>
+            </c:chart>
+          #{indent(Base::TEXT_PROPERTIES, 2).chomp}
+          </c:chartSpace>
+        XML
+      end
+
+      private
+
+      def radar_style = chart_type.name == :RADAR_FILLED ? "filled" : "marker"
+
+      # A plain radar draws lines without markers, which is said per series by
+      # asking for the "none" symbol. The markers and filled variants do not.
+      def marker_none_xml
+        return "" unless chart_type.name == :RADAR
+
+        <<~XML
+          <c:marker>
+            <c:symbol val="none"/>
+          </c:marker>
+        XML
+      end
+
+      def series_blocks
+        all_series_xml do |series|
+          series_xml(series, extra_before_cat: marker_none_xml,
+                             extra_after_val: %(<c:smooth val="0"/>\n))
+        end
+      end
+    end
+
     # `c:doughnutChart`, a pie with a hole.
     class DoughnutChartWriter < Base
-      # A doughnut's text properties leave the language off the trailing run
-      # properties, where every other family sets it.
-      TEXT_PROPERTIES = Base::TEXT_PROPERTIES.sub(
-        %(<a:endParaRPr lang="en-US"/>), "<a:endParaRPr/>"
-      )
-
       def xml
         <<~XML
           #{Base::DECLARATION}
@@ -458,7 +656,7 @@ module Pptx
               <c:dispBlanksAs val="gap"/>
               <c:showDLblsOverMax val="0"/>
             </c:chart>
-          #{indent(TEXT_PROPERTIES, 2).chomp}
+          #{indent(Base::TEXT_PROPERTIES_WITHOUT_LANG, 2).chomp}
           </c:chartSpace>
         XML
       end
