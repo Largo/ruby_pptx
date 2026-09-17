@@ -6,7 +6,10 @@ require "open3"
 RSpec.describe Pptx::Image do
   def self.fixture_dir = File.expand_path("../fixtures/images", __dir__)
   def fixture_dir = self.class.fixture_dir
-  def fixtures = Dir[File.join(fixture_dir, "*")].sort
+  # Rasters only. An SVG is deliberately outside this comparison: Pillow
+  # cannot open one and python-pptx skips SVG entirely, so there is nothing to
+  # compare against. SVG handling is covered by svg_picture_spec.rb.
+  def fixtures = Dir[File.join(fixture_dir, "*")].reject { |f| f.end_with?(".svg") }.sort
 
   def image_oracle_path = File.expand_path("../../tools/image_oracle.py", __dir__)
 
