@@ -1,0 +1,12 @@
+# The reference implementation this gem is checked against.
+#
+# The suite works by running the same operation through python-pptx and through
+# ruby_pptx and diffing the resulting packages part by part. That comparison is
+# only meaningful against a known version: a new python-pptx release could
+# legitimately change its output and turn the suite red through no fault of
+# ours. Bump this deliberately, and expect to read diffs when you do.
+python-pptx==1.0.2
+
+# Reads the workbook embedded in a chart, which is the one part that cannot be
+# compared byte-for-byte (python-pptx writes it with XlsxWriter, we do not).
+openpyxl~=3.1

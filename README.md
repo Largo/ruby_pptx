@@ -107,8 +107,15 @@ bundle exec rspec
 ```
 
 Specs compare the packages this gem writes against the ones python-pptx writes
-for the same operation, part by part, on canonicalised XML. `python3 -c "import
-pptx"` must work for those specs to run; they skip otherwise.
+for the same operation, part by part, on canonicalised XML. To run those:
+
+```bash
+pip install -r spec/oracle-requirements.txt
+```
+
+Without it, the 47 oracle-backed specs skip and the rest still run. CI sets
+`REQUIRE_ORACLE=1`, which turns those skips into failures so a broken Python
+environment cannot quietly reduce the suite to its unit tests.
 
 ## License
 

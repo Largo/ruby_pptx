@@ -28,15 +28,11 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+          cache-dependency-path: spec/oracle-requirements.txt
 
-      # The suite checks this gem against python-pptx by diffing the packages
-      # both produce. That comparison is only meaningful against a known
-      # version: a new python-pptx release could legitimately change its output
-      # and turn the whole suite red for no fault of ours. Pin it, and bump
-      # deliberately. openpyxl reads the embedded chart workbook, which is the
-      # one part that cannot be compared byte-for-byte.
+      # Versions are pinned in the requirements file, which explains why.
       - name: Install the python-pptx oracle
-        run: pip install "python-pptx==1.0.2" "openpyxl~=3.1"
+        run: pip install -r spec/oracle-requirements.txt
 
       - name: Verify the oracle is the pinned version
         run: |
