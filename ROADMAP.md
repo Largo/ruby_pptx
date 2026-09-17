@@ -157,7 +157,7 @@ Remaining upstream code, measured:
 | ~~Chart families — area, radar, XY, bubble~~ | ~~~900~~ | **done** — 27 of the 73 MS API types. |
 | ~~Hyperlinks / click actions~~ | ~~323~~ | **done**. |
 | ~~Table cell merging~~ | — | **done**. |
-| Freeform shape building | 337 | Self-contained. |
+| ~~Freeform shape building~~ | ~~337~~ | **done** — `add_freeform` with a block, or `build_freeform` for geometry stamped more than once. |
 | ~~Connectors and groups~~ | ~~366~~ | **done** — `add_connector`, `add_group_shape`, connecting ends to shapes, groups that resize around their contents. |
 | Video (`media.py`, `parts/media.py`) | 234 | |
 | `fit_text` — TTF parsing and line layout | 724 | Only `TextFrame#fit_text` needs it. |
@@ -173,7 +173,7 @@ Remaining upstream code, measured:
   exist, so this is writing a chart space with two plot elements and a second
   `c:valAx`. Tractable; not started.
 
-**Suggested order for what remains**: ~~connectors and groups~~, then freeform,
+**Suggested order for what remains**: ~~connectors and groups~~, ~~freeform~~,
 then video. `fit_text` last — it needs a TTF parser and a line-breaking
 algorithm for one method.
 

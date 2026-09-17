@@ -43,6 +43,60 @@ module Pptx
       zero_or_one "a:pathLst", successors: []
     end
 
+    # `a:pt`, one point of a path.
+    class CT_AdjPoint2D < Element
+      tag "a:pt"
+      required_attr "x", type: SimpleTypes::ST_Coordinate
+      required_attr "y", type: SimpleTypes::ST_Coordinate
+    end
+
+    # `a:moveTo` and `a:lnTo`: lift the pen to a point, or draw to it.
+    class CT_Path2DPoint < Element
+      tag "a:moveTo", "a:lnTo"
+      zero_or_one "a:pt", successors: []
+
+      def point_at(x, y)
+        point = get_or_add_pt
+        point.x = x
+        point.y = y
+        point
+      end
+    end
+
+    # `a:close`, ending a contour by joining it back to its start.
+    class CT_Path2DClose < Element
+      tag "a:close"
+    end
+
+    # `a:path`, one contour of a freeform shape.
+    #
+    # Its `w` and `h` are in the path's own coordinate space, not EMU: the
+    # shape's extents scale that space onto the slide.
+    class CT_Path2D < Element
+      tag "a:path"
+      zero_or_more "a:close", successors: [], as: :close
+      zero_or_more "a:lnTo", successors: [], as: :lnTo
+      zero_or_more "a:moveTo", successors: [], as: :moveTo
+      optional_attr "w", type: SimpleTypes::ST_PositiveCoordinate
+      optional_attr "h", type: SimpleTypes::ST_PositiveCoordinate
+
+      def move_to(x, y) = add_moveTo.point_at(x, y)
+
+      def line_to(x, y) = add_lnTo.point_at(x, y)
+
+      def close_contour = add_close
+    end
+
+    # `a:pathLst`, the contours of a freeform shape.
+    class CT_Path2DList < Element
+      tag "a:pathLst"
+      zero_or_more "a:path", successors: [], as: :path
+
+      def add_path_of(width, height)
+        add_path(w: width, h: height)
+      end
+    end
+
     # `p:cNvSpPr`, the non-visual properties specific to a `p:sp`.
     class CT_NonVisualDrawingShapeProps < Element
       tag "p:cNvSpPr"
@@ -133,6 +187,42 @@ module Pptx
           XML
         end
 
+        # A `p:sp` configured as a freeform: custom geometry with an empty
+        # path list, ready for contours to be added.
+        def new_freeform_sp(id, name, x, y, cx, cy)
+          Element.parse(<<~XML)
+            <p:sp #{Ns.nsdecls('a', 'p')}>
+              <p:nvSpPr>
+                <p:cNvPr id="#{id}" name="#{escape(name)}"/>
+                <p:cNvSpPr/>
+                <p:nvPr/>
+              </p:nvSpPr>
+              <p:spPr>
+                <a:xfrm>
+                  <a:off x="#{x.to_i}" y="#{y.to_i}"/>
+                  <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+                </a:xfrm>
+                <a:custGeom>
+                  <a:avLst/>
+                  <a:gdLst/>
+                  <a:ahLst/>
+                  <a:cxnLst/>
+                  <a:rect l="l" t="t" r="r" b="b"/>
+                  <a:pathLst/>
+                </a:custGeom>
+              </p:spPr>
+              #{DEFAULT_STYLE}
+              <p:txBody>
+                <a:bodyPr rtlCol="0" anchor="ctr"/>
+                <a:lstStyle/>
+                <a:p>
+                  <a:pPr algn="ctr"/>
+                </a:p>
+              </p:txBody>
+            </p:sp>
+          XML
+        end
+
         # A `p:sp` configured as a text box.
         def new_textbox_sp(id, name, x, y, cx, cy)
           Element.parse(<<~XML)
@@ -186,6 +276,16 @@ module Pptx
       # A text body added to a shape that has none needs the minimum structure
       # the schema requires, not an empty element.
       def new_txBody = CT_TextBody.new_element(self)
+
+      # Start a new contour on this shape's custom geometry.
+      #
+      # @raise [Error] unless the shape has custom geometry
+      def add_path(width, height)
+        geometry = spPr.custGeom
+        raise Error, "shape does not have custom geometry" if geometry.nil?
+
+        geometry.get_or_add_pathLst.add_path_of(width, height)
+      end
 
       def prstGeom = spPr.prstGeom
 

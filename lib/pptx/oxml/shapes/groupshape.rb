@@ -148,6 +148,13 @@ module Pptx
         [min_x, min_y, max_x - min_x, max_y - min_y]
       end
 
+      def add_freeform_sp(x, y, cx, cy)
+        id = next_shape_id
+        sp = adopt_xml(CT_Shape.new_freeform_sp(id, "Freeform #{id - 1}", x, y, cx, cy))
+        insert_element_before(sp, "p:extLst")
+        sp
+      end
+
       def add_textbox(id, name, x, y, cx, cy)
         sp = adopt_xml(CT_Shape.new_textbox_sp(id, name, x, y, cx, cy))
         insert_element_before(sp, "p:extLst")

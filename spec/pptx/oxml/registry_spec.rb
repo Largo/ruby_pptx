@@ -54,7 +54,11 @@ RSpec.describe Pptx::Oxml::Registry do
     "p:nvCxnSpPr" => Pptx::Oxml::CT_ConnectorNonVisual,
     "a:stCxn" => Pptx::Oxml::CT_Connection,
     "a:chOff" => Pptx::Oxml::CT_Point2D,
-    "a:chExt" => Pptx::Oxml::CT_PositiveSize2D
+    "a:chExt" => Pptx::Oxml::CT_PositiveSize2D,
+    "a:path" => Pptx::Oxml::CT_Path2D,
+    "a:moveTo" => Pptx::Oxml::CT_Path2DPoint,
+    "a:lnTo" => Pptx::Oxml::CT_Path2DPoint,
+    "a:pt" => Pptx::Oxml::CT_AdjPoint2D
   }.each do |nsptag, expected_class|
     it "dispatches #{nsptag} to #{expected_class}" do
       expect(described_class.class_for(Pptx::Oxml::Ns.qn(nsptag))).to eq(expected_class)

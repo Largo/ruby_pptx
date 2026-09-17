@@ -288,6 +288,45 @@ module Pptx
       shape_factory(cxn_sp)
     end
 
+    # Start building a freeform shape.
+    #
+    # +scale+ says how many EMU one local coordinate unit is worth, so a shape
+    # can be described in convenient numbers; pass a pair for different
+    # horizontal and vertical scales.
+    #
+    # @return [FreeformBuilder]
+    def build_freeform(start_x: 0, start_y: 0, scale: 1.0)
+      FreeformBuilder.new_builder(self, start_x, start_y, scale)
+    end
+
+    # Build a freeform shape and add it, in one call.
+    #
+    #   shapes.add_freeform(at: [x, y], scale: Pptx.inches(1).emu / 100.0) do |f|
+    #     f.line_to(100, 0)
+    #     f.line_to(50, 100)
+    #   end
+    #
+    # @return [Shape]
+    def add_freeform(at: [0, 0], start_x: 0, start_y: 0, scale: 1.0, close: true)
+      builder = build_freeform(start_x: start_x, start_y: start_y, scale: scale)
+      yield builder if block_given?
+      builder.close if close
+      builder.convert_to_shape(origin_at: at)
+    end
+
+    # @api private
+    # Used by FreeformBuilder, which needs to add the element and then draw
+    # into it.
+    def add_freeform_element(x, y, width, height)
+      @sp_tree.add_freeform_sp(x, y, width, height)
+    end
+
+    # @api private
+    def build_shape(shape_element)
+      recalculate_extents
+      shape_factory(shape_element)
+    end
+
     # Add a group, optionally moving +shapes+ into it.
     #
     # The group has no position or size of its own: both follow from what it
