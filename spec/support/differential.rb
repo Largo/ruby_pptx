@@ -30,11 +30,33 @@ module Pptx
 
       # True when python-pptx is importable, so specs can skip rather than fail
       # on a machine without it.
-      def self.oracle_available?
-        return @oracle_available if defined?(@oracle_available)
+      def self.oracle_available? = module_importable?("pptx, lxml")
 
-        _out, _err, status = Open3.capture3("python3", "-c", "import pptx, lxml")
-        @oracle_available = status.success?
+      # True when openpyxl is importable; only the chart round-trip needs it.
+      def self.openpyxl_available? = module_importable?("openpyxl")
+
+      def self.module_importable?(imports)
+        @importable ||= {}
+        return @importable[imports] if @importable.key?(imports)
+
+        _out, _err, status = Open3.capture3("python3", "-c", "import #{imports}")
+        @importable[imports] = status.success?
+      end
+
+      # Skip a spec that needs python-pptx -- unless REQUIRE_ORACLE is set, in
+      # which case its absence is a failure.
+      #
+      # CI sets it. Without that, a broken Python environment would quietly
+      # reduce the suite to its unit tests while still reporting green, and the
+      # differential checks are the part worth having.
+      def require_oracle!(what = "python-pptx", available: Differential.oracle_available?)
+        return if available
+
+        if ENV["REQUIRE_ORACLE"]
+          raise "#{what} is not importable and REQUIRE_ORACLE is set"
+        end
+
+        skip "#{what} not importable"
       end
 
       # Run +script+ through python-pptx. The script is handed `pptx` and `out`

@@ -123,7 +123,7 @@ RSpec.describe Pptx::Sections do
   end
 
   describe "round-tripping through python-pptx" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     # python-pptx does not know what sections are, but it must not destroy
     # them: it carries the presentation part through untouched.

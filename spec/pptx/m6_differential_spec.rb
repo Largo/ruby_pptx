@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe "pictures and tables agreement with python-pptx" do
-  before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+  before { require_oracle! }
 
   def self.images = File.expand_path("../fixtures/images", __dir__)
   def images = self.class.images

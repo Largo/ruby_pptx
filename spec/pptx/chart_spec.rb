@@ -104,7 +104,7 @@ RSpec.describe Pptx::Chart do
   end
 
   describe "the chart XML" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     # Ruby's nil is Python's None; everything else renders the same.
     def python_list(values)
@@ -145,7 +145,7 @@ RSpec.describe Pptx::Chart do
   end
 
   describe "the saved package" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     # The embedded workbook is deliberately excluded here: python-pptx writes
     # it with XlsxWriter and this gem writes it directly, so the bytes differ
@@ -189,9 +189,8 @@ RSpec.describe Pptx::Chart do
     def chart_oracle_path = File.expand_path("../../tools/chart_oracle.py", __dir__)
 
     before do
-      skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available?
-      _o, _e, status = Open3.capture3("python3", "-c", "import openpyxl")
-      skip "openpyxl not importable" unless status.success?
+      require_oracle!
+      require_oracle!("openpyxl", available: Pptx::Spec::Differential.openpyxl_available?)
     end
 
     # End-to-end: our file is opened by python-pptx, and its embedded workbook

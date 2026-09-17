@@ -139,7 +139,7 @@ RSpec.describe Pptx::Oxml::CT_CoreProperties do
   end
 
   describe "agreement with python-pptx" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     # Exercises a core-properties part built from scratch, where xsi is not
     # already declared -- the case a package that already has core properties

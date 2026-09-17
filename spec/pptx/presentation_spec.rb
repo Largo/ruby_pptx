@@ -143,7 +143,7 @@ RSpec.describe Pptx::Presentation do
   end
 
   describe "saving" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     # The M3 exit criterion. Unlike M2 this exercises real re-serialization:
     # the presentation, slide, layout and master parts are now XML parts

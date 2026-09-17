@@ -4,7 +4,7 @@
 # Ruby and Python canonicalizers must produce identical manifests for it. If
 # this fails, every differential result is untrustworthy.
 RSpec.describe Pptx::Spec::Differential do
-  before { skip "python-pptx not importable" unless described_class.oracle_available? }
+  before { require_oracle! }
 
   let(:script) do
     <<~PY

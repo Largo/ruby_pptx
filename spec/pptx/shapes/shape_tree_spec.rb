@@ -193,7 +193,7 @@ RSpec.describe Pptx::SlideShapes do
   end
 
   describe "agreement with python-pptx" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     # The M4 exit criterion: adding a slide is the first operation that both
     # creates a new part and writes non-trivial shape XML into it.

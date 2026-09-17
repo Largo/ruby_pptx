@@ -80,7 +80,7 @@ RSpec.describe Pptx::Oxml::SimpleTypes do
   define_method(:cases) { cases }
 
   describe "agreement with python-pptx" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     it "converts every case identically" do
       expected = python_simple_types(

@@ -18,7 +18,7 @@ RSpec.describe Pptx::Image do
   end
 
   describe "agreement with Pillow" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     # This parser exists to avoid depending on an image library, so it is
     # checked against the one it replaces, for every format we support.

@@ -53,7 +53,7 @@ RSpec.describe Pptx::Opc::OpcPackage do
   end
 
   describe "round-tripping" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     # The M2 exit criterion: opening a package and saving it again must
     # produce the same package python-pptx does, part for part.

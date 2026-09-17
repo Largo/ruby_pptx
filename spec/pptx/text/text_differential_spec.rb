@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe "text and DrawingML agreement with python-pptx" do
-  before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+  before { require_oracle! }
 
   # The M5 exit criterion. Text is where the most XML is generated per call,
   # and where run-splitting, escaping and formatting all have to line up.

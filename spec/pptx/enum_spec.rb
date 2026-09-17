@@ -14,7 +14,7 @@ RSpec.describe Pptx::Enum do
   end
 
   describe "agreement with python-pptx" do
-    before { skip "python-pptx not importable" unless Pptx::Spec::Differential.oracle_available? }
+    before { require_oracle! }
 
     let(:expected) { python_enums }
 
