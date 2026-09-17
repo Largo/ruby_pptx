@@ -288,9 +288,41 @@ Findings from M7:
 - A nil value is a *gap*: the `c:pt` is omitted while `c:ptCount` still counts
   it, which is how a missing data point differs from a zero.
 
-### M8 — Beyond python-pptx
+### M8 — Beyond python-pptx *(partly complete)*
 
-See below.
+| Feature | Status |
+|---|---|
+| Slide sections (`p14:sectionLst`) | done |
+| Table autopaging across slides | done |
+| Declarative authoring (`Pptx.build`) | done |
+| SVG image parts | not started -- see below |
+| Defining a slide master/layout in code | not started -- see below |
+
+**These have no differential oracle**, because python-pptx does not implement
+them. They are checked three other ways:
+
+- **Sections** are compared against the XML in the Microsoft [MS-PPTX]
+  specification, section 2.3.1.25, and proven to survive being opened and
+  saved by python-pptx -- which does not understand sections but must not
+  destroy them.
+- **Autopaging** is pure logic over the existing table API, so it is unit
+  tested and the resulting deck is read back by python-pptx.
+- **The builder** is checked by a *self-differential*: the same deck built
+  declaratively and imperatively must produce byte-identical packages. That is
+  the property that keeps it a convenience layer rather than a second
+  implementation, and three mutations confirm it bites.
+
+**SVG images are not started** for a concrete reason rather than a lack of
+time: PowerPoint requires an SVG picture to carry a raster fallback in
+`r:embed` alongside the SVG in a `svgBlip` extension, and this gem has no
+rasterizer. The honest shape for it is `add_picture(svg, fallback: png)`,
+making the caller supply the fallback, but that is a design decision worth
+making deliberately rather than in passing.
+
+**Defining a slide master in code is not started** because it is much larger
+than it sounds: a usable master needs a theme part with colour, font and
+format schemes, plus `p:txStyles`, before any layout can inherit from it.
+Starting from a template and editing remains the practical route.
 
 ## Beyond python-pptx: what to take from PptxGenJS
 
@@ -300,7 +332,8 @@ things.
 
 **1. Authoring ergonomics.** Its one-call-per-object style is genuinely nicer
 than python-pptx's `add_textbox(left, top, width, height)` positional
-arguments. This belongs in the redesigned API layer, not in a second engine:
+arguments. This belongs in the redesigned API layer, not in a second engine.
+Implemented in M8 as `Pptx.build`; the sketch below is close to what shipped:
 
 ```ruby
 Pptx.build do |deck|

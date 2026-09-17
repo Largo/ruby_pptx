@@ -98,6 +98,9 @@ module Pptx
       self[index] || raise(IndexError, "slide index #{index} out of range")
     end
 
+    # Enumerable gives us #first but not #last.
+    def last = self[-1]
+
     # The slide with the given slide id.
     #
     # @return [Slide, nil]

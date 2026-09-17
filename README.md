@@ -50,6 +50,45 @@ slide.shapes.add_chart(Pptx::Enum::XL_CHART_TYPE::COLUMN_CLUSTERED,
 prs.save("out.pptx")
 ```
 
+Or build a whole deck declaratively:
+
+```ruby
+deck = Pptx.build do |d|
+  d.slide_size = :widescreen
+
+  d.slide("Title Slide") do |s|
+    s.title = "Annual Report"
+    s.subtitle = "Prepared in Ruby"
+  end
+
+  d.section("Detail") do
+    d.slide("Blank") do |s|
+      s.shape :ROUNDED_RECTANGLE, at: [Pptx.inches(1), Pptx.inches(1)],
+                                  size: [Pptx.inches(3), Pptx.inches(1)],
+                                  fill: "1F497D", text: "Next steps"
+      s.chart :COLUMN_CLUSTERED, categories: %w[East West],
+                                 series: { "Q1" => [1, 2] },
+                                 at: [Pptx.inches(1), Pptx.inches(3)],
+                                 size: [Pptx.inches(6), Pptx.inches(4)]
+    end
+  end
+end
+
+deck.save("out.pptx")
+```
+
+Two things python-pptx does not do: **slide sections**, and **paging a long
+table across as many slides as it needs**.
+
+```ruby
+deck.sections.add("Appendix", slides: deck.slides.to_a.last(2))
+
+deck.slides.add_table_pages(rows,
+                            layout: deck.slide_layouts["Blank"],
+                            left: Pptx.inches(0.5), top: Pptx.inches(1),
+                            width: Pptx.inches(9), height: Pptx.inches(5))
+```
+
 Lengths are explicit rather than bare numbers:
 
 ```ruby

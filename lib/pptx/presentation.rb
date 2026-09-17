@@ -2,6 +2,7 @@
 
 require "pptx/element_proxy"
 require "pptx/slide"
+require "pptx/section"
 
 module Pptx
   # A PowerPoint presentation.
@@ -68,6 +69,12 @@ module Pptx
     # A presentation may have several masters, each with its own layouts; this
     # is a convenience for the common case of one.
     def slide_layouts = slide_master.slide_layouts
+
+    # The sections grouping this presentation's slides.
+    #
+    # Sections are a PowerPoint 2010 extension; a presentation with none has
+    # an empty collection and writes no extension element.
+    def sections = @sections ||= Sections.new(self)
 
     # @return [Length, nil] nil when the presentation defines no slide size
     def slide_width = @element.sldSz&.cx

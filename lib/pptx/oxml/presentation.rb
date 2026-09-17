@@ -3,6 +3,8 @@
 require "pptx/oxml/element"
 require "pptx/oxml/content_model"
 require "pptx/oxml/simple_types"
+require "pptx/oxml/section"
+require "pptx/oxml/ns"
 
 module Pptx
   module Oxml
@@ -15,6 +17,33 @@ module Pptx
                   successors: %w[p:notesMasterIdLst p:handoutMasterIdLst p:sldIdLst p:sldSz p:notesSz]
       zero_or_one "p:sldIdLst", successors: %w[p:sldSz p:notesSz]
       zero_or_one "p:sldSz", successors: %w[p:notesSz]
+      zero_or_one "p:extLst", successors: []
+
+      # The URI PowerPoint uses to mark the section-list extension.
+      SECTION_LIST_EXT_URI = "{521415D9-36F7-43E2-AB2F-B90AF26B5E84}"
+
+      # The `p14:sectionLst` element, or nil when the presentation has no
+      # sections.
+      def section_list
+        xpath("./p:extLst/p:ext/p14:sectionLst").first
+      end
+
+      # The `p14:sectionLst`, created inside its extension if absent.
+      def get_or_add_section_list
+        section_list || begin
+          ext = get_or_add_extLst.add_ext(uri: SECTION_LIST_EXT_URI)
+          ext.append(ext.build_from_xml(%(<p14:sectionLst #{Ns.nsdecls('p14')}/>)))
+          section_list
+        end
+      end
+
+      def remove_section_list
+        extension = xpath("./p:extLst/p:ext").find { |e| e.get("uri") == SECTION_LIST_EXT_URI }
+        return if extension.nil?
+
+        extLst.remove(extension)
+        remove_extLst if extLst.ext_list.empty?
+      end
     end
 
     # `p:sldId`, a reference from the presentation to one slide.
