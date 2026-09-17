@@ -246,10 +246,47 @@ Findings from M6:
   a reminder that a unit spec asserting our own expectation is not the same as
   a differential confirming upstream's.
 
-### M7 — Charts
+### M7 — Charts *(creation done for the main families)*
 
-`chart/*` (5187; `xmlwriter.py` is 1840), `oxml/chart/*`. Needs a minimal
-xlsx writer for the embedded chart workbook.
+| Upstream | LOC | Ruby | Status |
+|---|---:|---|---|
+| `chart/xmlwriter.py` (category families) | ~900 of 1840 | `Pptx::ChartXmlWriter` | bar, line, pie, doughnut |
+| `chart/data.py` | 864 | `Pptx::{ChartData,ChartSeries}` | category data |
+| `chart/xlsx.py` | 272 | `Pptx::ChartWorkbookWriter` | done, without XlsxWriter |
+| `parts/chart.py`, `parts/embeddedpackage.py` | 188 | `Pptx::Parts::{ChartPart,EmbeddedXlsxPart}` | done |
+| `chart/chart.py`, `series.py`, `category.py` | 738 | `Pptx::{Chart,ChartSeriesView}` | read-back only |
+| `chart/axis.py`, `plot.py`, `datalabel.py`, `legend.py`, `marker.py` | 1372 | -- | not started |
+
+**Exit criterion met, with one documented exception.** All 14 supported chart
+types produce chart XML byte-identical to python-pptx, and a saved package
+matches part for part -- *except* the embedded workbook, which cannot match by
+construction: python-pptx writes it with XlsxWriter and this gem writes it
+directly. That part is excluded from the byte comparison and checked
+separately: our file is reopened by python-pptx and its workbook read by
+openpyxl, asserting the chart type, categories, series values and the full cell
+grid. Three mutations were caught by these assertions.
+
+**Supported chart types**: clustered, stacked and 100% stacked bar and column;
+line and line-with-markers in all three groupings; pie; doughnut. Anything
+else raises rather than writing XML PowerPoint would reject. Area, radar, XY
+and bubble are the remaining families.
+
+Findings from M7:
+
+- **Ruby's squiggly heredoc only indents the first line of interpolated
+  content.** Nesting templates the way the reference implementation does
+  produced correct XML at wrong indentation, which is a byte difference. Every
+  fragment is now generated at zero indentation and placed by its caller
+  through an explicit `indent` helper.
+- **A pie plots only the first series; a doughnut plots all of them** as
+  concentric rings. The two are otherwise near-identical.
+- **A doughnut's `c:txPr` omits `lang` on its trailing run properties** where
+  every other family sets it -- a one-attribute quirk, invisible except to a
+  byte comparison.
+- **Floats keep their trailing ".0" in chart XML but not in the workbook.**
+  The cached value `2.0` is written as `2.0` in `c:v` and as `2` in the sheet.
+- A nil value is a *gap*: the `c:pt` is omitted while `c:ptCount` still counts
+  it, which is how a missing data point differs from a zero.
 
 ### M8 — Beyond python-pptx
 

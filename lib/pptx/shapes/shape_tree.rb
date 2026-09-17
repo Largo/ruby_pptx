@@ -198,6 +198,17 @@ module Pptx
       shape_factory(pic)
     end
 
+    # Add a chart of +chart_type+ depicting +chart_data+.
+    #
+    # @return [GraphicFrame] use its `#chart` to reach the chart itself
+    def add_chart(chart_type, left, top, width, height, chart_data)
+      r_id = part.add_chart_part(chart_type, chart_data)
+      id = next_shape_id
+      frame = @sp_tree.add_graphic_frame_chart(id, "Chart #{id - 1}", r_id,
+                                               left, top, width, height)
+      shape_factory(frame)
+    end
+
     # Add a table of +rows+ by +cols+ filling the given position and size.
     #
     # @return [GraphicFrame] use its `#table` to reach the table itself

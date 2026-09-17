@@ -68,6 +68,14 @@ module Pptx
         pic
       end
 
+      def add_graphic_frame_chart(id, name, r_id, x, y, cx, cy)
+        frame = adopt_xml(
+          CT_GraphicalObjectFrame.new_chart_graphic_frame(id, name, r_id, x, y, cx, cy)
+        )
+        insert_element_before(frame, "p:extLst")
+        frame
+      end
+
       def add_graphic_frame_table(id, name, rows, cols, x, y, cx, cy)
         frame = adopt_xml(
           CT_GraphicalObjectFrame.new_table_graphic_frame(id, name, rows, cols, x, y, cx, cy)

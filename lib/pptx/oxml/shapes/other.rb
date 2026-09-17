@@ -2,6 +2,7 @@
 
 require "pptx/oxml/shapes/shared"
 require "pptx/oxml/table"
+require "pptx/oxml/chart"
 
 module Pptx
   module Oxml
@@ -88,6 +89,9 @@ module Pptx
 
       def graphic_data_uri = xpath("./a:graphic/a:graphicData/@uri").first&.value
 
+      # The relationship id of the chart part this frame refers to.
+      def chart_rId = xpath("./a:graphic/a:graphicData/c:chart/@r:id").first&.value
+
       def table? = graphic_data_uri == URI_TABLE
       def chart? = graphic_data_uri == URI_CHART
 
@@ -116,6 +120,17 @@ module Pptx
               </a:graphic>
             </p:graphicFrame>
           XML
+        end
+
+        # A `p:graphicFrame` referring to the chart part related by +r_id+.
+        def new_chart_graphic_frame(id, name, r_id, x, y, cx, cy)
+          frame = new_graphic_frame(id, name, x, y, cx, cy)
+          graphic_data = frame.xpath("./a:graphic/a:graphicData").first
+          graphic_data.set("uri", URI_CHART)
+          graphic_data.append(
+            graphic_data.build_from_xml(CT_GraphicFrameChart.new_chart(r_id).node.to_xml)
+          )
+          frame
         end
 
         # A `p:graphicFrame` containing a table of +rows+ by +cols+.

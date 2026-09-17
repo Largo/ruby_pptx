@@ -4,6 +4,7 @@ require "pptx/opc/package"
 require "pptx/opc/constants"
 require "pptx/oxml/slide"
 require "pptx/slide"
+require "pptx/parts/chart"
 
 module Pptx
   module Parts
@@ -12,6 +13,14 @@ module Pptx
     class BaseSlidePart < Opc::XmlPart
       # The internal name of this slide.
       def name = element.cSld.name
+
+      # Create a chart part for +chart_data+ and relate this slide to it.
+      #
+      # @return [String] the relationship id of the new chart part
+      def add_chart_part(chart_type, chart_data)
+        chart_part = ChartPart.new_chart(chart_type, chart_data, package)
+        relate_to(chart_part, Opc::RELATIONSHIP_TYPE::CHART)
+      end
 
       # The image part for +image_file+, related to this slide.
       #

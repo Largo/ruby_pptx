@@ -73,6 +73,15 @@ module Pptx
       @table ||= Table.new(@element.tbl, self)
     end
 
+    # The chart inside this frame.
+    #
+    # @raise [Error] when the frame holds something other than a chart
+    def chart
+      raise Error, "this graphic frame does not contain a chart" unless chart?
+
+      @chart ||= part.related_part(@element.chart_rId).chart
+    end
+
     def shape_type
       return Enum::MSO_SHAPE_TYPE::TABLE if table?
       return Enum::MSO_SHAPE_TYPE::CHART if chart?

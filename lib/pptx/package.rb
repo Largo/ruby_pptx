@@ -96,5 +96,7 @@ end
   Pptx::Opc::CONTENT_TYPE::TIFF => Pptx::Parts::ImagePart,
   Pptx::Opc::CONTENT_TYPE::MS_PHOTO => Pptx::Parts::ImagePart,
   Pptx::Opc::CONTENT_TYPE::X_EMF => Pptx::Parts::ImagePart,
-  Pptx::Opc::CONTENT_TYPE::X_WMF => Pptx::Parts::ImagePart
+  Pptx::Opc::CONTENT_TYPE::X_WMF => Pptx::Parts::ImagePart,
+  Pptx::Opc::CONTENT_TYPE::DML_CHART => Pptx::Parts::ChartPart,
+  Pptx::Opc::CONTENT_TYPE::SML_SHEET => Pptx::Parts::EmbeddedXlsxPart
 }.each { |content_type, part_class| Pptx::Opc::PartFactory.register(content_type, part_class) }
