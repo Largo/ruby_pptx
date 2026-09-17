@@ -112,4 +112,9 @@ pptx"` must work for those specs to run; they skip otherwise.
 
 ## License
 
-MIT. python-pptx is MIT, © Steve Canny.
+MIT — see [LICENSE](LICENSE).
+
+This gem is a port of [python-pptx](https://github.com/scanny/python-pptx) by
+Steve Canny, which is also MIT licensed, and it vendors four template files
+from that project verbatim. See [NOTICE](NOTICE) for the full attribution and
+the upstream licence text.
