@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
 RSpec.describe Pptx::Oxml::ContentModel do
+  # The test schema below claims tags the real element classes also claim, such
+  # as "a:xfrm". Defining a class registers it immediately, and RSpec loads
+  # every spec file before running any example, so simply restoring in
+  # after(:all) would still leave the schema installed for whatever runs first.
+  # Instead: snapshot, define, put the real table straight back, and swap the
+  # schema in only for the duration of this file's examples.
+  pristine_registry = Pptx::Oxml::Registry.registered
+
 
   # A cut-down but faithful slice of the real schema: <a:xfrm> holds an
   # optional <a:off> then an optional <a:ext>, and carries a `rot` attribute.
@@ -53,9 +61,11 @@ RSpec.describe Pptx::Oxml::ContentModel do
     end
   end
 
-  before(:all) { @registry = Pptx::Oxml::Registry.registered }
+  schema_registry = Pptx::Oxml::Registry.registered
+  Pptx::Oxml::Registry.reset!(pristine_registry)
 
-  after(:all) { Pptx::Oxml::Registry.reset!(@registry) }
+  before(:all) { Pptx::Oxml::Registry.reset!(schema_registry) }
+  after(:all) { Pptx::Oxml::Registry.reset!(pristine_registry) }
 
   def element(xml) = Pptx::Oxml::Element.parse(xml)
 

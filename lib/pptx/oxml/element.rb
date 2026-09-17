@@ -54,13 +54,18 @@ module Pptx
     # correctness never depends on the wrapper cache. The cache exists to avoid
     # re-allocating wrappers, not to make comparisons work.
     class Element
-      # Declares the tag this class models and registers it for dispatch.
-      def self.tag(prefixed_tag)
-        @nsptag = prefixed_tag
-        Registry.register(Ns.qn(prefixed_tag), self)
+      # Declares the tag or tags this class models and registers them for
+      # dispatch. A few element types appear under more than one tag -- a
+      # transform is `a:xfrm` on a shape but `p:xfrm` on a graphic frame --
+      # and are the same class in both places.
+      def self.tag(*prefixed_tags)
+        @nsptags = prefixed_tags
+        prefixed_tags.each { |t| Registry.register(Ns.qn(t), self) }
       end
 
-      def self.nsptag = @nsptag
+      def self.nsptag = @nsptags&.first
+
+      def self.nsptags = @nsptags
 
       # Wrap +node+ in the class registered for its tag.
       #
@@ -190,7 +195,9 @@ module Pptx
 
       # Parse an XML literal into this element's document.
       def build_from_xml(xml)
-        fragment = @node.parse(xml)
+        # noblanks matches Element.parse, so an indented XML literal does not
+        # smuggle whitespace text nodes into the tree.
+        fragment = @node.parse(xml) { |config| config.noblanks }
         raise InvalidXmlError, "fragment produced no element: #{xml.inspect}" if fragment.first.nil?
 
         Element.wrap(fragment.first)

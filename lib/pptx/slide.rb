@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "pptx/element_proxy"
+require "pptx/shapes/shape_tree"
 
 module Pptx
   # Behaviour common to slides, layouts, masters and notes slides.
@@ -18,6 +19,11 @@ module Pptx
 
   # Common to slide masters and the notes master.
   class BaseMaster < BaseSlide
+    # The shapes on this master.
+    def shapes = @shapes ||= MasterShapes.new(@element.spTree, self)
+
+    # The placeholders on this master, in `idx` order.
+    def placeholders = @placeholders ||= MasterPlaceholders.new(@element.spTree, self)
   end
 
   # One slide in a presentation.
@@ -33,6 +39,12 @@ module Pptx
     def follows_master_background? = @element.bg.nil?
 
     def has_notes_slide? = part.notes_slide?
+
+    # The shapes on this slide, in z-order.
+    def shapes = @shapes ||= SlideShapes.new(@element.spTree, self)
+
+    # The placeholders on this slide, keyed by `idx`.
+    def placeholders = @placeholders ||= SlidePlaceholders.new(@element.spTree, self)
 
     def inspect = "#<Pptx::Slide id=#{slide_id} #{part.partname}>"
   end
@@ -78,13 +90,15 @@ module Pptx
     # @return [Slide, nil]
     def by_id(slide_id) = part.slide_by_id(slide_id)
 
-    # Add a slide inheriting from +slide_layout+.
+    # Add a slide inheriting from +slide_layout+, and return it.
     #
-    # Not yet implemented: creating a slide means cloning the layout's
-    # placeholders, which needs the shape layer.
-    def add(_slide_layout)
-      raise NotImplementedError,
-            "adding a slide requires the shape layer, which is not implemented yet"
+    # The layout's placeholders are copied onto the new slide, preserving
+    # z-order; latent ones are left to the layout.
+    def add(slide_layout)
+      r_id, slide = part.add_slide(slide_layout)
+      slide.shapes.clone_layout_placeholders(slide_layout)
+      @sld_id_list.add_slide_id(r_id)
+      slide
     end
 
     # The zero-based position of +slide+.
@@ -97,6 +111,25 @@ module Pptx
 
   # A slide layout: the arrangement a slide inherits from.
   class SlideLayout < BaseSlide
+    # Placeholders PowerPoint renders from the layout rather than copying onto
+    # each slide, so they are not cloned when a slide is created.
+    LATENT_PLACEHOLDER_TYPES = [
+      Enum::PP_PLACEHOLDER::DATE,
+      Enum::PP_PLACEHOLDER::FOOTER,
+      Enum::PP_PLACEHOLDER::SLIDE_NUMBER
+    ].freeze
+
+    # The shapes on this layout.
+    def shapes = @shapes ||= LayoutShapes.new(@element.spTree, self)
+
+    # The placeholders on this layout, in `idx` order.
+    def placeholders = @placeholders ||= LayoutPlaceholders.new(@element.spTree, self)
+
+    # The placeholders a new slide based on this layout should receive.
+    def cloneable_placeholders
+      placeholders.reject { |ph| LATENT_PLACEHOLDER_TYPES.include?(ph.element.ph_type) }
+    end
+
     # The master this layout inherits from.
     def slide_master = part.slide_master
 

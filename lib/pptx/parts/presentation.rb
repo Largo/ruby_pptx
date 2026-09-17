@@ -13,6 +13,15 @@ module Pptx
     class PresentationPart < Opc::XmlPart
       def presentation = @presentation ||= Presentation.new(element, self)
 
+      # Create a blank slide part inheriting from +slide_layout+.
+      #
+      # @return [Array(String, Pptx::Slide)] the new relationship id and slide
+      def add_slide(slide_layout)
+        slide_part = SlidePart.new_slide(next_slide_partname, package, slide_layout.part)
+        r_id = relate_to(slide_part, Opc::RELATIONSHIP_TYPE::SLIDE)
+        [r_id, slide_part.slide]
+      end
+
       def core_properties = package.core_properties
 
       def related_slide(r_id) = related_part(r_id).slide

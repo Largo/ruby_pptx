@@ -1,0 +1,29 @@
+# frozen_string_literal: true
+
+# Specs that define their own element classes register tags globally. If one
+# forgets to restore the registry, dispatch silently changes for every spec
+# that runs afterwards, which is close to impossible to debug from the
+# resulting failure. This asserts the real classes are still in place.
+RSpec.describe Pptx::Oxml::Registry do
+  {
+    "a:xfrm" => Pptx::Oxml::CT_Transform2D,
+    "p:xfrm" => Pptx::Oxml::CT_Transform2D,
+    "a:off" => Pptx::Oxml::CT_Point2D,
+    "a:ext" => Pptx::Oxml::CT_PositiveSize2D,
+    "p:sp" => Pptx::Oxml::CT_Shape,
+    "p:spTree" => Pptx::Oxml::CT_GroupShape,
+    "p:grpSp" => Pptx::Oxml::CT_GroupShape,
+    "p:ph" => Pptx::Oxml::CT_Placeholder,
+    "p:spPr" => Pptx::Oxml::CT_ShapeProperties,
+    "p:txBody" => Pptx::Oxml::CT_TextBody,
+    "a:txBody" => Pptx::Oxml::CT_TextBody,
+    "p:sld" => Pptx::Oxml::CT_Slide,
+    "p:presentation" => Pptx::Oxml::CT_Presentation,
+    "cp:coreProperties" => Pptx::Oxml::CT_CoreProperties,
+    "pr:Relationships" => Pptx::Opc::Oxml::CT_Relationships
+  }.each do |nsptag, expected_class|
+    it "dispatches #{nsptag} to #{expected_class}" do
+      expect(described_class.class_for(Pptx::Oxml::Ns.qn(nsptag))).to eq(expected_class)
+    end
+  end
+end
