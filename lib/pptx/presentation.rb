@@ -18,6 +18,9 @@ module Pptx
     class << self
       # Open a presentation from a path or an IO stream.
       #
+      # Given a block, yields the presentation and returns the block's value,
+      # as `File.open` does.
+      #
       # @raise [PackageNotFoundError] when the file is not an OPC package
       # @raise [Error] when the package is not a PowerPoint presentation
       def open(pptx = nil)
@@ -28,7 +31,8 @@ module Pptx
                 "not a PowerPoint file; content type is #{presentation_part.content_type.inspect}"
         end
 
-        presentation_part.presentation
+        presentation = presentation_part.presentation
+        block_given? ? yield(presentation) : presentation
       end
 
       # A new presentation based on the built-in default template.
@@ -96,6 +100,16 @@ module Pptx
     def save(path_or_stream)
       part.save(path_or_stream)
       self
+    end
+
+    # The .pptx bytes, for callers who want to hand them to something other
+    # than the filesystem.
+    #
+    # @return [String]
+    def to_blob
+      buffer = StringIO.new(+"", "w+b")
+      save(buffer)
+      buffer.string
     end
 
     def inspect

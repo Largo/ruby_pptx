@@ -9,7 +9,12 @@ delay makes that more disruptive.
 
 ---
 
-## A. API idiom
+## A. API idiom — **done**
+
+Everything in this section shipped. Kept here as the record of what changed
+and why; see the sub-sections for the reasoning.
+
+
 
 The project's stated decision was a **Ruby-idiomatic redesign** over a faithful
 engine. The engine held up; the public API drifted back toward python-pptx's
@@ -131,6 +136,14 @@ internal and deliberate.
 
 **Verdict**: the API is close, and the shape is right. A1 and A2 are the two
 that would actually make a reviewer wince. Everything else is polish.
+
+**Outcome**: A1-A7 are all done, except that `Length#coerce` (part of A7) was
+deliberately *not* added. Ruby's coerce protocol cannot see which operator is
+being applied, so the pair it returns must be right for all of them. Returning
+`[self, other]` would make `2 * length` work but silently turn `2 - length`
+into `length - 2`, the wrong sign. A `TypeError` the caller fixes by writing
+`length * 2` beats an answer that is quietly negative. The reasoning is
+recorded in `lib/pptx/length.rb` so nobody "fixes" it later.
 
 ---
 

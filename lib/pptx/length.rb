@@ -74,6 +74,14 @@ module Pptx
     # Scaling by a plain number; `length * 2` is twice as long.
     def *(factor) = Length.new((@emu * factor).to_i)
 
+    # Deliberately no #coerce, so `2 * length` raises rather than working.
+    #
+    # Ruby's coerce protocol cannot see which operator is being applied, so the
+    # pair it returns has to be right for all of them. Returning [self, other]
+    # would make `2 * length` correct but silently turn `2 - length` into
+    # `length - 2` -- the wrong sign. A TypeError the caller can fix by writing
+    # `length * 2` beats an answer that is quietly negative.
+
     def <=>(other)
       other = Length.coerce(other) if other.is_a?(Integer)
       return nil unless other.is_a?(Length)

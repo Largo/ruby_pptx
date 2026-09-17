@@ -4,8 +4,7 @@ RSpec.describe Pptx::Table do
   let(:presentation) { Pptx::Presentation.new_default }
   let(:slide) { presentation.slides.add(presentation.slide_layouts[6]) }
   let(:frame) do
-    slide.shapes.add_table(3, 2, Pptx.inches(1), Pptx.inches(1),
-                           Pptx.inches(6), Pptx.inches(3))
+    slide.shapes.add_table(3, 2, at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(6), Pptx.inches(3)])
   end
   subject(:table) { frame.table }
 
@@ -42,7 +41,7 @@ RSpec.describe Pptx::Table do
   # An odd total cannot divide evenly, and the remainder has to go somewhere
   # or the table would not fill the frame.
   it "gives the rounding remainder to the last row and column" do
-    odd = slide.shapes.add_table(3, 3, 0, 0, 100, 100).table
+    odd = slide.shapes.add_table(3, 3, at: [0, 0], size: [100, 100]).table
     aggregate_failures do
       expect(odd.columns.map { |c| c.width.emu }).to eq([33, 33, 34])
       expect(odd.rows.map { |r| r.height.emu }).to eq([33, 33, 34])
@@ -82,19 +81,19 @@ RSpec.describe Pptx::Table do
 
   it "defaults to a banded table with a header row, as PowerPoint does" do
     aggregate_failures do
-      expect(table.first_row).to be(true)
-      expect(table.horz_banding).to be(true)
-      expect(table.first_col).to be(false)
-      expect(table.last_row).to be(false)
+      expect(table.first_row?).to be(true)
+      expect(table.banded_rows?).to be(true)
+      expect(table.first_col?).to be(false)
+      expect(table.last_row?).to be(false)
     end
   end
 
   it "round-trips the style flags" do
     table.first_col = true
-    table.horz_banding = false
+    table.banded_rows = false
     aggregate_failures do
-      expect(table.first_col).to be(true)
-      expect(table.horz_banding).to be(false)
+      expect(table.first_col?).to be(true)
+      expect(table.banded_rows?).to be(false)
       expect(table.element.xml).to include('firstCol="1"')
     end
   end
@@ -140,7 +139,7 @@ RSpec.describe Pptx::Picture do
   let(:slide) { presentation.slides.add(presentation.slide_layouts[6]) }
 
   it "uses the image's native size when no size is given" do
-    pic = slide.shapes.add_picture(image("png-96dpi.png"), Pptx.inches(1), Pptx.inches(1))
+    pic = slide.shapes.add_picture(image("png-96dpi.png"), at: [Pptx.inches(1), Pptx.inches(1)])
     aggregate_failures do
       expect(pic.width.inches).to be_within(1e-9).of(64 / 96.0)
       expect(pic.height.inches).to be_within(1e-9).of(48 / 96.0)
@@ -151,17 +150,16 @@ RSpec.describe Pptx::Picture do
 
   it "preserves the aspect ratio when only one dimension is given" do
     aggregate_failures do
-      by_width = slide.shapes.add_picture(image("png-96dpi.png"), 0, 0, width: Pptx.inches(2))
+      by_width = slide.shapes.add_picture(image("png-96dpi.png"), at: [0, 0], width: Pptx.inches(2))
       expect(by_width.height).to eq(Pptx.inches(1.5))
 
-      by_height = slide.shapes.add_picture(image("png-96dpi.png"), 0, 0, height: Pptx.inches(3))
+      by_height = slide.shapes.add_picture(image("png-96dpi.png"), at: [0, 0], height: Pptx.inches(3))
       expect(by_height.width).to eq(Pptx.inches(4))
     end
   end
 
   it "stretches to fit when both dimensions are given" do
-    pic = slide.shapes.add_picture(image("png-96dpi.png"), 0, 0,
-                                   width: Pptx.inches(5), height: Pptx.inches(1))
+    pic = slide.shapes.add_picture(image("png-96dpi.png"), at: [0, 0], width: Pptx.inches(5), height: Pptx.inches(1))
     aggregate_failures do
       expect(pic.width).to eq(Pptx.inches(5))
       expect(pic.height).to eq(Pptx.inches(1))
@@ -170,7 +168,7 @@ RSpec.describe Pptx::Picture do
 
   it "accepts an IO stream as well as a path" do
     File.open(image("gif.gif"), "rb") do |io|
-      pic = slide.shapes.add_picture(io, 0, 0)
+      pic = slide.shapes.add_picture(io, at: [0, 0])
       expect(pic.element.xml).to include("descr=\"image.gif\"")
     end
   end
@@ -178,9 +176,9 @@ RSpec.describe Pptx::Picture do
   # The same picture used on several slides should be stored once.
   it "stores one image part however many times the same image is added" do
     other = presentation.slides.add(presentation.slide_layouts[6])
-    slide.shapes.add_picture(image("png-96dpi.png"), 0, 0)
-    other.shapes.add_picture(image("png-96dpi.png"), 0, 0)
-    other.shapes.add_picture(image("gif.gif"), 0, 0)
+    slide.shapes.add_picture(image("png-96dpi.png"), at: [0, 0])
+    other.shapes.add_picture(image("png-96dpi.png"), at: [0, 0])
+    other.shapes.add_picture(image("gif.gif"), at: [0, 0])
 
     media = presentation.part.package.parts.map { |p| p.partname.to_s }
                         .select { |n| n.start_with?("/ppt/media/") }
@@ -188,7 +186,7 @@ RSpec.describe Pptx::Picture do
   end
 
   it "names the image part after the image's real format" do
-    slide.shapes.add_picture(image("tiff-150dpi.tiff"), 0, 0)
+    slide.shapes.add_picture(image("tiff-150dpi.tiff"), at: [0, 0])
     media = presentation.part.package.parts.map { |p| p.partname.to_s }
                         .find { |n| n.start_with?("/ppt/media/") }
     expect(media).to eq("/ppt/media/image1.tiff")

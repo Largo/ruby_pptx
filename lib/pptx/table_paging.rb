@@ -79,7 +79,8 @@ module Pptx
 
     def fill_table(slide, page_rows, left, top, width, height)
       columns = page_rows.map(&:size).max
-      frame = slide.shapes.add_table(page_rows.size, columns, left, top, width, height)
+      frame = slide.shapes.add_table(page_rows.size, columns,
+                                     at: [left, top], size: [width, height])
       table = frame.table
       page_rows.each_with_index do |row, row_index|
         row.each_with_index { |value, col| table.cell(row_index, col).text = value.to_s }

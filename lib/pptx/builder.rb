@@ -132,9 +132,7 @@ module Pptx
     # @return [Shape]
     def text(content, at:, size: nil, font_size: nil, bold: nil, italic: nil,
              color: nil, font: nil, align: nil)
-      left, top = at
-      width, height = size || [Pptx.inches(4), Pptx.inches(1)]
-      box = @slide.shapes.add_textbox(left, top, width, height)
+      box = @slide.shapes.add_textbox(at: at, size: size || [Pptx.inches(4), Pptx.inches(1)])
       box.text_frame.text = content
       style_text(box.text_frame, font_size: font_size, bold: bold, italic: italic,
                                  color: color, font: font, align: align)
@@ -145,9 +143,7 @@ module Pptx
     #
     # @return [Shape]
     def shape(shape_type, at:, size:, fill: nil, line: nil, text: nil, **text_options)
-      left, top = at
-      width, height = size
-      auto_shape = @slide.shapes.add_shape(shape_type, left, top, width, height)
+      auto_shape = @slide.shapes.add_shape(shape_type, at: at, size: size)
       apply_fill(auto_shape, fill)
       apply_line(auto_shape, line)
       if text
@@ -162,8 +158,7 @@ module Pptx
     #
     # @return [Picture]
     def picture(image, at:, width: nil, height: nil)
-      left, top = at
-      @slide.shapes.add_picture(image, left, top, width: width, height: height)
+      @slide.shapes.add_picture(image, at: at, width: width, height: height)
     end
 
     # Add a table filled from +rows+, an array of arrays.
@@ -173,10 +168,8 @@ module Pptx
       rows = rows.to_a
       raise ArgumentError, "table needs at least one row" if rows.empty?
 
-      left, top = at
-      width, height = size
       columns = rows.map(&:size).max
-      frame = @slide.shapes.add_table(rows.size, columns, left, top, width, height)
+      frame = @slide.shapes.add_table(rows.size, columns, at: at, size: size)
       table = frame.table
       table.first_row = header
       rows.each_with_index do |row, row_index|
@@ -196,9 +189,7 @@ module Pptx
       data = ChartData.new
       data.categories = categories
       series.each { |name, values| data.add_series(name, values) }
-      left, top = at
-      width, height = size
-      @slide.shapes.add_chart(chart_type, left, top, width, height, data).chart
+      @slide.shapes.add_chart(chart_type, data, at: at, size: size).chart
     end
 
     private

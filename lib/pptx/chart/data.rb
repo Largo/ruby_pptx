@@ -60,20 +60,24 @@ module Pptx
       !@categories.empty? && @categories.all? { |c| c.is_a?(Numeric) }
     end
 
+    # @api private
     # Categories are always column A, one row per category.
     def categories_ref
       last_row = FIRST_DATA_ROW + category_count - 1
       "#{WORKSHEET_NAME}!$A$#{FIRST_DATA_ROW}:$A$#{last_row}"
     end
 
+    # @api private
     def series_name_ref(series) = "#{WORKSHEET_NAME}!$#{column_letter(series)}$1"
 
+    # @api private
     def series_values_ref(series)
       letter = column_letter(series)
       last_row = FIRST_DATA_ROW + category_count - 1
       "#{WORKSHEET_NAME}!$#{letter}$#{FIRST_DATA_ROW}:$#{letter}$#{last_row}"
     end
 
+    # @api private
     # The Excel column letter for a series, e.g. the third series is "D".
     def column_letter(series) = ChartData.column_reference(FIRST_SERIES_COLUMN + series.index)
 
@@ -90,6 +94,7 @@ module Pptx
       letters
     end
 
+    # @api private
     # Bytes of the embedded Excel workbook holding this data.
     def xlsx_blob = ChartWorkbookWriter.new(self).blob
 

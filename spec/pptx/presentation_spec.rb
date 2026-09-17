@@ -134,7 +134,7 @@ RSpec.describe Pptx::Presentation do
     it { expect(slide.layout.name).to eq("Title and Content") }
     it { expect(slide.name).to eq("") }
     it { expect(slide).to be_follows_master_background }
-    it { expect(slide).not_to be_has_notes_slide }
+    it { expect(slide).not_to be_notes_slide }
 
     it "round-trips a name through the XML" do
       slide.name = "Opening"

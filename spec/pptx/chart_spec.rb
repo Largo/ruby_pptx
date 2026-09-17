@@ -16,8 +16,7 @@ RSpec.describe Pptx::Chart do
   end
 
   def add_chart(type = Pptx::Enum::XL_CHART_TYPE::COLUMN_CLUSTERED, data: chart_data)
-    slide.shapes.add_chart(type, Pptx.inches(1), Pptx.inches(1),
-                           Pptx.inches(8), Pptx.inches(5), data)
+    slide.shapes.add_chart(type, data, at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(8), Pptx.inches(5)])
   end
 
   describe "adding a chart" do
@@ -34,7 +33,7 @@ RSpec.describe Pptx::Chart do
     end
 
     it "raises when a frame is asked for a chart it does not hold" do
-      table_frame = slide.shapes.add_table(1, 1, 0, 0, 100, 100)
+      table_frame = slide.shapes.add_table(1, 1, at: [0, 0], size: [100, 100])
       expect { table_frame.chart }.to raise_error(Pptx::Error, /does not contain a chart/)
     end
 
@@ -175,9 +174,7 @@ RSpec.describe Pptx::Chart do
           data.categories = ["East", "West", "Midwest"]
           data.add_series("Q1", [1.2, 2.0, 3.5])
           data.add_series("Q2", [4.1, 5.0, 6.2])
-          slide.shapes.add_chart(Pptx::Enum::XL_CHART_TYPE::COLUMN_CLUSTERED,
-                                 Pptx.inches(1), Pptx.inches(1),
-                                 Pptx.inches(8), Pptx.inches(5), data)
+          slide.shapes.add_chart(Pptx::Enum::XL_CHART_TYPE::COLUMN_CLUSTERED, data, at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(8), Pptx.inches(5)])
           prs.save(path)
         },
         ignore: ["ppt/embeddings/Microsoft_Excel_Sheet1.xlsx"]

@@ -23,6 +23,9 @@ module Pptx
     # The cell at +row_idx+, +col_idx+.
     def cell(row_idx, col_idx) = Cell.new(@element.tc(row_idx, col_idx), self)
 
+    # `table[0, 1]` reads better than `table.cell(0, 1)` in a loop.
+    alias [] cell
+
     def rows = @rows ||= TableRows.new(@element, self)
 
     def columns = @columns ||= TableColumns.new(@element, self)
@@ -33,48 +36,51 @@ module Pptx
 
     # Whether the first row is styled as a header. The same pattern applies to
     # first_col, last_row, last_col, horz_banding and vert_banding.
-    def first_row = @element.firstRow
+    def first_row? = @element.firstRow
 
     def first_row=(value)
       @element.firstRow = value
       value
     end
 
-    def first_col = @element.firstCol
+    def first_col? = @element.firstCol
 
     def first_col=(value)
       @element.firstCol = value
       value
     end
 
-    def last_row = @element.lastRow
+    def last_row? = @element.lastRow
 
     def last_row=(value)
       @element.lastRow = value
       value
     end
 
-    def last_col = @element.lastCol
+    def last_col? = @element.lastCol
 
     def last_col=(value)
       @element.lastCol = value
       value
     end
 
-    def horz_banding = @element.bandRow
+    # Whether alternate rows are shaded. Spelled out where python-pptx says
+    # `horz_banding`.
+    def banded_rows? = @element.bandRow
 
-    def horz_banding=(value)
+    def banded_rows=(value)
       @element.bandRow = value
       value
     end
 
-    def vert_banding = @element.bandCol
+    def banded_columns? = @element.bandCol
 
-    def vert_banding=(value)
+    def banded_columns=(value)
       @element.bandCol = value
       value
     end
 
+    # @api private
     # Resize the containing graphic frame to the sum of the row heights.
     #
     # A row calls this when its height changes: the frame and the table have
@@ -84,6 +90,7 @@ module Pptx
       @parent.height = Length.emu(rows.sum { |row| row.height.emu })
     end
 
+    # @api private
     # As {#notify_height_changed}, for column widths.
     def notify_width_changed
       @parent.width = Length.emu(columns.sum { |column| column.width.emu })

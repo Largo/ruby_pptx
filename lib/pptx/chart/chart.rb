@@ -30,7 +30,7 @@ module Pptx
       @element.series_elements.map { |ser| ChartSeriesView.new(ser, self) }
     end
 
-    def has_legend? = !@element.xpath("./c:chart/c:legend").empty?
+    def legend? = !@element.xpath("./c:chart/c:legend").empty?
 
     # The category labels cached in the chart XML.
     def categories

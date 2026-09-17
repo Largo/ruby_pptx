@@ -164,15 +164,19 @@ module Pptx
 
     def placeholders = parent.placeholders
 
-    # Add an auto shape of +shape_type+ at the given position and size.
+    # Add an auto shape.
     #
-    #   shapes.add_shape(Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE,
-    #                    Pptx.inches(1), Pptx.inches(1),
-    #                    Pptx.inches(2), Pptx.inches(1))
+    #   shapes.add_shape(:rounded_rectangle,
+    #                    at: [Pptx.inches(1), Pptx.inches(1)],
+    #                    size: [Pptx.inches(2), Pptx.inches(1)])
     #
     # @param shape_type [Pptx::Enum::MSO_SHAPE, Symbol, Integer]
+    # @param at [Array(Length, Length)] left and top
+    # @param size [Array(Length, Length)] width and height
     # @return [Shape]
-    def add_shape(shape_type, left, top, width, height)
+    def add_shape(shape_type, at:, size:)
+      left, top = at
+      width, height = size
       member = Enum::MSO_SHAPE.fetch(shape_type)
       id = next_shape_id
       name = "#{AutoShapeSpec.basename(member)} #{id - 1}"
@@ -188,8 +192,10 @@ module Pptx
     # supplying one scales the other to preserve the aspect ratio; supplying
     # both stretches the image to fit.
     #
+    # @param at [Array(Length, Length)] left and top
     # @return [Picture]
-    def add_picture(image_file, left, top, width: nil, height: nil)
+    def add_picture(image_file, at:, width: nil, height: nil)
+      left, top = at
       image_part, r_id = part.get_or_add_image_part(image_file)
       scaled_width, scaled_height = image_part.scale(width, height)
       id = next_shape_id
@@ -201,7 +207,9 @@ module Pptx
     # Add a chart of +chart_type+ depicting +chart_data+.
     #
     # @return [GraphicFrame] use its `#chart` to reach the chart itself
-    def add_chart(chart_type, left, top, width, height, chart_data)
+    def add_chart(chart_type, chart_data, at:, size:)
+      left, top = at
+      width, height = size
       r_id = part.add_chart_part(chart_type, chart_data)
       id = next_shape_id
       frame = @sp_tree.add_graphic_frame_chart(id, "Chart #{id - 1}", r_id,
@@ -209,20 +217,24 @@ module Pptx
       shape_factory(frame)
     end
 
-    # Add a table of +rows+ by +cols+ filling the given position and size.
+    # Add a table of +rows+ by +cols+.
     #
     # @return [GraphicFrame] use its `#table` to reach the table itself
-    def add_table(rows, cols, left, top, width, height)
+    def add_table(rows, cols, at:, size:)
+      left, top = at
+      width, height = size
       id = next_shape_id
       frame = @sp_tree.add_graphic_frame_table(id, "Table #{id - 1}", rows, cols,
                                                left, top, width, height)
       shape_factory(frame)
     end
 
-    # Add an empty text box at the given position and size.
+    # Add an empty text box.
     #
     # @return [Shape]
-    def add_textbox(left, top, width, height)
+    def add_textbox(at:, size:)
+      left, top = at
+      width, height = size
       id = next_shape_id
       sp = @sp_tree.add_textbox(id, "TextBox #{id - 1}", left, top, width, height)
       shape_factory(sp)

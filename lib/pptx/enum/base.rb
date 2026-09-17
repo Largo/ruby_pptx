@@ -79,12 +79,20 @@ module Pptx
         # Look a member up by symbolic name or MS API value.
         #
         # @return [Member, nil]
+        # Member names are SCREAMING_SNAKE to match the Microsoft API, but a
+        # caller writing Ruby should be able to say `:oval` rather than
+        # `:OVAL`, so lookup ignores case.
         def [](key)
           case key
           when Member then members.include?(key) ? key : nil
-          when Symbol, String then members.find { |m| m.name.to_s == key.to_s }
+          when Symbol, String then find_by_name(key.to_s)
           when Integer then members.find { |m| m.value == key }
           end
+        end
+
+        def find_by_name(name)
+          members.find { |m| m.name.to_s == name } ||
+            members.find { |m| m.name.to_s.casecmp?(name) }
         end
 
         # As {.[]}, but raises when there is no such member.

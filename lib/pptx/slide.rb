@@ -51,7 +51,7 @@ module Pptx
     # True when this slide inherits the master's background.
     def follows_master_background? = @element.bg.nil?
 
-    def has_notes_slide? = part.notes_slide?
+    def notes_slide? = part.notes_slide?
 
     # The shapes on this slide, in z-order.
     def shapes = @shapes ||= SlideShapes.new(@element.spTree, self)

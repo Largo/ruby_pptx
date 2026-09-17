@@ -22,8 +22,7 @@ RSpec.describe "pictures and tables agreement with python-pptx" do
       ruby: lambda { |path|
         prs = Pptx::Presentation.new_default
         slide = prs.slides.add(prs.slide_layouts[6])
-        slide.shapes.add_picture(File.join(images, "png-96dpi.png"),
-                                 Pptx.inches(1), Pptx.inches(1))
+        slide.shapes.add_picture(File.join(images, "png-96dpi.png"), at: [Pptx.inches(1), Pptx.inches(1)])
         prs.save(path)
       }
     )
@@ -50,11 +49,10 @@ RSpec.describe "pictures and tables agreement with python-pptx" do
         s2 = prs.slides.add(prs.slide_layouts[6])
         png = File.join(images, "png-96dpi.png")
         gif = File.join(images, "gif.gif")
-        s1.shapes.add_picture(png, Pptx.inches(1), Pptx.inches(1))
-        s1.shapes.add_picture(png, Pptx.inches(1), Pptx.inches(3), width: Pptx.inches(2))
-        s2.shapes.add_picture(png, Pptx.inches(1), Pptx.inches(1), height: Pptx.inches(1))
-        s2.shapes.add_picture(gif, Pptx.inches(4), Pptx.inches(1),
-                              width: Pptx.inches(2), height: Pptx.inches(2))
+        s1.shapes.add_picture(png, at: [Pptx.inches(1), Pptx.inches(1)])
+        s1.shapes.add_picture(png, at: [Pptx.inches(1), Pptx.inches(3)], width: Pptx.inches(2))
+        s2.shapes.add_picture(png, at: [Pptx.inches(1), Pptx.inches(1)], height: Pptx.inches(1))
+        s2.shapes.add_picture(gif, at: [Pptx.inches(4), Pptx.inches(1)], width: Pptx.inches(2), height: Pptx.inches(2))
         prs.save(path)
       }
     )
@@ -75,7 +73,7 @@ RSpec.describe "pictures and tables agreement with python-pptx" do
         prs = Pptx::Presentation.new_default
         slide = prs.slides.add(prs.slide_layouts[6])
         names.each_with_index do |name, i|
-          slide.shapes.add_picture(File.join(images, name), Pptx.inches(1), Pptx.inches(i * 0.5))
+          slide.shapes.add_picture(File.join(images, name), at: [Pptx.inches(1), Pptx.inches(i * 0.5)])
         end
         prs.save(path)
       }
@@ -108,8 +106,7 @@ RSpec.describe "pictures and tables agreement with python-pptx" do
       ruby: lambda { |path|
         prs = Pptx::Presentation.new_default
         slide = prs.slides.add(prs.slide_layouts[6])
-        frame = slide.shapes.add_table(3, 4, Pptx.inches(0.5), Pptx.inches(1.5),
-                                       Pptx.inches(9), Pptx.inches(3))
+        frame = slide.shapes.add_table(3, 4, at: [Pptx.inches(0.5), Pptx.inches(1.5)], size: [Pptx.inches(9), Pptx.inches(3)])
         table = frame.table
         table.cell(0, 0).text = "Region"
         table.cell(0, 1).text = "Q1"
@@ -118,7 +115,7 @@ RSpec.describe "pictures and tables agreement with python-pptx" do
         table.columns[0].width = Pptx.inches(3)
         table.rows[0].height = Pptx.inches(0.6)
         table.first_col = true
-        table.horz_banding = false
+        table.banded_rows = false
         cell = table.cell(0, 0)
         cell.vertical_anchor = Pptx::Enum::MSO_ANCHOR::MIDDLE
         cell.text_frame.paragraphs[0].runs[0].font.bold = true
@@ -141,7 +138,7 @@ RSpec.describe "pictures and tables agreement with python-pptx" do
       ruby: lambda { |path|
         prs = Pptx::Presentation.new_default
         slide = prs.slides.add(prs.slide_layouts[6])
-        slide.shapes.add_table(3, 7, 100, 100, 1_000_001, 700_003)
+        slide.shapes.add_table(3, 7, at: [100, 100], size: [1_000_001, 700_003])
         prs.save(path)
       }
     )
@@ -188,15 +185,12 @@ RSpec.describe "pictures and tables agreement with python-pptx" do
         content.placeholders[1].text_frame.text = "Growth\nMargin\nOutlook"
 
         blank = prs.slides.add(prs.slide_layouts[6])
-        blank.shapes.add_picture(File.join(images, "jpeg-300dpi.jpg"),
-                                 Pptx.inches(0.5), Pptx.inches(0.5), width: Pptx.inches(3))
-        box = blank.shapes.add_shape(Pptx::Enum::MSO_SHAPE::CHEVRON, Pptx.inches(4),
-                                     Pptx.inches(1), Pptx.inches(3), Pptx.inches(1))
+        blank.shapes.add_picture(File.join(images, "jpeg-300dpi.jpg"), at: [Pptx.inches(0.5), Pptx.inches(0.5)], width: Pptx.inches(3))
+        box = blank.shapes.add_shape(Pptx::Enum::MSO_SHAPE::CHEVRON, at: [Pptx.inches(4), Pptx.inches(1)], size: [Pptx.inches(3), Pptx.inches(1)])
         box.fill.solid
         box.fill.fore_color.rgb = Pptx::RGBColor.new(0x1F, 0x49, 0x7D)
         box.text_frame.text = "Next"
-        t = blank.shapes.add_table(2, 2, Pptx.inches(0.5), Pptx.inches(4),
-                                   Pptx.inches(6), Pptx.inches(2)).table
+        t = blank.shapes.add_table(2, 2, at: [Pptx.inches(0.5), Pptx.inches(4)], size: [Pptx.inches(6), Pptx.inches(2)]).table
         t.cell(0, 0).text = "A"
         t.cell(1, 1).text = "B"
         prs.save(path)

@@ -26,26 +26,26 @@ body.paragraphs.first.runs.first.font.tap do |font|
   font.color.rgb = Pptx::RGBColor["C0504D"]
 end
 
-box = slide.shapes.add_shape(Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE,
-                             Pptx.inches(1), Pptx.inches(5),
-                             Pptx.inches(3), Pptx.inches(1))
+box = slide.shapes.add_shape(:rounded_rectangle,
+                             at: [Pptx.inches(1), Pptx.inches(5)],
+                             size: [Pptx.inches(3), Pptx.inches(1)])
 box.fill.solid
 box.fill.fore_color.rgb = Pptx::RGBColor["1F497D"]
 box.text_frame.text = "Next steps"
 
-slide.shapes.add_picture("logo.png", Pptx.inches(7), Pptx.inches(0.5),
+slide.shapes.add_picture("logo.png", at: [Pptx.inches(7), Pptx.inches(0.5)],
                          width: Pptx.inches(2))
 
-table = slide.shapes.add_table(2, 3, Pptx.inches(1), Pptx.inches(3),
-                               Pptx.inches(8), Pptx.inches(2)).table
-table.cell(0, 0).text = "Region"
+table = slide.shapes.add_table(2, 3, at: [Pptx.inches(1), Pptx.inches(3)],
+                                     size: [Pptx.inches(8), Pptx.inches(2)]).table
+table[0, 0].text = "Region"
 
 data = Pptx::ChartData.new
 data.categories = ["East", "West", "Midwest"]
 data.add_series("Q1", [1.2, 2.0, 3.5])
-slide.shapes.add_chart(Pptx::Enum::XL_CHART_TYPE::COLUMN_CLUSTERED,
-                       Pptx.inches(1), Pptx.inches(3),
-                       Pptx.inches(8), Pptx.inches(4), data)
+slide.shapes.add_chart(:column_clustered, data,
+                       at: [Pptx.inches(1), Pptx.inches(3)],
+                       size: [Pptx.inches(8), Pptx.inches(4)])
 
 prs.save("out.pptx")
 ```
@@ -63,10 +63,10 @@ deck = Pptx.build do |d|
 
   d.section("Detail") do
     d.slide("Blank") do |s|
-      s.shape :ROUNDED_RECTANGLE, at: [Pptx.inches(1), Pptx.inches(1)],
+      s.shape :rounded_rectangle, at: [Pptx.inches(1), Pptx.inches(1)],
                                   size: [Pptx.inches(3), Pptx.inches(1)],
                                   fill: "1F497D", text: "Next steps"
-      s.chart :COLUMN_CLUSTERED, categories: %w[East West],
+      s.chart :column_clustered, categories: %w[East West],
                                  series: { "Q1" => [1, 2] },
                                  at: [Pptx.inches(1), Pptx.inches(3)],
                                  size: [Pptx.inches(6), Pptx.inches(4)]

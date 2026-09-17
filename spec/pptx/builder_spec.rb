@@ -175,7 +175,7 @@ RSpec.describe Pptx::DeckBuilder do
         expect(table.row_count).to eq(2)
         expect(table.column_count).to eq(2)
         expect(table.cell(1, 1).text).to eq("12")
-        expect(table.first_row).to be(true)
+        expect(table.first_row?).to be(true)
       end
     end
 
@@ -243,8 +243,7 @@ RSpec.describe Pptx::DeckBuilder do
         title.placeholders[1].text = "Prepared in Ruby"
 
         blank = prs.slides.add(prs.slide_layouts["Blank"])
-        box = blank.shapes.add_textbox(Pptx.inches(1), Pptx.inches(0.5),
-                                       Pptx.inches(4), Pptx.inches(1))
+        box = blank.shapes.add_textbox(at: [Pptx.inches(1), Pptx.inches(0.5)], size: [Pptx.inches(4), Pptx.inches(1)])
         box.text_frame.text = "A note"
         box.text_frame.paragraphs.first.runs.first.font.tap do |font|
           font.size = Pptx.pt(18)
@@ -252,15 +251,12 @@ RSpec.describe Pptx::DeckBuilder do
           font.color.rgb = Pptx::RGBColor["C0504D"]
         end
 
-        shape = blank.shapes.add_shape(Pptx::Enum::MSO_SHAPE::CHEVRON,
-                                       Pptx.inches(1), Pptx.inches(2),
-                                       Pptx.inches(3), Pptx.inches(1))
+        shape = blank.shapes.add_shape(Pptx::Enum::MSO_SHAPE::CHEVRON, at: [Pptx.inches(1), Pptx.inches(2)], size: [Pptx.inches(3), Pptx.inches(1)])
         shape.fill.solid
         shape.fill.fore_color.rgb = Pptx::RGBColor["1F497D"]
         shape.text_frame.text = "Next"
 
-        frame = blank.shapes.add_table(2, 2, Pptx.inches(5), Pptx.inches(2),
-                                       Pptx.inches(4), Pptx.inches(1.5))
+        frame = blank.shapes.add_table(2, 2, at: [Pptx.inches(5), Pptx.inches(2)], size: [Pptx.inches(4), Pptx.inches(1.5)])
         table = frame.table
         table.first_row = true
         [%w[A B], %w[1 2]].each_with_index do |row, r|

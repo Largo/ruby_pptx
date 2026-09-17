@@ -101,10 +101,7 @@ RSpec.describe "text and DrawingML agreement with python-pptx" do
       ruby: lambda { |path|
         prs = Pptx::Presentation.new_default
         slide = prs.slides.add(prs.slide_layouts[6])
-        shape = slide.shapes.add_shape(
-          Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE,
-          Pptx.inches(1), Pptx.inches(1), Pptx.inches(3), Pptx.inches(1)
-        )
+        shape = slide.shapes.add_shape(Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE, at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(3), Pptx.inches(1)])
         shape.fill.solid
         shape.fill.fore_color.rgb = Pptx::RGBColor.new(0x1F, 0x49, 0x7D)
         shape.line.color.rgb = Pptx::RGBColor.new(0xFF, 0xFF, 0x00)
@@ -130,10 +127,7 @@ RSpec.describe "text and DrawingML agreement with python-pptx" do
       ruby: lambda { |path|
         prs = Pptx::Presentation.new_default
         slide = prs.slides.add(prs.slide_layouts[6])
-        shape = slide.shapes.add_shape(
-          Pptx::Enum::MSO_SHAPE::OVAL,
-          Pptx.inches(1), Pptx.inches(1), Pptx.inches(2), Pptx.inches(2)
-        )
+        shape = slide.shapes.add_shape(Pptx::Enum::MSO_SHAPE::OVAL, at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(2), Pptx.inches(2)])
         shape.fill.background
         prs.save(path)
       }
@@ -160,8 +154,7 @@ RSpec.describe "text and DrawingML agreement with python-pptx" do
       ruby: lambda { |path|
         prs = Pptx::Presentation.new_default
         slide = prs.slides.add(prs.slide_layouts[6])
-        tb = slide.shapes.add_textbox(Pptx.inches(1), Pptx.inches(1),
-                                      Pptx.inches(4), Pptx.inches(1))
+        tb = slide.shapes.add_textbox(at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(4), Pptx.inches(1)])
         tf = tb.text_frame
         tf.text = "Plain "
         r = tf.paragraphs[0].add_run
