@@ -10,7 +10,7 @@ module Pptx
     # what else they hold, but each starts with the `p:cNvPr` that carries the
     # shape's id and name, which is all this library needs from them.
     class CT_ShapeNonVisualCommon < Element
-      tag "p:nvPicPr", "p:nvCxnSpPr", "p:nvGraphicFramePr"
+      tag "p:nvPicPr", "p:nvGraphicFramePr"
       one_and_only_one "p:cNvPr"
       zero_or_one "p:nvPr", successors: []
     end
@@ -64,12 +64,77 @@ module Pptx
       end
     end
 
+    # `p:nvCxnSpPr`, a connector's non-visual properties.
+    class CT_ConnectorNonVisual < Element
+      tag "p:nvCxnSpPr"
+      one_and_only_one "p:cNvPr"
+      one_and_only_one "p:cNvCxnSpPr"
+      zero_or_one "p:nvPr", successors: []
+    end
+
+    # `p:cNvCxnSpPr`, which records what each end of a connector attaches to.
+    class CT_NonVisualConnectorProperties < Element
+      tag "p:cNvCxnSpPr"
+      zero_or_one "a:stCxn", successors: %w[a:endCxn a:extLst]
+      zero_or_one "a:endCxn", successors: %w[a:extLst]
+    end
+
+    # `a:stCxn` and `a:endCxn`: one end of a connector attached to a shape's
+    # connection point.
+    class CT_Connection < Element
+      tag "a:stCxn", "a:endCxn"
+      required_attr "id", type: SimpleTypes::ST_DrawingElementId
+      required_attr "idx", type: SimpleTypes::XsdUnsignedInt
+    end
+
     # `p:cxnSp`, a connector.
     class CT_Connector < Element
       include BaseShapeElement
       tag "p:cxnSp"
       one_and_only_one "p:nvCxnSpPr"
       one_and_only_one "p:spPr"
+
+      # A connector is stored as a bounding box plus flip flags rather than as
+      # two points, so a line running right-to-left is the same box with
+      # flipH set.
+      def self.new_cxnSp(id, name, prst, x, y, cx, cy, flip_h, flip_v)
+        flip = +""
+        flip << %( flipH="1") if flip_h
+        flip << %( flipV="1") if flip_v
+
+        Element.parse(<<~XML)
+          <p:cxnSp #{Ns.nsdecls('a', 'p')}>
+            <p:nvCxnSpPr>
+              <p:cNvPr id="#{id}" name="#{CT_Picture.escape(name)}"/>
+              <p:cNvCxnSpPr/>
+              <p:nvPr/>
+            </p:nvCxnSpPr>
+            <p:spPr>
+              <a:xfrm#{flip}>
+                <a:off x="#{x.to_i}" y="#{y.to_i}"/>
+                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+              </a:xfrm>
+              <a:prstGeom prst="#{prst}">
+                <a:avLst/>
+              </a:prstGeom>
+            </p:spPr>
+            <p:style>
+              <a:lnRef idx="2">
+                <a:schemeClr val="accent1"/>
+              </a:lnRef>
+              <a:fillRef idx="0">
+                <a:schemeClr val="accent1"/>
+              </a:fillRef>
+              <a:effectRef idx="1">
+                <a:schemeClr val="accent1"/>
+              </a:effectRef>
+              <a:fontRef idx="minor">
+                <a:schemeClr val="tx1"/>
+              </a:fontRef>
+            </p:style>
+          </p:cxnSp>
+        XML
+      end
     end
 
     # `p:graphicFrame`, the container for a table, chart or embedded object.

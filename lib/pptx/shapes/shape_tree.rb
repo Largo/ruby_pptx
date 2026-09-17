@@ -162,27 +162,12 @@ module Pptx
     end
   end
 
-  # The shapes on a slide.
-  class SlideShapes < BaseShapes
-    # Copy the layout's placeholders onto this slide, preserving z-order.
-    #
-    # Latent placeholders -- date, footer and slide number -- are not cloned:
-    # PowerPoint shows them from the layout without materialising them on the
-    # slide.
-    def clone_layout_placeholders(slide_layout)
-      slide_layout.cloneable_placeholders.each { |ph| clone_placeholder(ph) }
-      self
-    end
-
-    # The title placeholder, which is the one with idx 0.
-    #
-    # @return [SlidePlaceholder, nil]
-    def title
-      element = @sp_tree.placeholder_elements.find { |e| e.ph_idx.zero? }
-      element && shape_factory(element)
-    end
-
-    def placeholders = parent.placeholders
+  # A shape collection you can add shapes to: a slide's tree, or a group
+  # within one.
+  #
+  # Adding to a group changes the group's extents, so every method here ends
+  # by recalculating them. On a slide that is a no-op.
+  class BaseGroupShapes < BaseShapes
 
     # Add an auto shape.
     #
@@ -202,6 +187,7 @@ module Pptx
       name = "#{AutoShapeSpec.basename(member)} #{id - 1}"
       sp = @sp_tree.add_autoshape(id, name, Enum::MSO_SHAPE.to_xml(member),
                                   left, top, width, height)
+      recalculate_extents
       shape_factory(sp)
     end
 
@@ -237,6 +223,7 @@ module Pptx
         pic.blip.add_svg_blip(svg_r_id)
       end
 
+      recalculate_extents
       shape_factory(pic)
     end
 
@@ -250,6 +237,7 @@ module Pptx
       id = next_shape_id
       frame = @sp_tree.add_graphic_frame_chart(id, "Chart #{id - 1}", r_id,
                                                left, top, width, height)
+      recalculate_extents
       shape_factory(frame)
     end
 
@@ -262,6 +250,7 @@ module Pptx
       id = next_shape_id
       frame = @sp_tree.add_graphic_frame_table(id, "Table #{id - 1}", rows, cols,
                                                left, top, width, height)
+      recalculate_extents
       shape_factory(frame)
     end
 
@@ -273,8 +262,75 @@ module Pptx
       width, height = size
       id = next_shape_id
       sp = @sp_tree.add_textbox(id, "TextBox #{id - 1}", left, top, width, height)
+      recalculate_extents
       shape_factory(sp)
     end
+
+    # Add a connector between two points.
+    #
+    # A connector is stored as a bounding box with flip flags rather than as
+    # two points, so the end points are converted here.
+    #
+    # @return [Connector]
+    def add_connector(connector_type, begin_at:, end_at:)
+      member = Enum::MSO_CONNECTOR_TYPE.fetch(connector_type)
+      begin_x, begin_y = begin_at.map { |value| Length.coerce(value).emu }
+      end_x, end_y = end_at.map { |value| Length.coerce(value).emu }
+
+      id = next_shape_id
+      cxn_sp = @sp_tree.add_cxnSp(
+        id, "Connector #{id - 1}", Enum::MSO_CONNECTOR_TYPE.to_xml(member),
+        [begin_x, end_x].min, [begin_y, end_y].min,
+        (end_x - begin_x).abs, (end_y - begin_y).abs,
+        begin_x > end_x, begin_y > end_y
+      )
+      recalculate_extents
+      shape_factory(cxn_sp)
+    end
+
+    # Add a group, optionally moving +shapes+ into it.
+    #
+    # The group has no position or size of its own: both follow from what it
+    # contains, and are recomputed whenever its contents change.
+    #
+    # @return [GroupShape]
+    def add_group_shape(shapes = [])
+      grp_sp = @sp_tree.add_grpSp
+      shapes.each { |shape| grp_sp.insert_element_before(shape.element, "p:extLst") }
+      grp_sp.recalculate_extents unless shapes.empty?
+      recalculate_extents
+      shape_factory(grp_sp)
+    end
+
+    private
+
+    # A group resizes itself around its contents; a slide does not move.
+    def recalculate_extents = nil
+
+    def shape_factory(shape_element) = ShapeFactory.build_for_slide(shape_element, self)
+  end
+
+  # The shapes on a slide.
+  class SlideShapes < BaseGroupShapes
+    # Copy the layout's placeholders onto this slide, preserving z-order.
+    #
+    # Latent placeholders -- date, footer and slide number -- are not cloned:
+    # PowerPoint shows them from the layout without materialising them on the
+    # slide.
+    def clone_layout_placeholders(slide_layout)
+      slide_layout.cloneable_placeholders.each { |ph| clone_placeholder(ph) }
+      self
+    end
+
+    # The title placeholder, which is the one with idx 0.
+    #
+    # @return [SlidePlaceholder, nil]
+    def title
+      element = @sp_tree.placeholder_elements.find { |e| e.ph_idx.zero? }
+      element && shape_factory(element)
+    end
+
+    def placeholders = parent.placeholders
 
     private
 
@@ -282,7 +338,14 @@ module Pptx
   end
 
   # The shapes inside a `p:grpSp`.
-  class GroupShapes < BaseShapes
+  class GroupShapes < BaseGroupShapes
+    private
+
+    # Adding to a group changes where the group sits and how big it is.
+    def recalculate_extents
+      @sp_tree.recalculate_extents
+      nil
+    end
   end
 
   # The shapes on a slide layout.

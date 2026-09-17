@@ -99,16 +99,17 @@ module Pptx
       end
     end
 
-    # `a:off`, a position.
+    # `a:off` and `a:chOff`: a position, in slide space or in a group's own
+    # child coordinate space.
     class CT_Point2D < Element
-      tag "a:off"
+      tag "a:off", "a:chOff"
       required_attr "x", type: SimpleTypes::ST_Coordinate
       required_attr "y", type: SimpleTypes::ST_Coordinate
     end
 
-    # `a:ext`, a size.
+    # `a:ext` and `a:chExt`: a size, in slide space or in a group's child space.
     class CT_PositiveSize2D < Element
-      tag "a:ext"
+      tag "a:ext", "a:chExt"
       required_attr "cx", type: SimpleTypes::ST_PositiveCoordinate
       required_attr "cy", type: SimpleTypes::ST_PositiveCoordinate
     end

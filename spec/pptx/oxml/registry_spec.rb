@@ -49,7 +49,12 @@ RSpec.describe Pptx::Oxml::Registry do
     "c:legend" => Pptx::Oxml::CT_Legend,
     "c:catAx" => Pptx::Oxml::CT_Axis,
     "c:valAx" => Pptx::Oxml::CT_Axis,
-    "c:barChart" => Pptx::Oxml::CT_Plot
+    "c:barChart" => Pptx::Oxml::CT_Plot,
+    "p:cxnSp" => Pptx::Oxml::CT_Connector,
+    "p:nvCxnSpPr" => Pptx::Oxml::CT_ConnectorNonVisual,
+    "a:stCxn" => Pptx::Oxml::CT_Connection,
+    "a:chOff" => Pptx::Oxml::CT_Point2D,
+    "a:chExt" => Pptx::Oxml::CT_PositiveSize2D
   }.each do |nsptag, expected_class|
     it "dispatches #{nsptag} to #{expected_class}" do
       expect(described_class.class_for(Pptx::Oxml::Ns.qn(nsptag))).to eq(expected_class)

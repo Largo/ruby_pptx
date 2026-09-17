@@ -53,6 +53,11 @@ xy.add_series("Alpha", points: [[1, 10], [2, 20]])
 
 box.hyperlink = "https://example.com"
 
+# Connectors attach to shapes, and groups size themselves around their contents.
+line = slide.shapes.add_connector(:straight, begin_at: [0, 0], end_at: [0, 0])
+line.begin_connect(box, 3)
+group = slide.shapes.add_group_shape([box, table_frame])
+
 prs.save("out.pptx")
 ```
 

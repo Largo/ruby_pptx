@@ -84,6 +84,70 @@ module Pptx
         frame
       end
 
+      def add_cxnSp(id, name, prst, x, y, cx, cy, flip_h, flip_v)
+        cxn_sp = adopt_xml(CT_Connector.new_cxnSp(id, name, prst, x, y, cx, cy, flip_h, flip_v))
+        insert_element_before(cxn_sp, "p:extLst")
+        cxn_sp
+      end
+
+      # An empty `p:grpSp` at the origin with no size; its extents follow from
+      # whatever is put in it.
+      def add_grpSp
+        id = next_shape_id
+        grp_sp = adopt_xml(CT_GroupShape.new_grpSp(id, "Group #{id - 1}"))
+        insert_element_before(grp_sp, "p:extLst")
+        grp_sp
+      end
+
+      def self.new_grpSp(id, name)
+        Element.parse(<<~XML)
+          <p:grpSp #{Ns.nsdecls('a', 'p', 'r')}>
+            <p:nvGrpSpPr>
+              <p:cNvPr id="#{id}" name="#{CT_Picture.escape(name)}"/>
+              <p:cNvGrpSpPr/>
+              <p:nvPr/>
+            </p:nvGrpSpPr>
+            <p:grpSpPr>
+              <a:xfrm>
+                <a:off x="0" y="0"/>
+                <a:ext cx="0" cy="0"/>
+                <a:chOff x="0" y="0"/>
+                <a:chExt cx="0" cy="0"/>
+              </a:xfrm>
+            </p:grpSpPr>
+          </p:grpSp>
+        XML
+      end
+
+      # Resize this group to just contain its shapes.
+      #
+      # A group's own extents are not stored by PowerPoint as anything the
+      # caller sets; they follow from the contents. Changing a group can also
+      # change the group containing it, so this walks upward.
+      def recalculate_extents
+        return self unless nsptag == "p:grpSp"
+
+        x, y, cx, cy = child_extents
+        chOff.x = self.x = x
+        chOff.y = self.y = y
+        chExt.cx = self.cx = cx
+        chExt.cy = self.cy = cy
+        parent.recalculate_extents if parent.respond_to?(:recalculate_extents)
+        self
+      end
+
+      # The bounding box of the contained shapes, or all zeroes when empty.
+      def child_extents
+        children = shape_elements.to_a
+        return [0, 0, 0, 0] if children.empty?
+
+        min_x = children.map { |child| child.x.to_i }.min
+        min_y = children.map { |child| child.y.to_i }.min
+        max_x = children.map { |child| child.x.to_i + child.cx.to_i }.max
+        max_y = children.map { |child| child.y.to_i + child.cy.to_i }.max
+        [min_x, min_y, max_x - min_x, max_y - min_y]
+      end
+
       def add_textbox(id, name, x, y, cx, cy)
         sp = adopt_xml(CT_Shape.new_textbox_sp(id, name, x, y, cx, cy))
         insert_element_before(sp, "p:extLst")
