@@ -157,7 +157,7 @@ Remaining upstream code, measured:
 | Chart families — area, radar, XY, bubble | ~900 of `xmlwriter.py` | Same pattern as the four already done; mechanical. |
 | Freeform shape building | 337 | Self-contained. |
 | Connectors and groups | 366 | Read works; creating and manipulating does not. |
-| Hyperlinks / click actions (`action.py`) | 323 | Wanted more often than charts, in practice. |
+| ~~Hyperlinks / click actions~~ | ~~323~~ | **done** — `shape.hyperlink = url`, `run.hyperlink = url`, `click_action.target_slide = slide`. |
 | Video (`media.py`, `parts/media.py`) | 234 | |
 | `fit_text` — TTF parsing and line layout | 724 | Only `TextFrame#fit_text` needs it. |
 | Table cell merging | part of `table.py` | Small. |
@@ -175,9 +175,9 @@ Remaining upstream code, measured:
   starting from a template remains the practical route.
 - **Combo charts / secondary axes** — depends on chart formatting above.
 
-**Suggested order**: hyperlinks, then cell merging, then the remaining chart
-families, then chart formatting. That front-loads what people actually reach
-for and leaves the biggest item last.
+**Suggested order**: ~~hyperlinks~~, then cell merging, then the remaining
+chart families, then chart formatting. That front-loads what people actually
+reach for and leaves the biggest item last.
 
 ---
 

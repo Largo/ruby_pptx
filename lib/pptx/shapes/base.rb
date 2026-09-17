@@ -2,6 +2,7 @@
 
 require "pptx/element_proxy"
 require "pptx/enum/shapes"
+require "pptx/action"
 
 module Pptx
   # A shape on a slide, layout or master.
@@ -72,6 +73,26 @@ module Pptx
     end
 
     def placeholder? = @element.placeholder?
+
+    # What happens when this shape is clicked during a slide show.
+    def click_action = @click_action ||= ActionSetting.new(@element.nvXxPr.cNvPr, self)
+
+    # What happens when the pointer rests on this shape.
+    def hover_action
+      @hover_action ||= ActionSetting.new(@element.nvXxPr.cNvPr, self, hover: true)
+    end
+
+    # The URL this shape links to, or nil.
+    #
+    # A shortcut for `click_action.url`, which is the common case; reach for
+    # {#click_action} when the click does something else. Nil when the click
+    # is not a hyperlink -- a slide jump reports nil here, not a partname.
+    def hyperlink = click_action.url
+
+    def hyperlink=(url)
+      click_action.address = url
+      url
+    end
 
     # Placeholder position and type, or nil when this is not a placeholder.
     def placeholder_format

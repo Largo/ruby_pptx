@@ -41,7 +41,10 @@ RSpec.describe Pptx::Oxml::Registry do
     "c:externalData" => Pptx::Oxml::CT_ExternalData,
     "p14:sectionLst" => Pptx::Oxml::CT_SectionList,
     "p14:section" => Pptx::Oxml::CT_Section,
-    "p:extLst" => Pptx::Oxml::CT_PresentationExtensionList
+    "p:extLst" => Pptx::Oxml::CT_PresentationExtensionList,
+    "a:hlinkClick" => Pptx::Oxml::CT_Hyperlink,
+    "a:hlinkHover" => Pptx::Oxml::CT_Hyperlink,
+    "a:blip" => Pptx::Oxml::CT_Blip
   }.each do |nsptag, expected_class|
     it "dispatches #{nsptag} to #{expected_class}" do
       expect(described_class.class_for(Pptx::Oxml::Ns.qn(nsptag))).to eq(expected_class)

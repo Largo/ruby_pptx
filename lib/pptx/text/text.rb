@@ -5,6 +5,7 @@ require "pptx/dml/color"
 require "pptx/dml/fill"
 require "pptx/oxml/text"
 require "pptx/enum/text"
+require "pptx/action"
 
 module Pptx
   # The text inside a shape.
@@ -234,6 +235,17 @@ module Pptx
     end
 
     def font = Font.new(@element.get_or_add_rPr)
+
+    # What happens when this run of text is clicked.
+    def click_action = @click_action ||= ActionSetting.new(@element.get_or_add_rPr, self)
+
+    # The URL this run links to, or nil.
+    def hyperlink = click_action.url
+
+    def hyperlink=(url)
+      click_action.address = url
+      url
+    end
 
     def inspect = "#<Pptx::Run #{text.inspect}>"
   end

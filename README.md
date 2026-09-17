@@ -47,6 +47,8 @@ slide.shapes.add_chart(:column_clustered, data,
                        at: [Pptx.inches(1), Pptx.inches(3)],
                        size: [Pptx.inches(8), Pptx.inches(4)])
 
+box.hyperlink = "https://example.com"
+
 prs.save("out.pptx")
 ```
 
