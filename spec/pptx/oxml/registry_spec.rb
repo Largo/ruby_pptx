@@ -20,7 +20,16 @@ RSpec.describe Pptx::Oxml::Registry do
     "p:sld" => Pptx::Oxml::CT_Slide,
     "p:presentation" => Pptx::Oxml::CT_Presentation,
     "cp:coreProperties" => Pptx::Oxml::CT_CoreProperties,
-    "pr:Relationships" => Pptx::Opc::Oxml::CT_Relationships
+    "pr:Relationships" => Pptx::Opc::Oxml::CT_Relationships,
+    "a:p" => Pptx::Oxml::CT_TextParagraph,
+    "a:r" => Pptx::Oxml::CT_RegularTextRun,
+    "a:rPr" => Pptx::Oxml::CT_TextCharacterProperties,
+    "a:endParaRPr" => Pptx::Oxml::CT_TextCharacterProperties,
+    "a:bodyPr" => Pptx::Oxml::CT_TextBodyProperties,
+    "a:srgbClr" => Pptx::Oxml::CT_SRgbColor,
+    "a:schemeClr" => Pptx::Oxml::CT_SchemeColor,
+    "a:solidFill" => Pptx::Oxml::CT_SolidColorFillProperties,
+    "a:ln" => Pptx::Oxml::CT_LineProperties
   }.each do |nsptag, expected_class|
     it "dispatches #{nsptag} to #{expected_class}" do
       expect(described_class.class_for(Pptx::Oxml::Ns.qn(nsptag))).to eq(expected_class)

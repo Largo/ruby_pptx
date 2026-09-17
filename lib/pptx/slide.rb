@@ -2,6 +2,7 @@
 
 require "pptx/element_proxy"
 require "pptx/shapes/shape_tree"
+require "pptx/dml/fill"
 
 module Pptx
   # Behaviour common to slides, layouts, masters and notes slides.
@@ -15,6 +16,18 @@ module Pptx
     end
 
     def shape_tree = @element.spTree
+
+    # The slide background.
+    #
+    # Note that merely reading this is destructive: a background given by a
+    # style reference, or inherited, is replaced with an explicit no-fill so
+    # there is something to interrogate. python-pptx behaves the same way.
+    def background = @background ||= Background.new(@element.cSld)
+  end
+
+  # The background of a slide, layout or master.
+  class Background < ElementProxy
+    def fill = @fill ||= FillFormat.from_fill_parent(@element.get_or_add_bgPr)
   end
 
   # Common to slide masters and the notes master.

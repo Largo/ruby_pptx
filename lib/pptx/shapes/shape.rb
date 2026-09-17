@@ -1,11 +1,32 @@
 # frozen_string_literal: true
 
 require "pptx/shapes/base"
+require "pptx/text/text"
+require "pptx/dml/fill"
 
 module Pptx
   # A `p:sp`: an auto shape, a text box, or a placeholder.
   class Shape < BaseShape
     def text_frame? = true
+
+    # The text inside this shape, creating an empty text body if it has none.
+    def text_frame
+      @text_frame ||= TextFrame.new(@element.get_or_add_txBody, self)
+    end
+
+    # Shortcut for `text_frame.text`.
+    def text = text_frame.text
+
+    def text=(value)
+      text_frame.text = value
+      value
+    end
+
+    # The shape's fill.
+    def fill = @fill ||= FillFormat.from_fill_parent(@element.spPr)
+
+    # The shape's outline.
+    def line = @line ||= LineFormat.new(@element.spPr)
 
     # The preset geometry of an auto shape.
     #

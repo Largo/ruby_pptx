@@ -6,12 +6,39 @@ A port of [python-pptx](https://github.com/scanny/python-pptx) — the same
 battle-tested OOXML object model underneath, with a public API redesigned for
 Ruby. See [PORTING.md](PORTING.md) for the architecture and the milestone plan.
 
-> **Status: early.** The foundation layer (units, namespaces, part names) is in
-> place and tested. Not yet usable for real work.
+> **Status: in progress.** Presentations, slides, shapes and text work and are
+> verified against python-pptx part-for-part. Pictures, tables and charts can
+> be read but not yet created. See [PORTING.md](PORTING.md).
 
 ```ruby
 require "ruby_pptx"
 
+prs = Pptx::Presentation.new_default          # or .open("deck.pptx")
+slide = prs.slides.add(prs.slide_layouts["Title and Content"])
+
+slide.shapes.title.text = "Quarterly Review"
+
+body = slide.placeholders[1].text_frame
+body.text = "Revenue up 12%\nCosts flat"
+body.paragraphs.first.runs.first.font.tap do |font|
+  font.bold = true
+  font.size = Pptx.pt(24)
+  font.color.rgb = Pptx::RGBColor["C0504D"]
+end
+
+box = slide.shapes.add_shape(Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE,
+                             Pptx.inches(1), Pptx.inches(5),
+                             Pptx.inches(3), Pptx.inches(1))
+box.fill.solid
+box.fill.fore_color.rgb = Pptx::RGBColor["1F497D"]
+box.text_frame.text = "Next steps"
+
+prs.save("out.pptx")
+```
+
+Lengths are explicit rather than bare numbers:
+
+```ruby
 Pptx.inches(1).emu        #=> 914400
 Pptx.cm(2.54).pt          #=> 72.0
 

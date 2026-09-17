@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "pptx/oxml/shapes/shared"
+require "pptx/oxml/text"
 
 module Pptx
   module Oxml
@@ -182,6 +183,10 @@ module Pptx
         XML
       end
 
+      # A text body added to a shape that has none needs the minimum structure
+      # the schema requires, not an empty element.
+      def new_txBody = CT_TextBody.new_element(self)
+
       def prstGeom = spPr.prstGeom
 
       def prst = prstGeom&.prst
@@ -201,24 +206,5 @@ module Pptx
       def autoshape? = !prstGeom.nil? && nvSpPr.cNvSpPr.txBox != true
     end
 
-    # `a:txBody`/`p:txBody`, a shape's text.
-    #
-    # Only enough of it to create the default body a new placeholder needs;
-    # the text object model proper arrives with the text layer.
-    class CT_TextBody < Element
-      tag "p:txBody", "a:txBody"
-
-      # A minimal `p:txBody` with one empty paragraph, created in +context+'s
-      # document so it can be appended without crossing documents.
-      def self.new_element(context)
-        context.build_from_xml(<<~XML)
-          <p:txBody #{Ns.nsdecls('a', 'p')}>
-            <a:bodyPr/>
-            <a:lstStyle/>
-            <a:p/>
-          </p:txBody>
-        XML
-      end
-    end
   end
 end
