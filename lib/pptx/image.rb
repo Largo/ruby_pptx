@@ -17,8 +17,12 @@ module Pptx
     # Canonical extension per format. The extension of the file the image came
     # from is ignored: what matters is what the bytes actually are.
     EXT_FOR_FORMAT = {
-      BMP: "bmp", GIF: "gif", JPEG: "jpg", PNG: "png", TIFF: "tiff", WMF: "wmf"
+      BMP: "bmp", GIF: "gif", JPEG: "jpg", PNG: "png", TIFF: "tiff", WMF: "wmf",
+      SVG: "svg"
     }.freeze
+
+    # Not in the OPC spec's table; Office writes this for an SVG part.
+    CONTENT_TYPE_SVG = "image/svg+xml"
 
     CONTENT_TYPE_FOR_EXT = {
       "bmp" => Opc::CONTENT_TYPE::BMP,
@@ -31,7 +35,8 @@ module Pptx
       "tif" => Opc::CONTENT_TYPE::TIFF,
       "tiff" => Opc::CONTENT_TYPE::TIFF,
       "wdp" => Opc::CONTENT_TYPE::MS_PHOTO,
-      "wmf" => Opc::CONTENT_TYPE::X_WMF
+      "wmf" => Opc::CONTENT_TYPE::X_WMF,
+      "svg" => CONTENT_TYPE_SVG
     }.freeze
 
     # Resolution assumed when the file does not say.
@@ -66,6 +71,10 @@ module Pptx
     # @return [Symbol] :PNG, :JPEG, :GIF, :BMP, :TIFF or :WMF
     def format = header.fetch(:format)
 
+    # True for a vector image, which has no pixel size of its own and needs a
+    # raster fallback to be placed in a slide.
+    def vector? = format == :SVG
+
     # @return [Array(Integer, Integer)] width and height in pixels
     def size = [header.fetch(:width), header.fetch(:height)]
 
@@ -93,6 +102,10 @@ module Pptx
     #
     # @return [Array(Pptx::Length, Pptx::Length)]
     def native_size
+      if vector?
+        raise Error, "an SVG has no native pixel size; size it from its raster fallback"
+      end
+
       horz_dpi, vert_dpi = dpi
       [Length.emu((EMU_PER_INCH * width_px / horz_dpi).to_i),
        Length.emu((EMU_PER_INCH * height_px / vert_dpi).to_i)]
@@ -133,8 +146,17 @@ module Pptx
       return parse_bmp(blob) if blob.start_with?("BM".b)
       return parse_tiff(blob) if blob.start_with?("II*\x00".b, "MM\x00*".b)
       return { format: :WMF, width: 0, height: 0 } if blob.start_with?("\xD7\xCD\xC6\x9A".b)
+      return { format: :SVG } if svg?(blob)
 
       raise Error, "unrecognized image format"
+    end
+
+    # An SVG is XML, so it is recognized by its root element rather than by a
+    # magic number. Only the first kilobyte is searched, which covers any
+    # plausible declaration, comment or doctype preamble.
+    def svg?(blob)
+      head = blob.byteslice(0, 1024)
+      head.include?("<svg".b) || (head.include?("<?xml".b) && blob.include?("<svg".b))
     end
 
     # PNG is a signature followed by length-prefixed chunks. IHDR carries the

@@ -27,6 +27,9 @@ module Pptx
         "p" => "http://schemas.openxmlformats.org/presentationml/2006/main",
         # PowerPoint 2010 extensions, which is where slide sections live.
         "p14" => "http://schemas.microsoft.com/office/powerpoint/2010/main",
+        # Office 2016 SVG extension, which carries an SVG beside its raster
+        # fallback in a picture fill.
+        "asvg" => "http://schemas.microsoft.com/office/drawing/2016/SVG/main",
         "pd" => "http://schemas.openxmlformats.org/drawingml/2006/presentationDrawing",
         "pic" => "http://schemas.openxmlformats.org/drawingml/2006/picture",
         "pr" => "http://schemas.openxmlformats.org/package/2006/relationships",

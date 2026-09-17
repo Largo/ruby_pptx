@@ -77,8 +77,14 @@ end
 deck.save("out.pptx")
 ```
 
-Two things python-pptx does not do: **slide sections**, and **paging a long
-table across as many slides as it needs**.
+Three things python-pptx does not do: **SVG pictures**, **slide sections**, and
+**paging a long table across as many slides as it needs**.
+
+```ruby
+# PowerPoint wants a raster stand-in beside the vector, and this gem has no
+# rasterizer, so you supply it.
+slide.shapes.add_picture("logo.svg", at: [x, y], fallback: "logo.png")
+```
 
 ```ruby
 deck.sections.add("Appendix", slides: deck.slides.to_a.last(2))

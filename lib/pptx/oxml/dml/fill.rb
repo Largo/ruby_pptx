@@ -85,6 +85,38 @@ module Pptx
     class CT_Blip < Element
       tag "a:blip"
       optional_attr "r:embed", type: SimpleTypes::ST_RelationshipId, as: :embed
+      zero_or_one "a:extLst", successors: []
+
+      # The Office 2016 extension that carries an SVG beside the raster the
+      # blip itself points at. Consumers that understand it draw the vector;
+      # those that do not draw the fallback.
+      SVG_EXT_URI = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}"
+
+      # Point this blip's SVG extension at the part related by +r_id+.
+      def add_svg_blip(r_id)
+        ext_list = get_or_add_extLst
+        ext_list.append(ext_list.build_from_xml(<<~XML))
+          <a:ext #{Ns.nsdecls('a')} uri="#{SVG_EXT_URI}">
+            <asvg:svgBlip #{Ns.nsdecls('asvg', 'r')} r:embed="#{r_id}"/>
+          </a:ext>
+        XML
+        self
+      end
+
+      # The relationship id of the SVG, or nil when this is a plain raster.
+      def svg_rId = xpath("./a:extLst/a:ext/asvg:svgBlip/@r:embed").first&.value
+    end
+
+    # `a:extLst` as it appears on a blip.
+    class CT_BlipExtensionList < Element
+      tag "a:extLst"
+      zero_or_more "a:ext", as: :ext
+    end
+
+    # `a:ext`, one DrawingML extension.
+    class CT_BlipExtension < Element
+      tag "a:ext"
+      required_attr "uri", type: SimpleTypes::XsdString
     end
 
     # `a:blipFill`, a picture fill.

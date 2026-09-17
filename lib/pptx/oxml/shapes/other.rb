@@ -23,6 +23,9 @@ module Pptx
       one_and_only_one "p:blipFill"
       one_and_only_one "p:spPr"
 
+      # The `a:blip` inside this picture's fill.
+      def blip = xpath("./p:blipFill/a:blip").first
+
       # A movie is a `p:pic` whose non-visual properties name a video file.
       def movie? = !xpath("./p:nvPicPr/p:nvPr/a:videoFile").empty?
 

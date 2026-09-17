@@ -164,10 +164,12 @@ Remaining upstream code, measured:
 
 **Beyond python-pptx, still open** (from M8):
 
-- **SVG images** — blocked on a design decision, not effort. PowerPoint wants a
-  raster fallback in `r:embed` beside the SVG; this gem has no rasterizer. The
-  honest signature is `add_picture(svg, fallback: png)`. Decide, then it is a
-  day.
+- ~~**SVG images**~~ — **done**. `add_picture(svg, at:, fallback: png)`. The
+  fallback is required and cannot be generated here, so the error says so
+  rather than failing obscurely later. The picture is sized from the fallback,
+  since an SVG has no pixel size of its own. Structure follows
+  [MS-ODRAWXML] `svgBlip`; python-pptx, which skips SVG entirely, still opens
+  the result with the extension intact.
 - **Defining a slide master in code** — needs a theme part with colour, font and
   format schemes plus `p:txStyles` before a layout can inherit. Genuinely large;
   starting from a template remains the practical route.

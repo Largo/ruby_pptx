@@ -116,6 +116,26 @@ module Pptx
 
     private
 
+    # Decide which file the blip points at and which, if any, hangs off its
+    # SVG extension.
+    #
+    # @return [Array(Object, Object)] the raster to embed, and the SVG or nil
+    def vector_or_raster(image_file, fallback)
+      unless Image.from_file(image_file).vector?
+        return [image_file, nil] if fallback.nil?
+
+        raise ArgumentError, "fallback: is only meaningful for a vector image"
+      end
+
+      if fallback.nil?
+        raise ArgumentError,
+              "an SVG needs a raster fallback: add_picture(svg, fallback: png). " \
+              "This gem cannot rasterize one for you."
+      end
+
+      [fallback, image_file]
+    end
+
     # Which shape elements belong to this collection; placeholder collections
     # narrow this.
     def member?(_shape_element) = true
@@ -192,15 +212,31 @@ module Pptx
     # supplying one scales the other to preserve the aspect ratio; supplying
     # both stretches the image to fit.
     #
+    # An SVG additionally needs +fallback+: a raster image PowerPoint shows to
+    # consumers that cannot draw the vector. This gem has no rasterizer, so
+    # the fallback has to be supplied rather than generated. The picture is
+    # sized from the fallback, since an SVG carries no pixel size of its own.
+    #
+    #   shapes.add_picture("logo.svg", at: [x, y], fallback: "logo.png")
+    #
     # @param at [Array(Length, Length)] left and top
+    # @param fallback [String, IO, nil] raster stand-in, required for an SVG
     # @return [Picture]
-    def add_picture(image_file, at:, width: nil, height: nil)
+    def add_picture(image_file, at:, width: nil, height: nil, fallback: nil)
       left, top = at
-      image_part, r_id = part.get_or_add_image_part(image_file)
+      raster_file, svg_file = vector_or_raster(image_file, fallback)
+
+      image_part, r_id = part.get_or_add_image_part(raster_file)
       scaled_width, scaled_height = image_part.scale(width, height)
       id = next_shape_id
       pic = @sp_tree.add_pic(id, "Picture #{id - 1}", image_part.desc, r_id,
                              left, top, scaled_width, scaled_height)
+
+      if svg_file
+        _svg_part, svg_r_id = part.get_or_add_image_part(svg_file)
+        pic.blip.add_svg_blip(svg_r_id)
+      end
+
       shape_factory(pic)
     end
 
