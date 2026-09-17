@@ -44,7 +44,12 @@ RSpec.describe Pptx::Oxml::Registry do
     "p:extLst" => Pptx::Oxml::CT_PresentationExtensionList,
     "a:hlinkClick" => Pptx::Oxml::CT_Hyperlink,
     "a:hlinkHover" => Pptx::Oxml::CT_Hyperlink,
-    "a:blip" => Pptx::Oxml::CT_Blip
+    "a:blip" => Pptx::Oxml::CT_Blip,
+    "c:chart" => Pptx::Oxml::CT_Chart,
+    "c:legend" => Pptx::Oxml::CT_Legend,
+    "c:catAx" => Pptx::Oxml::CT_Axis,
+    "c:valAx" => Pptx::Oxml::CT_Axis,
+    "c:barChart" => Pptx::Oxml::CT_Plot
   }.each do |nsptag, expected_class|
     it "dispatches #{nsptag} to #{expected_class}" do
       expect(described_class.class_for(Pptx::Oxml::Ns.qn(nsptag))).to eq(expected_class)

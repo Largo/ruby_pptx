@@ -263,7 +263,9 @@ module Pptx
 
     # `p:txBody`, `a:txBody` and `c:txPr`: a body of text.
     class CT_TextBody < Element
-      tag "p:txBody", "a:txBody", "c:txPr"
+      # `c:rich` is a text body under a different name: it is what a chart or
+      # axis title holds.
+      tag "p:txBody", "a:txBody", "c:txPr", "c:rich"
       one_and_only_one "a:bodyPr"
       one_or_more "a:p", successors: [], as: :p
 
