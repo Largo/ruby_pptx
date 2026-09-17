@@ -160,7 +160,7 @@ Remaining upstream code, measured:
 | ~~Hyperlinks / click actions~~ | ~~323~~ | **done** — `shape.hyperlink = url`, `run.hyperlink = url`, `click_action.target_slide = slide`. |
 | Video (`media.py`, `parts/media.py`) | 234 | |
 | `fit_text` — TTF parsing and line layout | 724 | Only `TextFrame#fit_text` needs it. |
-| Table cell merging | part of `table.py` | Small. |
+| ~~Table cell merging~~ | — | **done** — `cell.merge(other)`, `cell.split`, `merge_origin?`, `spanned?`. |
 
 **Beyond python-pptx, still open** (from M8):
 
@@ -175,7 +175,7 @@ Remaining upstream code, measured:
   starting from a template remains the practical route.
 - **Combo charts / secondary axes** — depends on chart formatting above.
 
-**Suggested order**: ~~hyperlinks~~, then cell merging, then the remaining
+**Suggested order**: ~~hyperlinks~~, ~~cell merging~~, then the remaining
 chart families, then chart formatting. That front-loads what people actually
 reach for and leaves the biggest item last.
 

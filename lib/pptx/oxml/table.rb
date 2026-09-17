@@ -68,6 +68,45 @@ module Pptx
       # A cell always has a text body, so a new one is created with it rather
       # than empty.
       def self.new_cell(context) = context.build_from_xml(CELL_XML)
+
+      # The `a:tr` this cell sits in.
+      def tr = parent
+
+      # The `a:tbl` this cell belongs to.
+      def tbl = tr.parent
+
+      def col_idx = tr.tc_list.index(self)
+
+      def row_idx = tbl.tr_list.index(tr)
+
+      # True when this is the top-left cell of a merged range.
+      #
+      # Only the origin carries the full span; the cells it covers are marked
+      # hMerge or vMerge and keep spans of 1.
+      def merge_origin?
+        return true if gridSpan > 1 && !vMerge
+
+        rowSpan > 1 && !hMerge
+      end
+
+      # True when this cell is covered by a merge rather than being its origin.
+      def spanned? = hMerge || vMerge
+
+      # Take the paragraphs from +other+ into this cell's text body.
+      #
+      # An empty source contributes nothing; a single empty paragraph in the
+      # target is replaced rather than appended to; and the source is left with
+      # one empty paragraph, since the schema requires at least one.
+      def append_paragraphs_from(other)
+        source = other.get_or_add_txBody
+        target = get_or_add_txBody
+        return self if source.empty?
+
+        target.clear_content if target.empty?
+        source.p_list.each { |paragraph| target.append(paragraph) }
+        source.unclear_content
+        self
+      end
     end
 
     # `a:tr`, one row of a table.
@@ -131,6 +170,16 @@ module Pptx
       # The cell at +row_idx+, +col_idx+.
       def tc(row_idx, col_idx) = tr_list[row_idx].tc_list[col_idx]
 
+      # The rectangle of cells spanned by the two opposite corners +a+ and +b+.
+      #
+      # The corners may be given in either order and along either diagonal, so
+      # the extents are normalised here.
+      def cell_range(a, b)
+        top, bottom = [a.row_idx, b.row_idx].minmax
+        left, right = [a.col_idx, b.col_idx].minmax
+        CellRange.new(self, top, left, bottom, right)
+      end
+
       %w[firstRow firstCol lastRow lastCol bandRow bandCol].each do |name|
         define_method(name) { tblPr ? tblPr.public_send(name) : false }
 
@@ -138,6 +187,62 @@ module Pptx
           get_or_add_tblPr.public_send("#{name}=", value)
           value
         end
+      end
+    end
+
+    # A rectangular block of `a:tc` elements, used when merging and splitting.
+    #
+    # It assumes the table's structure does not change while it is alive, so
+    # create one, use it, and let it go.
+    class CellRange
+      attr_reader :row_count, :column_count
+
+      def initialize(tbl, top, left, bottom, right)
+        @tbl = tbl
+        @top = top
+        @left = left
+        @bottom = bottom
+        @right = right
+        @row_count = bottom - top + 1
+        @column_count = right - left + 1
+      end
+
+      # The range a merge-origin cell already covers.
+      def self.from_merge_origin(tc)
+        tc.tbl.cell_range(tc, tc.tbl.tc(tc.row_idx + tc.rowSpan - 1,
+                                        tc.col_idx + tc.gridSpan - 1))
+      end
+
+      # Every cell in the range, left to right then top to bottom.
+      def cells
+        (@top..@bottom).flat_map { |row| (@left..@right).map { |col| @tbl.tc(row, col) } }
+      end
+
+      def top_row_cells = (@left..@right).map { |col| @tbl.tc(@top, col) }
+
+      def left_column_cells = (@top..@bottom).map { |row| @tbl.tc(row, @left) }
+
+      def cells_except_left_column
+        (@top..@bottom).flat_map { |row| ((@left + 1)..@right).map { |col| @tbl.tc(row, col) } }
+      end
+
+      def cells_except_top_row
+        ((@top + 1)..@bottom).flat_map { |row| (@left..@right).map { |col| @tbl.tc(row, col) } }
+      end
+
+      # True when any cell in the range is already part of a merge. Merging
+      # over an existing merge would produce a table PowerPoint cannot lay out.
+      def contains_merged_cell?
+        cells.any? { |tc| tc.gridSpan > 1 || tc.rowSpan > 1 || tc.hMerge || tc.vMerge }
+      end
+
+      # Gather the text of the whole range into its top-left cell, which is
+      # the one that stays visible.
+      def move_content_to_origin
+        all = cells
+        origin = all.first
+        all.drop(1).each { |spanned| origin.append_paragraphs_from(spanned) }
+        origin
       end
     end
   end

@@ -253,15 +253,61 @@ module Pptx
       value
     end
 
-    # How many columns this cell spans; 1 unless merged.
+    # How many columns this cell spans.
+    #
+    # Only a merge origin carries the real span; on any other cell this reads
+    # 1 whether or not it is part of a merge. Test {#merge_origin?} first.
     def span_width = @element.gridSpan
 
-    # How many rows this cell spans; 1 unless merged.
+    # How many rows this cell spans. See {#span_width} on when to trust it.
     def span_height = @element.rowSpan
 
-    # True when this cell is covered by a merged neighbour rather than being
-    # the origin of the merge.
-    def spanned? = @element.hMerge || @element.vMerge
+    # True when this cell is the top-left of a merged range.
+    def merge_origin? = @element.merge_origin?
+
+    # True when this cell is covered by a merge rather than being its origin.
+    def spanned? = @element.spanned?
+
+    # Merge this cell with +other+, which is the opposite corner of the range.
+    #
+    # Either diagonal may be given, in either order. The text of every cell in
+    # the range is gathered into the top-left one, which is the cell that stays
+    # visible.
+    #
+    # @raise [Error] when the cells are in different tables, or the range
+    #   already contains a merge -- merging over a merge produces a table
+    #   PowerPoint cannot lay out
+    def merge(other)
+      unless @element.tbl == other.element.tbl
+        raise Error, "cannot merge cells from different tables"
+      end
+
+      range = @element.tbl.cell_range(@element, other.element)
+      raise Error, "the range already contains a merged cell" if range.contains_merged_cell?
+
+      range.move_content_to_origin
+      range.top_row_cells.each { |tc| tc.rowSpan = range.row_count }
+      range.left_column_cells.each { |tc| tc.gridSpan = range.column_count }
+      range.cells_except_left_column.each { |tc| tc.hMerge = true }
+      range.cells_except_top_row.each { |tc| tc.vMerge = true }
+      self
+    end
+
+    # Undo a merge, giving back a separate cell for each grid position it
+    # covered. The text stays in the origin cell.
+    #
+    # @raise [Error] unless this is a merge origin
+    def split
+      raise Error, "only a merge-origin cell can be split" unless merge_origin?
+
+      Oxml::CellRange.from_merge_origin(@element).cells.each do |tc|
+        tc.rowSpan = 1
+        tc.gridSpan = 1
+        tc.hMerge = false
+        tc.vMerge = false
+      end
+      self
+    end
 
     def inspect = "#<Pptx::Cell #{text.inspect}>"
 
