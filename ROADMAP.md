@@ -153,33 +153,29 @@ Remaining upstream code, measured:
 
 | Area | Upstream LOC | Notes |
 |---|---:|---|
-| Chart formatting — axes, plots, data labels, legend, marker | ~1,530 object model + ~1,250 oxml | Charts can be created but not restyled. Largest remaining item. |
-| ~~Chart families — area, radar, XY, bubble~~ | ~~~900~~ | **done**. 27 of the 73 MS API chart types are supported; the rest are 3-D, stock and surface variants, which are refused rather than written wrongly. |
+| ~~Chart formatting — axes, plots, data labels, legend~~ | ~~~2,800~~ | **done** — titles, legend and position, axis scale/gridlines/number format/title, gap width and overlap, data labels. |
+| ~~Chart families — area, radar, XY, bubble~~ | ~~~900~~ | **done** — 27 of the 73 MS API types. |
+| ~~Hyperlinks / click actions~~ | ~~323~~ | **done**. |
+| ~~Table cell merging~~ | — | **done**. |
 | Freeform shape building | 337 | Self-contained. |
 | Connectors and groups | 366 | Read works; creating and manipulating does not. |
-| ~~Hyperlinks / click actions~~ | ~~323~~ | **done** — `shape.hyperlink = url`, `run.hyperlink = url`, `click_action.target_slide = slide`. |
 | Video (`media.py`, `parts/media.py`) | 234 | |
 | `fit_text` — TTF parsing and line layout | 724 | Only `TextFrame#fit_text` needs it. |
-| ~~Table cell merging~~ | — | **done** — `cell.merge(other)`, `cell.split`, `merge_origin?`, `spanned?`. |
+| Series-level formatting | part of `series.py` | Per-series fill and line; the plot-level surface is done. |
 
-**Beyond python-pptx, still open** (from M8):
+**Beyond python-pptx, still open:**
 
-- ~~**SVG images**~~ — **done**. `add_picture(svg, at:, fallback: png)`. The
-  fallback is required and cannot be generated here, so the error says so
-  rather than failing obscurely later. The picture is sized from the fallback,
-  since an SVG has no pixel size of its own. Structure follows
-  [MS-ODRAWXML] `svgBlip`; python-pptx, which skips SVG entirely, still opens
-  the result with the extension intact.
+- ~~**SVG images**~~ — **done**, `add_picture(svg, at:, fallback: png)`.
 - **Defining a slide master in code** — needs a theme part with colour, font and
-  format schemes plus `p:txStyles` before a layout can inherit. Genuinely large;
-  starting from a template remains the practical route.
-- **Combo charts / secondary axes** — depends on chart formatting above.
+  format schemes plus `p:txStyles` before a layout can inherit. Genuinely
+  large; starting from a template remains the practical route.
+- **Combo charts / secondary axes** — the plot collection and axis surface now
+  exist, so this is writing a chart space with two plot elements and a second
+  `c:valAx`. Tractable; not started.
 
-**Suggested order**: ~~hyperlinks~~, ~~cell merging~~, ~~the remaining chart
-families~~, then chart formatting — now the only large item left. That front-loads what people actually
-reach for and leaves the biggest item last.
-
----
+**Suggested order for what remains**: connectors and groups, then freeform,
+then video. `fit_text` last — it needs a TTF parser and a line-breaking
+algorithm for one method.
 
 ## C. Before a release
 
