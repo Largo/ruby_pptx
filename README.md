@@ -47,6 +47,10 @@ slide.shapes.add_chart(:column_clustered, data,
                        at: [Pptx.inches(1), Pptx.inches(3)],
                        size: [Pptx.inches(8), Pptx.inches(4)])
 
+# Scatter and bubble charts take points rather than a value per category.
+xy = Pptx::XyChartData.new
+xy.add_series("Alpha", points: [[1, 10], [2, 20]])
+
 box.hyperlink = "https://example.com"
 
 prs.save("out.pptx")

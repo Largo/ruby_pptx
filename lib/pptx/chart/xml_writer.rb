@@ -21,6 +21,9 @@ module Pptx
               COLUMN_CLUSTERED COLUMN_STACKED COLUMN_STACKED_100],
       line: %i[LINE LINE_STACKED LINE_STACKED_100
                LINE_MARKERS LINE_MARKERS_STACKED LINE_MARKERS_STACKED_100],
+      xy: %i[XY_SCATTER XY_SCATTER_LINES XY_SCATTER_LINES_NO_MARKERS
+             XY_SCATTER_SMOOTH XY_SCATTER_SMOOTH_NO_MARKERS],
+      bubble: %i[BUBBLE BUBBLE_THREE_D_EFFECT],
       pie: %i[PIE],
       doughnut: %i[DOUGHNUT],
       area: %i[AREA AREA_STACKED AREA_STACKED_100],
@@ -41,6 +44,8 @@ module Pptx
       when :doughnut then DoughnutChartWriter.new(member, chart_data).xml
       when :area then AreaChartWriter.new(member, chart_data).xml
       when :radar then RadarChartWriter.new(member, chart_data).xml
+      when :xy then XyChartWriter.new(member, chart_data).xml
+      when :bubble then BubbleChartWriter.new(member, chart_data).xml
       end
     end
 
@@ -173,23 +178,30 @@ module Pptx
       end
 
       def val_xml(series)
-        # A nil value means no data for that category: the point is omitted
-        # while ptCount still counts it, which is how a gap is expressed.
-        points = series.values.each_with_index.filter_map do |value, index|
+        num_ref_xml("c:val", series.values_ref, series.values, series.number_format)
+      end
+
+      # A `c:val`, `c:xVal`, `c:yVal` or `c:bubbleSize` block: a worksheet
+      # reference plus the cached values.
+      #
+      # A nil value means no data at that position: the point is omitted while
+      # ptCount still counts it, which is how a gap is expressed.
+      def num_ref_xml(tag, reference, values, number_format)
+        points = values.each_with_index.filter_map do |value, index|
           point_xml(index, format_value(value)) unless value.nil?
         end.join
 
         <<~XML
-          <c:val>
+          <#{tag}>
             <c:numRef>
-              <c:f>#{series.values_ref}</c:f>
+              <c:f>#{reference}</c:f>
               <c:numCache>
-                <c:formatCode>#{series.number_format}</c:formatCode>
-                <c:ptCount val="#{series.values.size}"/>
+                <c:formatCode>#{number_format}</c:formatCode>
+                <c:ptCount val="#{values.size}"/>
           #{indent(points, 6).chomp}
               </c:numCache>
             </c:numRef>
-          </c:val>
+          </#{tag}>
         XML
       end
 
@@ -429,6 +441,193 @@ module Pptx
       # A pie plots one series only; any others live in the workbook but are
       # not drawn.
       def series_blocks = series_xml(chart_data.series.first)
+    end
+
+    # Shared by the two families whose points carry their own x value rather
+    # than sitting against a shared category.
+    class XyBase < Base
+      private
+
+      # A scatter or bubble series names its own x and y ranges instead of
+      # sharing a category axis.
+      def xy_series_xml(series, extra_after_tx: "", extra_after_values: "")
+        parts = [
+          %(  <c:idx val="#{series.index}"/>\n),
+          %(  <c:order val="#{series.index}"/>\n),
+          indent(tx_xml(series), 2),
+          extra_after_tx.empty? ? "" : indent(extra_after_tx, 2),
+          indent(num_ref_xml("c:xVal", series.x_values_ref, series.x_values,
+                             series.number_format), 2),
+          indent(num_ref_xml("c:yVal", series.y_values_ref, series.y_values,
+                             series.number_format), 2),
+          extra_after_values.empty? ? "" : indent(extra_after_values, 2)
+        ]
+        "<c:ser>\n#{parts.join}</c:ser>\n"
+      end
+
+      def value_axes_xml(x_ax_id, y_ax_id)
+        <<~XML
+          <c:valAx>
+            <c:axId val="#{x_ax_id}"/>
+            <c:scaling>
+              <c:orientation val="minMax"/>
+            </c:scaling>
+            <c:delete val="0"/>
+            <c:axPos val="b"/>
+            <c:numFmt formatCode="General" sourceLinked="1"/>
+            <c:majorTickMark val="out"/>
+            <c:minorTickMark val="none"/>
+            <c:tickLblPos val="nextTo"/>
+            <c:crossAx val="#{y_ax_id}"/>
+            <c:crosses val="autoZero"/>
+            <c:crossBetween val="midCat"/>
+          </c:valAx>
+          <c:valAx>
+            <c:axId val="#{y_ax_id}"/>
+            <c:scaling>
+              <c:orientation val="minMax"/>
+            </c:scaling>
+            <c:delete val="0"/>
+            <c:axPos val="l"/>
+            <c:majorGridlines/>
+            <c:numFmt formatCode="General" sourceLinked="1"/>
+            <c:majorTickMark val="out"/>
+            <c:minorTickMark val="none"/>
+            <c:tickLblPos val="nextTo"/>
+            <c:crossAx val="#{x_ax_id}"/>
+            <c:crosses val="autoZero"/>
+            <c:crossBetween val="midCat"/>
+          </c:valAx>
+        XML
+      end
+    end
+
+    # `c:scatterChart`, points at (x, y) with optional lines.
+    class XyChartWriter < XyBase
+      X_AX_ID = "-2128940872"
+      Y_AX_ID = "-2129643912"
+
+      SMOOTH_TYPES = %i[XY_SCATTER_SMOOTH XY_SCATTER_SMOOTH_NO_MARKERS].freeze
+      NO_MARKER_TYPES = %i[XY_SCATTER_LINES_NO_MARKERS XY_SCATTER_SMOOTH_NO_MARKERS].freeze
+
+      def xml
+        <<~XML
+          #{Base::DECLARATION}
+          <c:chartSpace #{Base::CHART_SPACE_NS}>
+            <c:chart>
+              <c:plotArea>
+                <c:scatterChart>
+                  <c:scatterStyle val="#{scatter_style}"/>
+                  <c:varyColors val="0"/>
+          #{indent(series_blocks, 8).chomp}
+                  <c:axId val="#{X_AX_ID}"/>
+                  <c:axId val="#{Y_AX_ID}"/>
+                </c:scatterChart>
+          #{indent(value_axes_xml(X_AX_ID, Y_AX_ID), 6).chomp}
+              </c:plotArea>
+          #{indent(Base::LEGEND, 4).chomp}
+              <c:plotVisOnly val="1"/>
+              <c:dispBlanksAs val="gap"/>
+              <c:showDLblsOverMax val="0"/>
+            </c:chart>
+          #{indent(Base::TEXT_PROPERTIES, 2).chomp}
+          </c:chartSpace>
+        XML
+      end
+
+      private
+
+      def scatter_style
+        SMOOTH_TYPES.include?(chart_type.name) ? "smoothMarker" : "lineMarker"
+      end
+
+      # Plain XY_SCATTER draws markers only, which is said by giving the series
+      # an invisible line rather than by any scatterStyle value.
+      def line_suppression_xml
+        return "" unless chart_type.name == :XY_SCATTER
+
+        <<~XML
+          <c:spPr>
+            <a:ln w="47625">
+              <a:noFill/>
+            </a:ln>
+          </c:spPr>
+        XML
+      end
+
+      def marker_none_xml
+        return "" unless NO_MARKER_TYPES.include?(chart_type.name)
+
+        <<~XML
+          <c:marker>
+            <c:symbol val="none"/>
+          </c:marker>
+        XML
+      end
+
+      def series_blocks
+        all_series_xml do |series|
+          xy_series_xml(series,
+                        extra_after_tx: line_suppression_xml + marker_none_xml,
+                        extra_after_values: %(<c:smooth val="0"/>\n))
+        end
+      end
+    end
+
+    # `c:bubbleChart`, points at (x, y) sized by a third value.
+    class BubbleChartWriter < XyBase
+      X_AX_ID = "-2115720072"
+      Y_AX_ID = "-2115723560"
+
+      def xml
+        <<~XML
+          #{Base::DECLARATION}
+          <c:chartSpace #{Base::CHART_SPACE_NS}>
+            <c:chart>
+              <c:autoTitleDeleted val="0"/>
+              <c:plotArea>
+                <c:layout/>
+                <c:bubbleChart>
+                  <c:varyColors val="0"/>
+          #{indent(series_blocks, 8).chomp}
+                  <c:dLbls>
+                    <c:showLegendKey val="0"/>
+                    <c:showVal val="0"/>
+                    <c:showCatName val="0"/>
+                    <c:showSerName val="0"/>
+                    <c:showPercent val="0"/>
+                    <c:showBubbleSize val="0"/>
+                  </c:dLbls>
+                  <c:bubbleScale val="100"/>
+                  <c:showNegBubbles val="0"/>
+                  <c:axId val="#{X_AX_ID}"/>
+                  <c:axId val="#{Y_AX_ID}"/>
+                </c:bubbleChart>
+          #{indent(value_axes_xml(X_AX_ID, Y_AX_ID), 6).chomp}
+              </c:plotArea>
+          #{indent(Base::LEGEND, 4).chomp}
+              <c:plotVisOnly val="1"/>
+              <c:dispBlanksAs val="gap"/>
+              <c:showDLblsOverMax val="0"/>
+            </c:chart>
+          #{indent(Base::TEXT_PROPERTIES, 2).chomp}
+          </c:chartSpace>
+        XML
+      end
+
+      private
+
+      def three_d? = chart_type.name == :BUBBLE_THREE_D_EFFECT
+
+      def series_blocks
+        all_series_xml do |series|
+          sizes = indent(num_ref_xml("c:bubbleSize", series.bubble_sizes_ref,
+                                     series.bubble_sizes, series.number_format), 0)
+          xy_series_xml(series,
+                        extra_after_tx: %(<c:invertIfNegative val="0"/>\n),
+                        extra_after_values: sizes + %(<c:bubble3D val="#{three_d? ? 1 : 0}"/>\n))
+        end
+      end
     end
 
     # `c:areaChart`, filled bands under each series.

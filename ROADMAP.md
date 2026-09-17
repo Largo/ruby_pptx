@@ -154,7 +154,7 @@ Remaining upstream code, measured:
 | Area | Upstream LOC | Notes |
 |---|---:|---|
 | Chart formatting — axes, plots, data labels, legend, marker | ~1,530 object model + ~1,250 oxml | Charts can be created but not restyled. Largest remaining item. |
-| Chart families — ~~area~~, ~~radar~~, XY, bubble | ~900 of `xmlwriter.py` | Area and radar done. XY and bubble still open: they need their own data types, since a point is (x, y) or (x, y, size) rather than a value per category. |
+| ~~Chart families — area, radar, XY, bubble~~ | ~~~900~~ | **done**. 27 of the 73 MS API chart types are supported; the rest are 3-D, stock and surface variants, which are refused rather than written wrongly. |
 | Freeform shape building | 337 | Self-contained. |
 | Connectors and groups | 366 | Read works; creating and manipulating does not. |
 | ~~Hyperlinks / click actions~~ | ~~323~~ | **done** — `shape.hyperlink = url`, `run.hyperlink = url`, `click_action.target_slide = slide`. |
@@ -175,8 +175,8 @@ Remaining upstream code, measured:
   starting from a template remains the practical route.
 - **Combo charts / secondary axes** — depends on chart formatting above.
 
-**Suggested order**: ~~hyperlinks~~, ~~cell merging~~, then the remaining
-chart families, then chart formatting. That front-loads what people actually
+**Suggested order**: ~~hyperlinks~~, ~~cell merging~~, ~~the remaining chart
+families~~, then chart formatting — now the only large item left. That front-loads what people actually
 reach for and leaves the biggest item last.
 
 ---

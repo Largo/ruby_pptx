@@ -64,9 +64,33 @@ RSpec.describe Pptx::Chart do
       expect(chart.series.first.values).to eq([1.0, nil, 3.0])
     end
 
+    # 27 of the 73 MS API chart types are supported; the 3-D ones and the
+    # stock/surface families are not. Refusing beats writing XML PowerPoint
+    # would reject.
     it "refuses a chart type it cannot write correctly" do
-      expect { add_chart(Pptx::Enum::XL_CHART_TYPE::BUBBLE) }
+      expect { add_chart(Pptx::Enum::XL_CHART_TYPE::THREE_D_COLUMN) }
         .to raise_error(Pptx::Error, /not supported yet/)
+    end
+
+    it "creates a scatter chart from XY data" do
+      data = Pptx::XyChartData.new
+      data.add_series("Alpha", points: [[1, 10], [2, 20]])
+      frame = slide.shapes.add_chart(:xy_scatter, data,
+                                     at: [Pptx.inches(1), Pptx.inches(1)],
+                                     size: [Pptx.inches(6), Pptx.inches(4)])
+      aggregate_failures do
+        expect(frame.chart.plot_type).to eq(:XY)
+        expect(frame.chart.series.map(&:name)).to eq(["Alpha"])
+      end
+    end
+
+    it "creates a bubble chart from bubble data" do
+      data = Pptx::BubbleChartData.new
+      data.add_series("B", points: [[1, 10, 5]])
+      frame = slide.shapes.add_chart(:bubble, data,
+                                     at: [Pptx.inches(1), Pptx.inches(1)],
+                                     size: [Pptx.inches(6), Pptx.inches(4)])
+      expect(frame.chart.plot_type).to eq(:BUBBLE)
     end
   end
 
@@ -110,15 +134,64 @@ RSpec.describe Pptx::Chart do
       "(#{values.map { |v| v.nil? ? 'None' : v.inspect }.join(', ')},)"
     end
 
-    def chart_xml_oracle(type, categories, series)
+    # Each family takes its own kind of data, so the fixture and the oracle
+    # script are chosen to match.
+    CATEGORIES = ["East", "West", "Mid"].freeze
+    CATEGORY_SERIES = [["Q1", [1.2, 2.0, nil]], ["Q2", [4, 5, 6]]].freeze
+    XY_SERIES = [["Alpha", [[1, 10], [2, 20]]], ["Beta", [[3, 30]]]].freeze
+    BUBBLE_SERIES = [["B", [[1, 10, 5], [2, 20, 6]]]].freeze
+
+    def ruby_data_for(family)
+      case family
+      when :xy
+        Pptx::XyChartData.new.tap do |data|
+          XY_SERIES.each { |name, points| data.add_series(name, points: points) }
+        end
+      when :bubble
+        Pptx::BubbleChartData.new.tap do |data|
+          BUBBLE_SERIES.each { |name, points| data.add_series(name, points: points) }
+        end
+      else
+        Pptx::ChartData.new.tap do |data|
+          data.categories = CATEGORIES
+          CATEGORY_SERIES.each { |name, values| data.add_series(name, values) }
+        end
+      end
+    end
+
+    def python_data_for(family)
+      case family
+      when :xy
+        lines = ["cd = XyChartData()"]
+        XY_SERIES.each_with_index do |(name, points), i|
+          lines << "s#{i} = cd.add_series(#{name.inspect})"
+          points.each { |x, y| lines << "s#{i}.add_data_point(#{x}, #{y})" }
+        end
+        ["from pptx.chart.data import XyChartData", *lines].join("\n")
+      when :bubble
+        lines = ["cd = BubbleChartData()"]
+        BUBBLE_SERIES.each_with_index do |(name, points), i|
+          lines << "s#{i} = cd.add_series(#{name.inspect})"
+          points.each { |x, y, size| lines << "s#{i}.add_data_point(#{x}, #{y}, #{size})" }
+        end
+        ["from pptx.chart.data import BubbleChartData", *lines].join("\n")
+      else
+        lines = ["from pptx.chart.data import CategoryChartData",
+                 "cd = CategoryChartData()",
+                 "cd.categories = #{CATEGORIES.inspect}"]
+        CATEGORY_SERIES.each do |name, values|
+          lines << "cd.add_series(#{name.inspect}, #{python_list(values)})"
+        end
+        lines.join("\n")
+      end
+    end
+
+    def chart_xml_oracle(type_name, family)
       script = <<~PY
-        import json, sys
-        from pptx.chart.data import CategoryChartData
+        import sys
         from pptx.enum.chart import XL_CHART_TYPE as XL
-        cd = CategoryChartData()
-        cd.categories = #{categories.inspect}
-        #{series.map { |n, v| "cd.add_series(#{n.inspect}, #{python_list(v)})" }.join("\n")}
-        sys.stdout.write(cd.xml_bytes(getattr(XL, #{type.to_s.inspect})).decode())
+        #{python_data_for(family)}
+        sys.stdout.write(cd.xml_bytes(getattr(XL, #{type_name.to_s.inspect})).decode())
       PY
       out, err, status = Open3.capture3("python3", "-c", script)
       raise "chart xml oracle failed: #{err}" unless status.success?
@@ -128,17 +201,13 @@ RSpec.describe Pptx::Chart do
 
     # The cached values in this XML are what PowerPoint renders from, so it has
     # to match exactly. Every chart type this library can create is checked.
-    Pptx::ChartXmlWriter::FAMILIES.values.flatten.each do |type_name|
-      it "matches python-pptx for #{type_name}" do
-        categories = ["East", "West", "Mid"]
-        series = [["Q1", [1.2, 2.0, nil]], ["Q2", [4, 5, 6]]]
-
-        data = Pptx::ChartData.new
-        data.categories = categories
-        series.each { |name, values| data.add_series(name, values) }
-
-        ours = Pptx::ChartXmlWriter.write(Pptx::Enum::XL_CHART_TYPE.fetch(type_name), data)
-        expect(ours).to eq(chart_xml_oracle(type_name, categories, series))
+    Pptx::ChartXmlWriter::FAMILIES.each do |family, type_names|
+      type_names.each do |type_name|
+        it "matches python-pptx for #{type_name}" do
+          ours = Pptx::ChartXmlWriter.write(Pptx::Enum::XL_CHART_TYPE.fetch(type_name),
+                                            ruby_data_for(family))
+          expect(ours).to eq(chart_xml_oracle(type_name, family))
+        end
       end
     end
   end
