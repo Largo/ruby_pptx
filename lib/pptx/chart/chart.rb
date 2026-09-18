@@ -31,6 +31,18 @@ module Pptx
       @element.series_elements.map { |ser| ChartSeriesView.new(ser, self) }
     end
 
+    # Replace this chart's categories and series with those in +chart_data+.
+    #
+    # Series-level formatting is left alone. If there are more series than
+    # before, the extra ones are cloned from the last series of the last plot
+    # so they inherit its formatting; if fewer, the surplus is removed along
+    # with any plot left empty.
+    def replace_data(chart_data)
+      SeriesRewriter.new(chart_data).rewrite(@element)
+      part.workbook.replace_with(chart_data.xlsx_blob)
+      self
+    end
+
     # Whether a legend is drawn.
     def legend? = !chart_element.legend.nil?
 
@@ -123,6 +135,9 @@ module Pptx
       @chart = chart
     end
 
+    # The fill and outline of this series.
+    def format = @format ||= ChartFormat.new(@element)
+
     def name = @element.xpath("./c:tx//c:pt/c:v").first&.text.to_s
 
     # Cached values, with nil where the chart records a gap.
@@ -136,5 +151,92 @@ module Pptx
     end
 
     def inspect = "#<Pptx::ChartSeriesView #{name.inspect}>"
+  end
+
+  # Rewrites a chart's series data in place, leaving formatting alone.
+  class SeriesRewriter
+    def initialize(chart_data)
+      @chart_data = chart_data
+    end
+
+    def rewrite(chart_space)
+      plot_area = chart_space.chart.plotArea
+      adjust_series_count(plot_area, @chart_data.series.size)
+      plot_area.series_elements.zip(@chart_data.series) do |ser, series_data|
+        rewrite_series(ser, series_data)
+      end
+      self
+    end
+
+    private
+
+    def adjust_series_count(plot_area, wanted)
+      difference = wanted - plot_area.series_elements.size
+      if difference.positive?
+        clone_series(plot_area, difference)
+      elsif difference.negative?
+        trim_series(plot_area, -difference)
+      end
+    end
+
+    # New series are copied from the last one so they pick up its formatting;
+    # only their position in the chart is changed.
+    def clone_series(plot_area, count)
+      last = plot_area.series_elements.last
+      raise Error, "cannot add series to a chart that has none" if last.nil?
+
+      next_index = plot_area.series_elements.size
+      count.times do |offset|
+        copy = last.parent.build_from_xml(last.node.to_xml)
+        copy.get_or_add_idx.val = next_index + offset
+        copy.get_or_add_order.val = next_index + offset
+        last.node.add_next_sibling(copy.node)
+        last = copy
+      end
+    end
+
+    # A plot left with no series is removed too; an empty plot element is not
+    # valid, and PowerPoint would have nothing to draw for it.
+    def trim_series(plot_area, count)
+      plot_area.series_elements.last(count).each { |ser| ser.parent.remove(ser) }
+      plot_area.plot_elements.each do |plot|
+        plot_area.remove(plot) if plot.ser_list.empty?
+      end
+    end
+
+    def rewrite_series(ser, series_data)
+      ser.remove_tx
+      ser.remove_cat
+      ser.remove_val
+      tx, cat, val = SeriesFragments.new(@chart_data, series_data).fragments
+      ser.insert_tx(ser.build_from_xml(tx))
+      ser.insert_cat(ser.build_from_xml(cat))
+      ser.insert_val(ser.build_from_xml(val))
+    end
+  end
+
+  # Builds the `c:tx`, `c:cat` and `c:val` of one series as standalone XML.
+  #
+  # It borrows the writer that produces those fragments when a chart is
+  # created, so a rewritten series and a freshly written one cannot drift
+  # apart.
+  class SeriesFragments < ChartXmlWriter::Base
+    def initialize(chart_data, series)
+      super(nil, chart_data)
+      @series = series
+    end
+
+    # @return [Array(String, String, String)] the tx, cat and val fragments
+    def fragments
+      [namespaced(tx_xml(@series)), namespaced(cat_xml(@series)), namespaced(val_xml(@series))]
+    end
+
+    private
+
+    # The fragments are written for a document that already declares the chart
+    # namespaces; parsed on their own they need their own declaration.
+    def namespaced(fragment)
+      fragment.sub(/\A<(c:\w+)/, %(<\\1 #{Oxml::Ns.nsdecls('c', 'a', 'r')}))
+    end
   end
 end

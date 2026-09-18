@@ -161,8 +161,8 @@ Remaining upstream code, measured:
 | ~~Connectors and groups~~ | ~~366~~ | **done** — `add_connector`, `add_group_shape`, connecting ends to shapes, groups that resize around their contents. |
 | ~~Video~~ | ~~234~~ | **done** — `add_movie`, with the loudspeaker poster frame when none is given. |
 | `fit_text` — TTF parsing and line layout | 724 | Only `TextFrame#fit_text` needs it. |
-| Series-level formatting | part of `series.py` | Per-series fill and line; the plot-level surface is done. |
-| `replace_data` on an existing chart | part of `chart.py` | Rewrite a chart's series without rebuilding it. |
+| ~~Series-level formatting~~ | — | **done** — `chart.series[0].format.fill` / `.line`. |
+| ~~`replace_data`~~ | — | **done** — rewrites the series and the workbook, keeping formatting. |
 
 **Beyond python-pptx, still open:**
 
@@ -178,9 +178,9 @@ Remaining upstream code, measured:
   which reads multi-plot charts even though it never writes one, read the
   result back.
 
-**Suggested order for what remains**: ~~connectors and groups~~, ~~freeform~~,
-~~video~~. `fit_text` last — it needs a TTF parser and a line-breaking
-algorithm for one method.
+**What remains**: `fit_text`, which needs a TTF name-table parser and a
+line-breaking algorithm for one method, and defining a slide master in code,
+which needs a whole theme part. Everything else is done.
 
 ## C. Before a release
 

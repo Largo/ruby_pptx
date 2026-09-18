@@ -216,9 +216,13 @@ module Pptx
       end
     end
 
-    # `p:spPr`, shape properties: geometry, fill, line and transform.
+    # Shape properties: geometry, fill, line and transform.
+    #
+    # The same content model appears under three prefixes -- `p:spPr` on a
+    # shape, `c:spPr` on a chart element, `a:spPr` in DrawingML -- so one
+    # class covers all of them.
     class CT_ShapeProperties < Element
-      tag "p:spPr"
+      tag "p:spPr", "c:spPr", "a:spPr"
       TAG_SEQ = %w[a:xfrm a:custGeom a:prstGeom a:noFill a:solidFill a:gradFill
                    a:blipFill a:pattFill a:grpFill a:ln a:effectLst a:effectDag
                    a:scene3d a:sp3d a:extLst].freeze

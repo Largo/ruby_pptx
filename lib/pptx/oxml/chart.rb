@@ -230,6 +230,45 @@ module Pptx
       end
     end
 
+    # `c:ser`, one series of a plot.
+    #
+    # The families order their series children slightly differently -- a line
+    # series has `c:marker` and `c:smooth` where a bar series has
+    # `c:invertIfNegative` and `c:shape`. The successor lists below are a
+    # superset covering all of them, so an element inserted here lands in the
+    # right place whichever family it belongs to.
+    class CT_Series < Element
+      tag "c:ser"
+      TAG_SEQ = %w[c:idx c:order c:tx c:spPr c:invertIfNegative c:marker
+                   c:pictureOptions c:dPt c:dLbls c:trendline c:errBars c:cat
+                   c:xVal c:yVal c:val c:bubbleSize c:bubble3D c:shape c:smooth
+                   c:extLst].freeze
+
+      zero_or_one "c:idx", successors: TAG_SEQ[1..]
+      zero_or_one "c:order", successors: TAG_SEQ[2..]
+      zero_or_one "c:tx", successors: TAG_SEQ[3..]
+      zero_or_one "c:spPr", successors: TAG_SEQ[4..]
+      zero_or_one "c:dLbls", successors: TAG_SEQ[9..]
+      zero_or_one "c:cat", successors: TAG_SEQ[12..]
+      zero_or_one "c:val", successors: TAG_SEQ[15..]
+
+      def index = idx&.val.to_i
+
+      def name = xpath("./c:tx//c:pt/c:v").first&.text.to_s
+    end
+
+    # `c:idx` and `c:order`, a series' position in the chart.
+    class CT_SeriesIndex < Element
+      tag "c:idx", "c:order"
+      required_attr "val", type: SimpleTypes::XsdUnsignedInt
+    end
+
+    # `c:tx`, `c:cat`, `c:val` and their XY counterparts: a reference into the
+    # worksheet plus the cached values.
+    class CT_SeriesData < Element
+      tag "c:tx", "c:cat", "c:val", "c:xVal", "c:yVal", "c:bubbleSize"
+    end
+
     # `c:plotArea`.
     class CT_PlotArea < Element
       tag "c:plotArea"
@@ -245,6 +284,12 @@ module Pptx
       def value_axis = find("c:valAx")
 
       def value_axes = find_all("c:valAx")
+
+      # Every series in the chart, in plot order then series order -- which is
+      # the order their chart-wide indices follow.
+      def series_elements = plot_elements.flat_map(&:ser_list)
+
+      def last_plot_element = plot_elements.last
     end
 
     # `c:chart`, which OOXML uses for two different things under one tag name.

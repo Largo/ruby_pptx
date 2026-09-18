@@ -3,8 +3,20 @@
 require "pptx/element_proxy"
 require "pptx/text/text"
 require "pptx/enum/chart"
+require "pptx/dml/fill"
 
 module Pptx
+  # The fill and outline of a chart element -- a series, an axis, gridlines.
+  #
+  # Reached through the `format` of whatever it belongs to.
+  class ChartFormat < ElementProxy
+    def fill = @fill ||= FillFormat.from_fill_parent(@element.get_or_add_spPr)
+
+    def line = @line ||= LineFormat.new(@element.get_or_add_spPr)
+
+    def inspect = "#<Pptx::ChartFormat #{fill.type&.name}>"
+  end
+
   # A chart's legend.
   class ChartLegend < ElementProxy
     # @return [Pptx::Enum::XL_LEGEND_POSITION, nil] nil when PowerPoint decides
