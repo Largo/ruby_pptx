@@ -5,9 +5,9 @@ AllCops:
     - tmp/**/*
     - vendor/**/*
     # Emitted by tools/; regenerate these, do not reformat them.
-    - lib/pptx/autoshape_spec.rb
-    - lib/pptx/opc/constants.rb
-    - lib/pptx/enum/**/*
+    - lib/ruby_pptx/autoshape_spec.rb
+    - lib/ruby_pptx/opc/constants.rb
+    - lib/ruby_pptx/enum/**/*
 
 # --------------------------------------------------------------------------
 # The oxml layer mirrors OOXML
@@ -21,37 +21,37 @@ AllCops:
 # --------------------------------------------------------------------------
 Naming/ClassAndModuleCamelCase:
   Exclude:
-    - lib/pptx/oxml/**/*
-    - lib/pptx/enum/**/*
-    - lib/pptx/opc/oxml.rb
+    - lib/ruby_pptx/oxml/**/*
+    - lib/ruby_pptx/enum/**/*
+    - lib/ruby_pptx/opc/oxml.rb
     # CONTENT_TYPE and RELATIONSHIP_TYPE are namespaces of constants, named
     # for the constants they hold, exactly as python-pptx names them.
-    - lib/pptx/opc/constants.rb
+    - lib/ruby_pptx/opc/constants.rb
     # Specs define throwaway CT_* elements to exercise the content-model DSL.
     - spec/**/*
 
 Naming/MethodName:
   Exclude:
-    - lib/pptx/oxml/**/*
-    - lib/pptx/opc/oxml.rb
-    - lib/pptx/chart/xml_writer.rb
+    - lib/ruby_pptx/oxml/**/*
+    - lib/ruby_pptx/opc/oxml.rb
+    - lib/ruby_pptx/chart/xml_writer.rb
 
 Naming/VariableName:
   Exclude:
-    - lib/pptx/oxml/**/*
+    - lib/ruby_pptx/oxml/**/*
 
 # `get_or_add_x` is the name python-pptx gives these throughout, and the API
 # layer reaches for the same word when it does the same thing.
 Naming/AccessorMethodName:
   Exclude:
-    - lib/pptx/oxml/**/*
-    - lib/pptx/action.rb
+    - lib/ruby_pptx/oxml/**/*
+    - lib/ruby_pptx/action.rb
 
 # `convert_from_xml` returning a boolean is the simple-type protocol every
 # type implements, not a predicate that forgot its question mark.
 Naming/PredicateMethod:
   Exclude:
-    - lib/pptx/oxml/**/*
+    - lib/ruby_pptx/oxml/**/*
     - spec/**/*
 
 # `accent1`, `lvl1pPr`, `dk2` and `tx1` are schema names, not numbered
@@ -67,8 +67,8 @@ Naming/MethodParameterName:
 # multiplying two lengths, which is exactly what Length refuses to do.
 Naming/BinaryOperatorParameterName:
   Exclude:
-    - lib/pptx/length.rb
-    - lib/pptx/geometry.rb
+    - lib/ruby_pptx/length.rb
+    - lib/ruby_pptx/geometry.rb
 
 # --------------------------------------------------------------------------
 # House style
@@ -101,24 +101,24 @@ Style/Documentation:
 Metrics/ClassLength:
   Max: 250
   Exclude:
-    - lib/pptx/oxml/**/*
-    - lib/pptx/chart/**/*
+    - lib/ruby_pptx/oxml/**/*
+    - lib/ruby_pptx/chart/**/*
 
 Metrics/ModuleLength:
   Max: 250
   Exclude:
-    - lib/pptx/oxml/**/*
-    - lib/pptx/enum/**/*
+    - lib/ruby_pptx/oxml/**/*
+    - lib/ruby_pptx/enum/**/*
     - spec/**/*
 
 Metrics/MethodLength:
   Max: 20
   Exclude:
     - spec/**/*
-    - lib/pptx/oxml/**/*
-    - lib/pptx/image.rb
-    - lib/pptx/chart/xml_writer.rb
-    - lib/pptx/chart/combo.rb
+    - lib/ruby_pptx/oxml/**/*
+    - lib/ruby_pptx/image.rb
+    - lib/ruby_pptx/chart/xml_writer.rb
+    - lib/ruby_pptx/chart/combo.rb
 
 # A spec that builds a fixture deck is a linear script; its branch count says
 # nothing about how hard it is to read.
@@ -126,9 +126,9 @@ Metrics/AbcSize:
   Max: 30
   Exclude:
     - spec/**/*
-    - lib/pptx/oxml/**/*
-    - lib/pptx/chart/xml_writer.rb
-    - lib/pptx/image.rb
+    - lib/ruby_pptx/oxml/**/*
+    - lib/ruby_pptx/chart/xml_writer.rb
+    - lib/ruby_pptx/image.rb
 
 # Keyword arguments name themselves at the call site, so a long keyword list
 # is a menu of options rather than a row of unlabelled positions.
@@ -136,31 +136,31 @@ Metrics/ParameterLists:
   Max: 6
   CountKeywordArgs: false
   Exclude:
-    - lib/pptx/oxml/**/*
+    - lib/ruby_pptx/oxml/**/*
 
 # A binary-format parser is a flat sequence of cases dictated by the format.
 # Splitting one to reduce a branch count hides the structure it is following.
 Metrics/CyclomaticComplexity:
   Max: 10
   Exclude:
-    - lib/pptx/image.rb
+    - lib/ruby_pptx/image.rb
 
 Metrics/PerceivedComplexity:
   Max: 10
   Exclude:
-    - lib/pptx/image.rb
+    - lib/ruby_pptx/image.rb
 
 Metrics/BlockLength:
   Exclude:
     - spec/**/*
-    - lib/pptx/oxml/**/*
-    - lib/pptx/enum/**/*
+    - lib/ruby_pptx/oxml/**/*
+    - lib/ruby_pptx/enum/**/*
 
 # Generated enum files define their members inside a block.
 Lint/ConstantDefinitionInBlock:
   Exclude:
     - spec/**/*
-    - lib/pptx/enum/**/*
+    - lib/ruby_pptx/enum/**/*
 
 Style/WordArray:
   MinSize: 3

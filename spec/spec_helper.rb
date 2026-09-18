@@ -3,6 +3,7 @@
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
 require "ruby_pptx"
+require "open3"
 require "support/differential"
 require "support/schema"
 

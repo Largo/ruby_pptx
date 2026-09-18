@@ -200,7 +200,7 @@ Findings from M4:
   `after(:all)` is too late -- the test schema is already installed for
   whatever runs first. The content-model spec now snapshots, defines, restores
   immediately, and swaps its schema in only for its own examples.
-  `spec/pptx/oxml/registry_spec.rb` guards this.
+  `spec/ruby_pptx/oxml/registry_spec.rb` guards this.
 
 ### M5 — Text and DrawingML *(complete)*
 
@@ -493,6 +493,36 @@ end
 Deliberately *not* taken: HTML-table import and YouTube embeds (separate
 add-on gems if wanted), and Blob/base64/stream export, which in Ruby is just
 writing to an `IO`.
+
+## Packaging: the gem owns `lib/ruby_pptx`
+
+The library used to live at `lib/pptx.rb` and `lib/pptx/**`, with a one-line
+`lib/ruby_pptx.rb` requiring it. That is a path the `pptx` gem already owns,
+and six files collided outright:
+
+    pptx.rb   pptx/version.rb   pptx/presentation.rb
+    pptx/slide.rb   pptx/opc/package.rb   pptx/shapes/shape.rb
+
+With both gems installed, `require "pptx/version"` resolves to whichever `lib`
+sits first on `$LOAD_PATH`. Put the other gem first and `require "ruby_pptx"`
+loads *its* `pptx.rb` instead of ours -- confirmed, not theorised: the gem
+loaded without error and `Pptx::VERSION` did not exist.
+
+Everything therefore moved under `lib/ruby_pptx/`, the path the gem's own name
+claims. **The module is still `Pptx`** and the public API is unchanged:
+`require "ruby_pptx"`, then `Pptx::Presentation`. Only the file layout moved.
+
+`Pptx` rather than `PPTX` is deliberate, and now doubly so. Ruby reserves all
+caps for initialisms that are spelled out -- `URI`, `JSON`, `CSV` -- and `pptx`
+is a file extension, which is why the neighbouring gems read `Docx`, `Axlsx`,
+`Roo`. This codebase also spends SCREAMING_SNAKE on constants
+(`CONTENT_TYPE`, `MSO_SHAPE`), so an all-caps namespace would read as one of
+them. And the `pptx` gem defines `PPTX`, so `Pptx` keeps the two apart at the
+constant level as well as the path level.
+
+`spec/ruby_pptx/packaging_spec.rb` guards the layout: no file may sit outside
+`lib/ruby_pptx`, the templates must stay in the packaged file list, and the
+gem must load from a clean interpreter with only `lib` on the path.
 
 ## Ruby idioms beyond the port
 

@@ -143,7 +143,7 @@ being applied, so the pair it returns must be right for all of them. Returning
 `[self, other]` would make `2 * length` work but silently turn `2 - length`
 into `length - 2`, the wrong sign. A `TypeError` the caller fixes by writing
 `length * 2` beats an answer that is quietly negative. The reasoning is
-recorded in `lib/pptx/length.rb` so nobody "fixes" it later.
+recorded in `lib/ruby_pptx/length.rb` so nobody "fixes" it later.
 
 ---
 
@@ -201,6 +201,11 @@ checklist.
   through `import_methods`, so the two cannot drift.
 - **`Data.define` in place of `Struct.new`** for the three internal value
   types, which were never mutated.
+
+- **The gem now owns `lib/ruby_pptx`.** It used to ship `lib/pptx.rb` and
+  `lib/pptx/**`, colliding with the `pptx` gem on six files including
+  `version.rb`; with both installed the wrong library could load. The module
+  is still `Pptx` and the public API did not change. See PORTING.md.
 
 ## C. Before a release
 
