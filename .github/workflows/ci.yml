@@ -24,6 +24,14 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
+      # The fit_text specs measure real glyph outlines, so they need real font
+      # files. Both sides of that comparison read the same ones; without them
+      # the specs skip rather than fail, which would hide them silently.
+      - name: Install the fonts the text-fitting specs measure
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-dejavu-core fonts-urw-base35
+
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"

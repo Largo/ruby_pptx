@@ -202,11 +202,79 @@ Findings from M4:
   immediately, and swaps its schema in only for its own examples.
   `spec/pptx/oxml/registry_spec.rb` guards this.
 
-### M5 — Text and DrawingML
+### M5 — Text and DrawingML *(complete)*
 
 `text/text.py` (681), `oxml/text.py` (618), `dml/*` (880),
-`text/fonts.py` (399, a TTF name-table parser — pure `struct`, ports cleanly),
-`text/layout.py` (325).
+`text/fonts.py` (399, a TTF name-table parser), `text/layout.py` (325).
+
+#### `fit_text` — the second documented divergence
+
+`TextFrame#fit_text` shrinks text until it fits its shape. The search is a
+faithful port: try whole point sizes from `max_size` down, wrap the text onto
+as many lines as it needs, and accept the first size whose
+`line_height × line_count` fits the shape's height less its margins. Line
+height is measured from `"Ty"` so that it does not depend on which glyphs a
+line happens to contain — exactly as upstream does it.
+
+**What cannot be ported is the measurement underneath.** python-pptx's
+`_rendered_size` calls Pillow's `ImageFont.truetype(...).getbbox(text)`, which
+*rasterizes* the string and reports the bounding box of the resulting bitmap.
+Matching that byte for byte would mean reimplementing FreeType's scaler and
+hinter. This is the opposite of the image-header case, where dropping Pillow
+was exact because the answer was sitting in the file.
+
+So `Pptx::FontMetrics` reads the glyph outlines' own bounding boxes out of the
+font instead — `head`, `maxp`, `hhea`/`hmtx`, `cmap` format 4, and `loca`/`glyf`
+— and lays them out along the baseline. Two details were found empirically
+rather than assumed, by comparing against Pillow directly:
+
+- **Width is anchored at the pen origin, not at the first mark.** Pillow's box
+  starts where the bitmap starts, so it counts a leading space and the first
+  glyph's left side bearing. Taking `min(xMin, 0)` as the left edge halved the
+  mean error against Pillow, from 1.94 px to 1.16 px.
+- **Height is pure ink**, top mark to bottom mark, with no such anchoring.
+
+Kerning is not applied, and OpenType/CFF fonts (no `glyf` table) fall back to
+advance widths plus the font's overall vertical extents, rather than having
+their charstrings interpreted.
+
+**How far apart the two end up**, measured over a corpus of 7 strings × 5 box
+sizes × 3 maximum sizes:
+
+| | |
+|---|---|
+| Measurement vs Pillow | mean 0.9 px, worst 3.8 px (DejaVu Sans and Sans Mono, 12–36 pt) |
+| Chosen point size | identical in 87%, **and never off by more than 1 point** |
+
+The ±1 cases are text that only just fits, where a sub-pixel difference lands
+on the other side of a size boundary. The spec asserts both bounds — the
+tolerance *and* the exact-match rate — because a tolerance alone would pass
+even if the measurement were badly wrong.
+
+Everything `fit_text` *writes* once it has a size is exactly comparable, and is
+checked by ordinary package differentials: pinning both sides to the same size
+via `max_size` must produce byte-identical packages, for single- and
+multi-paragraph text.
+
+#### One place this gem is deliberately better
+
+python-pptx's `fit_text` **raises `TypeError: cannot unpack non-iterable
+NoneType object`** whenever a single word is too wide for the shape at the size
+being tried. `_break_line` returns `None` from its binary search and the caller
+unpacks it blindly. Because the search starts at the *largest* size, this fires
+constantly: it hit 19% of the corpus above, including `"Annual Report"` in a
+2 × 2 inch box at `max_size=54`.
+
+This port puts such a word on a line of its own, which overflows the width and
+is then rejected on height — so the search simply moves down a size and returns
+an answer. A spec pins both halves of that: upstream raises, this returns.
+
+Separately, `font_family` here is only written into the XML; it is never used
+to go looking for a font file. python-pptx's `FontFiles._installed_fonts()`
+handles `darwin` and `win32` only and raises `OSError: unsupported operating
+system` on Linux, so its own font discovery does not work on the platform CI
+runs on. `font_file:` is therefore a required keyword rather than an optional
+override.
 
 ### M6 — Tables and images *(mostly complete)*
 
@@ -371,6 +439,12 @@ Three oracles under `tools/` expose python-pptx to the specs:
 | `simple_type_oracle.py` | every simple-type conversion, including the failures |
 | `enum_oracle.py` | every enum member's name, MS API value and XML value |
 | `coreprops_oracle.py` | a core-properties part built from scratch |
+
+`fit_text` additionally uses python-pptx's own `TextFitter` and Pillow's
+`ImageFont` inline as oracles: the first for the point size chosen, the second
+for the text measurement that feeds it. See the M5 divergence note above for
+why those two are compared with a tolerance while everything written to the
+package is compared exactly.
 
 `spec/support/differential.rb` drives the same operation through python-pptx
 (importable on this box) and through the gem, then diffs the resulting package:

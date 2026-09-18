@@ -6,6 +6,7 @@ require "pptx/dml/fill"
 require "pptx/oxml/text"
 require "pptx/enum/text"
 require "pptx/action"
+require "pptx/text/fitter"
 
 module Pptx
   # The text inside a shape.
@@ -123,9 +124,63 @@ module Pptx
       value
     end
 
+    # Shrink the text until it fits the shape, and apply that size to all of it.
+    #
+    # Turns word wrap on and autofit off, then sets every run -- and the
+    # end-paragraph properties, so typing in PowerPoint continues in the same
+    # font -- to +font_family+ at the size found.
+    #
+    #   frame.fit_text(font_file: "/usr/share/fonts/.../DejaVuSans.ttf",
+    #                  font_family: "DejaVu Sans", max_size: 28)
+    #
+    # A +font_file+ is required: measuring needs the actual glyph outlines, and
+    # this gem does not go looking through system font directories for them.
+    # The size is measured from the font's own metrics rather than by
+    # rendering, so it can differ from python-pptx's by a point on text that
+    # only just fits; see PORTING.md.
+    #
+    # @return [Integer] the point size applied
+    def fit_text(font_file:, font_family: "Calibri", max_size: 18, bold: false, italic: false)
+      raise Error, "cannot fit text in a text frame with no text" if text.empty?
+
+      size = TextFitter.best_fit_font_size(text, extents: extents, max_size: max_size,
+                                                 font_file: font_file)
+      raise Error, "text does not fit at any size up to #{max_size}pt" if size.nil?
+
+      apply_fit(font_family, size, bold, italic)
+      size
+    end
+
+    # The area text actually gets to occupy: the shape less its margins.
+    #
+    # @return [Array(Integer, Integer)] width and height in EMU
+    def extents
+      [@parent.width - margin_left - margin_right, @parent.height - margin_top - margin_bottom]
+    end
+
     def inspect = "#<Pptx::TextFrame #{text.inspect}>"
 
     private
+
+    def apply_fit(family, size, bold, italic)
+      self.auto_size = Enum::MSO_AUTO_SIZE::NONE
+      self.word_wrap = true
+      each_character_properties do |rPr|
+        font = Font.new(rPr)
+        font.name = family
+        font.size = Pptx.pt(size)
+        font.bold = bold
+        font.italic = italic
+      end
+    end
+
+    # Every run in the frame, plus each paragraph's end-paragraph properties.
+    def each_character_properties
+      @element.p_list.each do |p|
+        p.content_children.each { |child| yield child.get_or_add_rPr }
+        yield p.get_or_add_endParaRPr
+      end
+    end
 
     def body_properties = @element.bodyPr
   end

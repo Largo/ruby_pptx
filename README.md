@@ -107,6 +107,22 @@ end
 slide.shapes.add_picture("logo.svg", at: [x, y], fallback: "logo.png")
 ```
 
+Text can be shrunk to fit the shape holding it. Measuring needs the actual
+glyph outlines, so you pass the font file; `font_family` is what gets written
+into the deck.
+
+```ruby
+box.text_frame.fit_text(font_file: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                        font_family: "DejaVu Sans",
+                        max_size: 28)
+#=> 18   (the point size applied, never above max_size)
+```
+
+That turns word wrap on, autofit off, and applies the size to every run. Sizes
+are measured from the font's own metrics rather than by rendering, so they can
+differ from python-pptx's by a point on text that only just fits; PORTING.md
+has the measured comparison.
+
 ```ruby
 deck.sections.add("Appendix", slides: deck.slides.to_a.last(2))
 
