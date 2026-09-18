@@ -471,6 +471,8 @@ module Pptx
 
   # The placeholders of a slide layout, in `idx` order.
   class LayoutPlaceholders < LayoutShapes
+    include PlaceholderAuthoring
+
     # @return [LayoutPlaceholder, nil]
     def by_idx(idx) = find { |ph| ph.element.ph_idx == idx }
 
@@ -483,6 +485,8 @@ module Pptx
 
   # The placeholders of a slide master, in `idx` order.
   class MasterPlaceholders < MasterShapes
+    include PlaceholderAuthoring
+
     # @return [MasterPlaceholder, nil]
     def by_type(ph_type) = find { |ph| ph.element.ph_type == ph_type }
 

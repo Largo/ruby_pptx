@@ -167,9 +167,12 @@ Remaining upstream code, measured:
 **Beyond python-pptx, still open:**
 
 - ~~**SVG images**~~ — **done**, `add_picture(svg, at:, fallback: png)`.
-- **Defining a slide master in code** — needs a theme part with colour, font and
-  format schemes plus `p:txStyles` before a layout can inherit. Genuinely
-  large; starting from a template remains the practical route.
+- ~~**Defining a slide master in code**~~ — **done**.
+  `deck.slide_masters.add(name:)` builds the master, its theme part and its
+  layouts. The format scheme and text styles come from a base theme; the
+  colour scheme, fonts, placeholders and layouts are all generated. Validated
+  against the ISO/IEC 29500-4 schemas, round-tripped through python-pptx and
+  rendered by LibreOffice — see PORTING.md.
 - ~~**Combo charts / secondary axes**~~ — **done**. `add_combo_chart(data) { |c|
   c.plot :column_clustered, series: "Revenue"; c.plot :line, series: "Margin",
   secondary_axis: true }`. No oracle exists, so it is checked against the
@@ -178,8 +181,8 @@ Remaining upstream code, measured:
   which reads multi-plot charts even though it never writes one, read the
   result back.
 
-**What remains**: defining a slide master in code,
-which needs a whole theme part. Everything else is done.
+**What remains**: nothing in the port. Section C below is the release
+checklist.
 
 ## C. Before a release
 

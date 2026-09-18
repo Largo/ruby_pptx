@@ -103,8 +103,17 @@ RSpec.describe Pptx::SlideShapes do
   describe "shape geometry" do
     subject(:shape) { Pptx::Presentation.open(fixture).slides.first.shapes.title }
 
-    it "returns nil for a position the placeholder inherits" do
-      expect(shape.left).to be_nil
+    # The shape carries no transform of its own; the value comes from the
+    # layout placeholder it inherits from, which is what python-pptx reports
+    # here too. See Pptx::InheritsDimensions.
+    it "reports the position the placeholder inherits from its layout" do
+      layout_title = Pptx::Presentation.open(fixture).slides.first.layout
+                                       .placeholders.by_idx(0)
+      aggregate_failures do
+        expect(shape.element.xpath("./p:spPr/a:xfrm")).to be_empty
+        expect(shape.left).to eq(Pptx.emu(457_200))
+        expect(shape.left).to eq(layout_title.left)
+      end
     end
 
     it "materializes a transform on first write" do

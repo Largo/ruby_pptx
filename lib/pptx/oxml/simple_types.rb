@@ -419,6 +419,35 @@ module Pptx
         def self.validate(value) = validate_int_in_range(value, 256, 2_147_483_647)
       end
 
+      # The 36 layout kinds ST_SlideLayoutType allows. PowerPoint uses this to
+      # decide which layout to offer for a given command, so an unrecognised
+      # value is rejected rather than written through.
+      class ST_SlideLayoutType < XsdString
+        VALUES = %w[
+        title tx twoColTx tbl txAndChart chartAndTx dgm chart txAndClipArt clipArtAndTx
+        titleOnly blank txAndObj objAndTx objOnly obj txAndMedia mediaAndTx objOverTx txOverObj
+        txAndTwoObj twoObjAndTx twoObjOverTx fourObj vertTx clipArtAndVertTx vertTitleAndTx
+        vertTitleAndTxOverChart twoObj objAndTwoObj twoObjAndObj cust secHead twoTxTwoObj objTx
+        picTx
+        ].freeze
+
+        def self.validate(value)
+          super
+          return if VALUES.include?(value)
+
+          raise ArgumentError, "#{value.inspect} is not a slide layout type"
+        end
+      end
+
+      # Slide-master and slide-layout ids share one range, which starts above
+      # the signed 32-bit maximum -- PowerPoint numbers them from 2147483648
+      # upwards precisely so they cannot be confused with slide ids.
+      class ST_SlideMasterId < XsdUnsignedInt
+        def self.validate(value) = validate_int_in_range(value, 2_147_483_648, 4_294_967_295)
+      end
+
+      class ST_SlideLayoutId < ST_SlideMasterId; end
+
       class ST_SlideSizeCoordinate < BaseIntType
         class << self
           def convert_from_xml(str_value) = Pptx::Length.emu(Integer(str_value, 10))

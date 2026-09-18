@@ -6,6 +6,7 @@ require "pptx/parts/core_properties"
 require "pptx/parts/media"
 require "pptx/parts/presentation"
 require "pptx/parts/slide"
+require "pptx/parts/theme"
 
 module Pptx
   # A .pptx package: an OPC package that knows about PowerPoint's parts.
@@ -112,6 +113,7 @@ end
   Pptx::Opc::CONTENT_TYPE::PML_SLIDE_LAYOUT => Pptx::Parts::SlideLayoutPart,
   Pptx::Opc::CONTENT_TYPE::PML_SLIDE_MASTER => Pptx::Parts::SlideMasterPart,
   Pptx::Opc::CONTENT_TYPE::PML_NOTES_MASTER => Pptx::Parts::NotesMasterPart,
+  Pptx::Opc::CONTENT_TYPE::OFC_THEME => Pptx::Parts::ThemePart,
   Pptx::Opc::CONTENT_TYPE::PML_NOTES_SLIDE => Pptx::Parts::NotesSlidePart,
   Pptx::Opc::CONTENT_TYPE::OPC_CORE_PROPERTIES => Pptx::Parts::CorePropertiesPart,
   Pptx::Opc::CONTENT_TYPE::PNG => Pptx::Parts::ImagePart,

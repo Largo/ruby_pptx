@@ -364,7 +364,7 @@ Findings from M7:
 | Table autopaging across slides | done |
 | Declarative authoring (`Pptx.build`) | done |
 | SVG image parts | not started -- see below |
-| Defining a slide master/layout in code | not started -- see below |
+| Defining a slide master/layout in code | done -- see below |
 
 **These have no differential oracle**, because python-pptx does not implement
 them. They are checked three other ways:
@@ -387,10 +387,76 @@ rasterizer. The honest shape for it is `add_picture(svg, fallback: png)`,
 making the caller supply the fallback, but that is a design decision worth
 making deliberately rather than in passing.
 
-**Defining a slide master in code is not started** because it is much larger
-than it sounds: a usable master needs a theme part with colour, font and
-format schemes, plus `p:txStyles`, before any layout can inherit from it.
-Starting from a template and editing remains the practical route.
+### Defining a slide master in code
+
+`deck.slide_masters.add` creates a slide master, its theme part, and as many
+layouts as you add to it. This was the last thing left in the port, and it is
+larger than it sounds: a master is useless without a theme part carrying
+colour, font *and* format schemes, plus `p:txStyles`, before any layout can
+inherit from it.
+
+**What is generated and what is inherited.** Two things are not written from
+scratch, deliberately:
+
+- **The format scheme** -- the numbered fill, line, effect and background
+  styles that shapes and slide backgrounds refer to by `idx` -- comes from the
+  base theme. Writing a coherent set by hand is a design exercise, not a
+  configuration one, and `p:bgRef idx="1001"` on a generated master has to
+  resolve to *something*. The colour and font schemes, which are what a caller
+  actually wants to change, are fully editable.
+- **`p:txStyles` and `p:clrMap`** come from `templates/slideMaster.xml`, whose
+  text styles and colour map are taken verbatim from python-pptx's default
+  template (recorded in NOTICE). A master with no text styles gives PowerPoint
+  nothing to size or indent outline levels with.
+
+Everything else is built: the shape tree, the placeholders and their geometry,
+the layout list and its ids, the relationships, and the presentation-level
+registration.
+
+**Placeholder geometry is computed, not copied.** The five standard
+placeholders are placed at the Office default's *fractions* of the slide, so a
+4:3 deck reproduces Office's master to the EMU while a 16:9 deck gets the same
+proportions rather than a 4:3 block in one corner. A spec pins both halves of
+that.
+
+**A port gap this exposed.** Placeholders normally carry no `a:xfrm` at all --
+geometry is inherited slide → layout → master. This gem was returning `nil`
+for all four values, where python-pptx resolves them through
+`_InheritsDimensions`. That made a generated master impossible to inspect and
+was wrong for template-based decks too. `Pptx::InheritsDimensions` now ports
+it, including the detail that a layout placeholder inherits from the master
+placeholder of the *corresponding* type rather than the same one: chart,
+table, picture and object placeholders all take their geometry from the
+master's body. The values now match python-pptx exactly, which a differential
+spec asserts.
+
+#### Validation: the standard itself
+
+python-pptx can *read* a slide master but cannot *create* one, so there is no
+differential oracle here -- there is nothing on the other side to diff
+against. Three checks stand in:
+
+1. **Schema validation against ISO/IEC 29500-4.** Every XML part of a
+   generated package is validated against the published `pml.xsd` and
+   `dml-main.xsd`. This is the actual standard rather than another
+   implementation's opinion of it, and is a stronger check than the
+   round-trips used elsewhere. The schemas are not redistributed with the gem;
+   set `OOXML_SCHEMAS` to a directory containing them and those examples run,
+   otherwise they skip. A deliberately corrupted `p:clrMap` is used to prove
+   the validator actually bites.
+2. **Round-trip through python-pptx** (`tools/master_oracle.py`), which reads
+   back the masters, their layouts and placeholders with resolved geometry,
+   the theme colours and fonts, and which master a slide ends up inheriting
+   from.
+3. **Rendering by LibreOffice**, done during development rather than in CI: a
+   generated deck converts to PDF and PNG, the text lands in the right places,
+   the theme fonts are substituted as a real consumer would substitute them
+   (Georgia to a serif, Verdana to a sans), and a shape filled with theme
+   colour `accent1` rasterizes to exactly `(31, 73, 125)` -- the `1F497D` that
+   was set on the theme. That is end-to-end proof through a renderer that has
+   never heard of this gem.
+
+All 18 mutations of the new assertions are caught.
 
 ## Beyond python-pptx: what to take from PptxGenJS
 
@@ -439,6 +505,7 @@ Three oracles under `tools/` expose python-pptx to the specs:
 | `simple_type_oracle.py` | every simple-type conversion, including the failures |
 | `enum_oracle.py` | every enum member's name, MS API value and XML value |
 | `coreprops_oracle.py` | a core-properties part built from scratch |
+| `master_oracle.py` | a generated slide master, its layouts, placeholders and theme, read back |
 
 `fit_text` additionally uses python-pptx's own `TextFitter` and Pillow's
 `ImageFont` inline as oracles: the first for the point size chosen, the second

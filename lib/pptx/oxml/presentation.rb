@@ -97,6 +97,7 @@ module Pptx
     class CT_SlideMasterIdListEntry < Element
       tag "p:sldMasterId"
       required_attr "r:id", type: ST::XsdString, as: :rId
+      optional_attr "id", type: ST::ST_SlideMasterId
     end
 
     # `p:sldSz`, the slide dimensions for the whole presentation.

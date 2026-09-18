@@ -4,6 +4,7 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 
 require "ruby_pptx"
 require "support/differential"
+require "support/schema"
 
 # A constant assigned inside an `RSpec.describe` block lands on Object, not on
 # the example group, so two spec files using the same name silently clobber

@@ -12,6 +12,14 @@ that project. The following files are copied from it verbatim:
     lib/pptx/templates/theme.xml
     lib/pptx/templates/media-speaker.png
 
+The following file is derived from python-pptx's default template: its colour
+map and text styles are taken verbatim from the slide master inside
+`default.pptx`, with the shape tree emptied and the layout list cleared, so
+that a master created by this gem starts from the same defaults PowerPoint
+itself would use:
+
+    lib/pptx/templates/slideMaster.xml
+
 python-pptx is distributed under the MIT License, reproduced in full below.
 
 The MIT License (MIT)

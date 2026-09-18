@@ -139,6 +139,37 @@ module Pptx
       include BaseSlideElement
       tag "p:sldLayout"
       one_and_only_one "p:cSld"
+      zero_or_one "p:clrMapOvr", successors: %w[p:transition p:timing p:hf p:extLst]
+      optional_attr "type", type: SimpleTypes::ST_SlideLayoutType
+      optional_attr "preserve", type: SimpleTypes::XsdBoolean
+
+      # A new `p:sldLayout` named +name+, inheriting its colour map from the
+      # master. `preserve` is set because a layout with no slides using it is
+      # otherwise discarded by PowerPoint when it tidies up.
+      def self.new_element(name, layout_type)
+        layout = Element.parse(SLD_LAYOUT_XML)
+        layout.cSld.name = name
+        layout.type = layout_type unless layout_type.nil?
+        layout
+      end
+
+      SLD_LAYOUT_XML = <<~XML
+        <p:sldLayout #{Ns.nsdecls('a', 'p', 'r')} preserve="1">
+          <p:cSld>
+            <p:spTree>
+              <p:nvGrpSpPr>
+                <p:cNvPr id="1" name=""/>
+                <p:cNvGrpSpPr/>
+                <p:nvPr/>
+              </p:nvGrpSpPr>
+              <p:grpSpPr/>
+            </p:spTree>
+          </p:cSld>
+          <p:clrMapOvr>
+            <a:masterClrMapping/>
+          </p:clrMapOvr>
+        </p:sldLayout>
+      XML
     end
 
     # `p:sldMaster`, the root of a slide-master part.
@@ -146,8 +177,30 @@ module Pptx
       include BaseSlideElement
       tag "p:sldMaster"
       one_and_only_one "p:cSld"
+      one_and_only_one "p:clrMap"
       zero_or_one "p:sldLayoutIdLst",
                   successors: %w[p:transition p:timing p:hf p:txStyles p:extLst]
+      zero_or_one "p:txStyles", successors: %w[p:extLst]
+
+      # A new `p:sldMaster` carrying the colour map and text styles a master
+      # cannot do without, an empty shape tree and no layouts.
+      def self.new_element = Oxml.parse_from_template("slideMaster")
+    end
+
+    # `p:clrMap`, which binds each of a slide's colour roles to a theme colour.
+    class CT_ColorMapping < Element
+      tag "p:clrMap"
+      ROLES = %w[bg1 tx1 bg2 tx2 accent1 accent2 accent3 accent4 accent5
+                 accent6 hlink folHlink].freeze
+      ROLES.each { |role| required_attr role, type: SimpleTypes::XsdString }
+    end
+
+    # `p:txStyles`, the master's default text styling per outline level.
+    class CT_SlideMasterTextStyles < Element
+      tag "p:txStyles"
+      zero_or_one "p:titleStyle", successors: %w[p:bodyStyle p:otherStyle p:extLst]
+      zero_or_one "p:bodyStyle", successors: %w[p:otherStyle p:extLst]
+      zero_or_one "p:otherStyle", successors: %w[p:extLst]
     end
 
     # `p:sldLayoutIdLst`, the layouts inheriting from a slide master.
@@ -162,6 +215,7 @@ module Pptx
     class CT_SlideLayoutIdListEntry < Element
       tag "p:sldLayoutId"
       required_attr "r:id", type: SimpleTypes::XsdString, as: :rId
+      optional_attr "id", type: SimpleTypes::ST_SlideLayoutId
     end
 
     # `p:notesMaster`, the root of the notes-master part.

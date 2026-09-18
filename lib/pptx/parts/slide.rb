@@ -79,6 +79,17 @@ module Pptx
 
     # A slide-layout part, `/ppt/slideLayouts/slideLayoutN.xml`.
     class SlideLayoutPart < BaseSlidePart
+      PARTNAME_TEMPLATE = "/ppt/slideLayouts/slideLayout%d.xml"
+
+      # A new layout named +name+, inheriting from +slide_master_part+.
+      def self.new_layout(package, slide_master_part, name, layout_type)
+        part = new(package.next_partname(PARTNAME_TEMPLATE),
+                   Opc::CONTENT_TYPE::PML_SLIDE_LAYOUT, package,
+                   Oxml::CT_SlideLayout.new_element(name, layout_type))
+        part.relate_to(slide_master_part, Opc::RELATIONSHIP_TYPE::SLIDE_MASTER)
+        part
+      end
+
       def slide_layout = @slide_layout ||= SlideLayout.new(element, self)
 
       def slide_master
@@ -88,9 +99,50 @@ module Pptx
 
     # A slide-master part, `/ppt/slideMasters/slideMasterN.xml`.
     class SlideMasterPart < BaseSlidePart
+      PARTNAME_TEMPLATE = "/ppt/slideMasters/slideMaster%d.xml"
+      THEME_PARTNAME_TEMPLATE = "/ppt/theme/theme%d.xml"
+
+      # A new master with its own theme part and no layouts yet.
+      #
+      # The theme is a separate part related from the master, which is where
+      # the master's colours and fonts actually live.
+      def self.new_master(package, name: "Office Theme")
+        part = new(package.next_partname(PARTNAME_TEMPLATE),
+                   Opc::CONTENT_TYPE::PML_SLIDE_MASTER, package,
+                   Oxml::CT_SlideMaster.new_element)
+        theme = ThemePart.new_theme(package.next_partname(THEME_PARTNAME_TEMPLATE), package,
+                                    name: name)
+        part.relate_to(theme, Opc::RELATIONSHIP_TYPE::THEME)
+        part
+      end
+
       def slide_master = @slide_master ||= SlideMaster.new(element, self)
 
+      # The theme this master draws its colours and fonts from.
+      def theme_part = part_related_by(Opc::RELATIONSHIP_TYPE::THEME)
+
+      # Add +slide_layout_part+ to this master's layout list.
+      #
+      # @return [String] the relationship id
+      def add_slide_layout(slide_layout_part)
+        r_id = relate_to(slide_layout_part, Opc::RELATIONSHIP_TYPE::SLIDE_LAYOUT)
+        entry = element.get_or_add_sldLayoutIdLst.add_sldLayoutId
+        entry.rId = r_id
+        entry.id = next_slide_layout_id
+        r_id
+      end
+
       def related_slide_layout(r_id) = related_part(r_id).slide_layout
+
+      private
+
+      # Layout ids are numbered from 2147483649 upwards, continuing from the
+      # highest already in use so a removed layout does not free its id for
+      # reuse -- PowerPoint keeps references to them elsewhere in the package.
+      def next_slide_layout_id
+        used = element.get_or_add_sldLayoutIdLst.sldLayoutId_list.filter_map(&:id)
+        used.empty? ? 2_147_483_649 : used.max + 1
+      end
     end
 
     # A notes-master part.

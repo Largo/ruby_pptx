@@ -90,9 +90,9 @@ end
 deck.save("out.pptx")
 ```
 
-Four things python-pptx does not do: **SVG pictures**, **slide sections**,
-**paging a long table across as many slides as it needs**, and **combo charts**
-with a secondary axis.
+Five things python-pptx does not do: **SVG pictures**, **slide sections**,
+**paging a long table across as many slides as it needs**, **combo charts**
+with a secondary axis, and **defining a slide master in code**.
 
 ```ruby
 slide.shapes.add_combo_chart(data, at: [x, y], size: [w, h]) do |combo|
@@ -122,6 +122,31 @@ That turns word wrap on, autofit off, and applies the size to every run. Sizes
 are measured from the font's own metrics rather than by rendering, so they can
 differ from python-pptx's by a point on text that only just fits; PORTING.md
 has the measured comparison.
+
+A slide master can be built from scratch, rather than only edited in a
+template. The master gets its own theme, so its colours and fonts are
+independent of any other master in the deck.
+
+```ruby
+master = deck.slide_masters.add(name: "Corporate")
+master.theme.colors.update(accent1: "1F497D", accent2: "C0504D")
+master.theme.fonts.major = "Georgia"
+master.theme.fonts.minor = "Verdana"
+
+layout = master.slide_layouts.add("Title and Content", type: "obj") do |l|
+  l.placeholders.add(:title, at: [Pptx.inches(0.5), Pptx.inches(0.3)],
+                             size: [Pptx.inches(9), Pptx.inches(1.25)])
+  l.placeholders.add(:body, idx: 1, at: [Pptx.inches(0.5), Pptx.inches(1.75)],
+                                    size: [Pptx.inches(9), Pptx.inches(4.5)])
+end
+
+slide = deck.slides.add(layout)
+slide.shapes.title.text = "Built from a hand-made master"
+```
+
+The master starts with the five placeholders PowerPoint expects — title, body,
+date, footer and slide number — scaled to the deck's slide size. Pass
+`placeholders: :none` for a bare one.
 
 ```ruby
 deck.sections.add("Appendix", slides: deck.slides.to_a.last(2))
@@ -156,15 +181,24 @@ for the same operation, part by part, on canonicalised XML. To run those:
 pip install -r spec/oracle-requirements.txt
 ```
 
-Without it, the 47 oracle-backed specs skip and the rest still run. CI sets
+Without it, the oracle-backed specs skip and the rest still run. CI sets
 `REQUIRE_ORACLE=1`, which turns those skips into failures so a broken Python
 environment cannot quietly reduce the suite to its unit tests.
+
+A slide master has no oracle — python-pptx can read one but not create one —
+so it is validated against the published ISO/IEC 29500-4 schemas instead.
+Those are not redistributed here; point `OOXML_SCHEMAS` at a directory holding
+`pml.xsd`, `dml-main.xsd` and the `shared-*.xsd` files they import:
+
+```bash
+OOXML_SCHEMAS=/path/to/schemas bundle exec rspec
+```
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
 
 This gem is a port of [python-pptx](https://github.com/scanny/python-pptx) by
-Steve Canny, which is also MIT licensed, and it vendors four template files
-from that project verbatim. See [NOTICE](NOTICE) for the full attribution and
+Steve Canny, which is also MIT licensed, and it vendors five template files
+from that project verbatim plus one derived from them. See [NOTICE](NOTICE) for the full attribution and
 the upstream licence text.

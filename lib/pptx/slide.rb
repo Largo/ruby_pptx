@@ -149,6 +149,15 @@ module Pptx
     # The master this layout inherits from.
     def slide_master = part.slide_master
 
+    # The kind of layout this is, e.g. "title" or "obj". PowerPoint uses it to
+    # decide which layout to offer for a given command.
+    def type = @element.type
+
+    def type=(value)
+      @element.type = value&.to_s
+      value
+    end
+
     # The slides based on this layout.
     def used_by_slides
       part.package.presentation_part.presentation.slides.select { |s| s.layout == self }
@@ -220,6 +229,27 @@ module Pptx
       slide_layout
     end
 
+    # Add a layout to this master.
+    #
+    #   layout = master.slide_layouts.add("Section Header", type: "secHead")
+    #   layout.placeholders.add(:title, at: [x, y], size: [cx, cy])
+    #
+    # The layout starts empty; placeholders are added to it explicitly, which
+    # is what decides what a slide using it inherits.
+    #
+    # @param name [String] the name PowerPoint shows in the layout gallery
+    # @param type [String, Symbol, nil] one of the 36 ST_SlideLayoutType values
+    # @return [SlideLayout]
+    def add(name, type: "obj")
+      master_part = parent.part
+      layout_part = Parts::SlideLayoutPart.new_layout(master_part.package, master_part, name,
+                                                      type&.to_s)
+      master_part.add_slide_layout(layout_part)
+      layout = layout_part.slide_layout
+      yield layout if block_given?
+      layout
+    end
+
     def inspect = "#<Pptx::SlideLayouts size=#{size}>"
   end
 
@@ -229,6 +259,16 @@ module Pptx
     def slide_layouts
       @slide_layouts ||= SlideLayouts.new(@element.get_or_add_sldLayoutIdLst, self)
     end
+
+    # The colours and fonts this master draws from.
+    #
+    # @return [Pptx::Theme]
+    def theme = part.theme_part.theme
+
+    # The placeholders every layout and slide under this master inherits from.
+    #
+    # @return [MasterPlaceholders]
+    def placeholders = @placeholders ||= MasterPlaceholders.new(@element.spTree, self)
 
     def inspect = "#<Pptx::SlideMaster #{part.partname}>"
   end
@@ -259,6 +299,50 @@ module Pptx
       entry && part.related_slide_master(entry.rId)
     end
 
+    # Add a slide master to the presentation, with its own theme.
+    #
+    #   master = deck.slide_masters.add(name: "Corporate")
+    #   master.theme.colors.update(accent1: "1F497D")
+    #   master.slide_layouts.add("Title Slide", type: "title")
+    #
+    # The master starts with the five placeholders PowerPoint expects of one --
+    # title, body, date, footer and slide number -- positioned proportionally
+    # to this presentation's slide size. Pass <tt>placeholders: :none</tt> to
+    # get a bare master and place them yourself.
+    #
+    # @param name [String] names both the master's theme and its schemes
+    # @param placeholders [Symbol] :standard or :none
+    # @return [SlideMaster]
+    def add(name: "Office Theme", placeholders: :standard)
+      unless %i[standard none].include?(placeholders)
+        raise ArgumentError, "placeholders must be :standard or :none, got #{placeholders.inspect}"
+      end
+
+      master_part = Parts::SlideMasterPart.new_master(part.package, name: name)
+      register(master_part)
+      master = master_part.slide_master
+      master.placeholders.add_standard_set(slide_size) if placeholders == :standard
+      yield master if block_given?
+      master
+    end
+
     def inspect = "#<Pptx::SlideMasters size=#{size}>"
+
+    private
+
+    # Master ids are numbered from 2147483648 upwards, above the slide-id range.
+    def register(master_part)
+      r_id = part.relate_to(master_part, Opc::RELATIONSHIP_TYPE::SLIDE_MASTER)
+      entry = @sld_master_id_list.add_sldMasterId
+      entry.rId = r_id
+      used = @sld_master_id_list.sldMasterId_list.filter_map(&:id)
+      entry.id = used.empty? ? 2_147_483_648 : used.max + 1
+      r_id
+    end
+
+    def slide_size
+      size_element = part.element.sldSz
+      [size_element.cx, size_element.cy]
+    end
   end
 end
