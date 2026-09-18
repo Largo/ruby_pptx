@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pptx/pattern_matching"
+
 require "pptx/element_proxy"
 require "pptx/slide"
 require "pptx/section"
@@ -15,6 +17,10 @@ module Pptx
   #   prs.slide_width = Pptx.inches(13.333)
   #   prs.save("wide.pptx")
   class Presentation < PartElementProxy
+    include PatternMatching
+
+    pattern_keys :slides, :slide_layouts, :slide_masters, :slide_width, :slide_height
+
     class << self
       # Open a presentation from a path or an IO stream.
       #

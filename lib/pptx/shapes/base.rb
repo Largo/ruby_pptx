@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pptx/pattern_matching"
+
 require "pptx/element_proxy"
 require "pptx/enum/shapes"
 require "pptx/action"
@@ -10,6 +12,11 @@ module Pptx
   # Subclasses cover the specific kinds: {Shape} for auto shapes and text
   # boxes, {Picture}, {GraphicFrame}, {Connector} and {GroupShape}.
   class BaseShape
+    include PatternMatching
+
+    pattern_keys :shape_id, :name, :shape_type, :left, :top, :width, :height,
+                 :rotation, :placeholder_format
+
     attr_reader :element, :parent
 
     def initialize(shape_element, parent)
@@ -106,6 +113,10 @@ module Pptx
   # The placeholder-specific properties of a shape: which placeholder it is
   # and what kind.
   class PlaceholderFormat < ElementProxy
+    include PatternMatching
+
+    pattern_keys :idx, :type
+
     # The `idx` that ties a slide placeholder to the layout one it inherits
     # from. The title placeholder is always 0.
     def idx = @element.idx

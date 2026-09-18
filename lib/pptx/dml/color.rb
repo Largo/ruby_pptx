@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pptx/pattern_matching"
+
 require "pptx/element_proxy"
 require "pptx/oxml/dml/color"
 require "pptx/enum/dml"
@@ -10,7 +12,14 @@ module Pptx
   #   Pptx::RGBColor.new(60, 47, 128)
   #   Pptx::RGBColor["3C2F80"]
   class RGBColor
+    include PatternMatching
+
+    pattern_keys :r, :g, :b
+
     attr_reader :r, :g, :b
+
+    # Array patterns too: `in [r, g, b]`.
+    def deconstruct = to_a
 
     # Parse a hex string such as "3C2F80".
     def self.from_string(hex)

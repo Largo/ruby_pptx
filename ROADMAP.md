@@ -184,6 +184,24 @@ Remaining upstream code, measured:
 **What remains**: nothing in the port. Section C below is the release
 checklist.
 
+## B2. Ruby idioms added after the port closed
+
+- **Array-like indexing on every collection.** `slides[1..3]` and
+  `slides[1, 2]` used to raise `NoMethodError` deep inside the library;
+  `Pptx::Sliceable` now gives every collection Array's semantics, nil at the
+  edges included.
+- **`case`/`in` support** (`Pptx::PatternMatching`) on shapes, slides,
+  layouts, presentations, text, fonts, charts, sections, `Length` and
+  `RGBColor`. Enum-valued attributes read as symbols in a pattern; only the
+  keys a pattern asks for are computed.
+- **`Pptx::Point` and `Pptx::Size`**, value objects that stand in for the
+  `[x, y]` arrays via `to_ary`, with arithmetic and scaling.
+- **`Pptx::Lengths` refinement**, so `1.inch` can be had without patching
+  `Numeric` process-wide. It shares its method bodies with `pptx/core_ext`
+  through `import_methods`, so the two cannot drift.
+- **`Data.define` in place of `Struct.new`** for the three internal value
+  types, which were never mutated.
+
 ## C. Before a release
 
 - [ ] Decide the public API (section A) — signatures should settle first.

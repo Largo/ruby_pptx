@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pptx/pattern_matching"
+
 require "pptx/element_proxy"
 require "pptx/dml/color"
 require "pptx/dml/fill"
@@ -18,6 +20,10 @@ module Pptx
   #   frame.text = "First line\nSecond line"
   #   frame.paragraphs.first.runs.first.font.bold = true
   class TextFrame
+    include PatternMatching
+
+    pattern_keys :text, :paragraphs, :word_wrap, :auto_size, :vertical_anchor
+
     attr_reader :parent, :element
 
     def initialize(tx_body, parent)
@@ -177,6 +183,10 @@ module Pptx
 
   # One paragraph of a text frame.
   class Paragraph
+    include PatternMatching
+
+    pattern_keys :text, :runs, :level, :alignment
+
     attr_reader :element, :parent
 
     def initialize(p, parent)
@@ -257,6 +267,10 @@ module Pptx
 
   # A run: a span of text sharing one set of character properties.
   class Run
+    include PatternMatching
+
+    pattern_keys :text, :font, :hyperlink
+
     attr_reader :element, :parent
 
     def initialize(r, parent)
@@ -293,6 +307,10 @@ module Pptx
   # hierarchy rather than set here, and assigning nil restores that
   # inheritance.
   class Font
+    include PatternMatching
+
+    pattern_keys :name, :size, :bold, :italic, :underline
+
     attr_reader :element
 
     def initialize(r_pr)

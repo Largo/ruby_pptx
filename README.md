@@ -162,10 +162,49 @@ Lengths are explicit rather than bare numbers:
 ```ruby
 Pptx.inches(1).emu        #=> 914400
 Pptx.cm(2.54).pt          #=> 72.0
-
-require "pptx/core_ext"   # opt-in numeric sugar
-1.inch == 72.points       #=> true
 ```
+
+Numeric sugar is opt-in, and comes two ways. Prefer the refinement: it is
+scoped to the file that asks for it, so it cannot surprise anything else
+sharing the process.
+
+```ruby
+require "pptx/refinements"
+using Pptx::Lengths        # this file only
+1.inch == 72.points        #=> true
+
+require "pptx/core_ext"    # or patch Numeric process-wide
+```
+
+`at:` and `size:` have always taken a two-element array, and still do. Passing
+a `Point` or a `Size` instead costs nothing and buys named readers, arithmetic
+and pattern matching:
+
+```ruby
+origin = Pptx.point(Pptx.inches(1), Pptx.inches(1))
+box    = Pptx.size(Pptx.inches(3), Pptx.inches(1))
+
+slide.shapes.add_shape(:rectangle, at: origin, size: box)
+slide.shapes.add_shape(:rectangle, at: origin + [0, Pptx.inches(1.5)], size: box * 2)
+```
+
+Reading a deck back supports `case`/`in`. Enum-valued attributes read as their
+symbolic name in a pattern, and only the keys a pattern asks for are computed:
+
+```ruby
+slide.shapes.each do |shape|
+  case shape
+  in {shape_type: :PICTURE, name:}                      then puts "picture #{name}"
+  in {shape_type: :PLACEHOLDER, placeholder_format: {type: :TITLE}}
+                                                        then puts shape.text_frame.text
+  in {width:} if width > Pptx.inches(5)                 then puts "#{shape.name} is wide"
+  else next
+  end
+end
+```
+
+Collections index like arrays — `slides[2]`, `slides[-1]`, `slides[1..3]`,
+`slides[1, 2]` — and deconstruct into array patterns.
 
 ## Development
 

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pptx/sliceable"
+
 module Pptx
   # Base for the objects that make up the public API.
   #
@@ -7,6 +9,8 @@ module Pptx
   # entirely in the XML element it wraps. Two proxies wrapping the same element
   # are equal, whether or not they are the same object.
   class ElementProxy
+    include Sliceable
+
     attr_reader :element
 
     def initialize(element)

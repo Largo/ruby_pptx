@@ -68,6 +68,7 @@ Naming/MethodParameterName:
 Naming/BinaryOperatorParameterName:
   Exclude:
     - lib/pptx/length.rb
+    - lib/pptx/geometry.rb
 
 # --------------------------------------------------------------------------
 # House style

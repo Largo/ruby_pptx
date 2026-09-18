@@ -30,7 +30,7 @@ module Pptx
     # cannot reuse the name -- call it something like `add_x_for` instead.
     module ContentModel
       # A member of an `EG_*` element group, for {#zero_or_one_choice}.
-      Choice = Struct.new(:nsptag) do
+      Choice = Data.define(:nsptag) do
         def prop_name = Ns.split_tag(nsptag).last
       end
 

@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require "pptx/pattern_matching"
+
+require "pptx/sliceable"
+
 require "pptx/element_proxy"
 
 module Pptx
@@ -12,6 +16,9 @@ module Pptx
   #   prs.sections.add("Introduction", slides: prs.slides.first(2))
   #   prs.sections["Introduction"].slides.map(&:slide_id)
   class Sections
+    include DeconstructToArray
+
+    include Sliceable
     include Enumerable
 
     def initialize(presentation)
@@ -31,11 +38,10 @@ module Pptx
     def empty? = size.zero?
 
     # Indexed by position, or looked up by name.
-    def [](key)
+    def [](key, length = nil)
       return by_name(key) if key.is_a?(String)
 
-      element = section_elements[key]
-      element && Section.new(element, @presentation)
+      slice_members(section_elements, key, length) { |element| Section.new(element, @presentation) }
     end
 
     # @return [Section, nil]
@@ -72,6 +78,10 @@ module Pptx
 
   # One named section of a presentation.
   class Section < ElementProxy
+    include PatternMatching
+
+    pattern_keys :name, :id, :slides
+
     def initialize(element, presentation)
       super(element)
       @presentation = presentation

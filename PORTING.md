@@ -494,6 +494,39 @@ Deliberately *not* taken: HTML-table import and YouTube embeds (separate
 add-on gems if wanted), and Blob/base64/stream export, which in Ruby is just
 writing to an `IO`.
 
+## Ruby idioms beyond the port
+
+python-pptx is the source of the object model, not of the idiom. Five things
+were added once the port itself closed, none of which have an upstream
+counterpart:
+
+- **`Pptx::Sliceable`.** `slides[1..3]` raised `NoMethodError: undefined
+  method 'rId' for an instance of Array` -- `[]` handed the index to the
+  backing list and then treated the result as a single element. Every
+  collection was affected. They now follow Array, nil at the edges included.
+- **`Pptx::PatternMatching`.** `deconstruct_keys` on the objects a caller
+  reads a deck with. Two decisions worth recording: enum-valued attributes
+  report as their **symbol** (`in {shape_type: :PICTURE}` is what anyone
+  would write, and the accessor still returns the member), and only the keys
+  a pattern names are computed, so matching on a shape's name does not walk
+  its text.
+- **`Pptx::Point` / `Pptx::Size`.** They define `to_ary`, so they destructure
+  exactly as the `[x, y]` arrays every call site already unpacks -- the value
+  objects went in without touching a single call site.
+- **`Pptx::Lengths`**, a refinement giving `1.inch` without patching `Numeric`
+  process-wide. It shares its bodies with `pptx/core_ext` via
+  `import_methods`, which is also why those methods are spelled out rather
+  than aliased: `import_methods` cannot carry an alias across.
+- **`Data.define`** for the three internal value types, none of which were
+  ever mutated.
+
+Two of these were only pinned properly after mutation testing pushed back.
+`Length` defines `to_int`, so `100 == Pptx.emu(100)` is already true and a
+value comparison cannot tell whether `Point` normalised its coordinates -- the
+spec has to assert the class. And `Length.from`/`Point.from` returning the
+argument untouched is an allocation saving rather than a behavioural
+difference, so it takes an identity assertion to pin it at all.
+
 ## Testing
 
 Three oracles under `tools/` expose python-pptx to the specs:

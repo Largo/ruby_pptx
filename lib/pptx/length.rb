@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pptx/pattern_matching"
+
 module Pptx
   # A distance, stored canonically in English Metric Units (EMU).
   #
@@ -14,6 +16,11 @@ module Pptx
   # EMU, so `Pptx::Length.inches(1) == 914_400` holds.
   class Length
     include Comparable
+    include PatternMatching
+
+    # `in {inches:}` converts on demand, so a pattern can ask in whatever unit
+    # reads best at the point of use.
+    pattern_keys :emu, :inches, :cm, :mm, :pt, :centipoints
 
     EMUS_PER_INCH       = 914_400
     EMUS_PER_CENTIPOINT = 127
@@ -23,6 +30,10 @@ module Pptx
 
     class << self
       # @param emu [Integer] distance in English Metric Units
+      # Accept either a Length or a bare number of EMU, so a caller may hand
+      # over whichever it has without checking first.
+      def from(value) = value.is_a?(Length) ? value : emu(value)
+
       def emu(emu) = new(emu)
 
       def inches(inches) = new((inches * EMUS_PER_INCH).to_i)

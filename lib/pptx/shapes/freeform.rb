@@ -20,7 +20,7 @@ module Pptx
 
     # One pen movement. `kind` is :move, :line or :close; a close carries no
     # coordinates.
-    Operation = Struct.new(:kind, :x, :y)
+    Operation = Data.define(:kind, :x, :y)
 
     def initialize(shapes, start_x, start_y, x_scale, y_scale)
       @shapes = shapes

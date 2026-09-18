@@ -18,7 +18,7 @@ module Pptx
   # each plot names the ones it draws.
   class ComboChartBuilder
     # What a plot draws and how.
-    PlotSpec = Struct.new(:chart_type, :series, :secondary_axis)
+    PlotSpec = Data.define(:chart_type, :series, :secondary_axis)
 
     # The families that can share a category axis. A pie or a scatter cannot,
     # so they are not combinable.

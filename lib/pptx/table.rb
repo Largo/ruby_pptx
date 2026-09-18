@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require "pptx/pattern_matching"
+
+require "pptx/sliceable"
+
 require "pptx/element_proxy"
 require "pptx/text/text"
 require "pptx/dml/fill"
@@ -103,6 +107,9 @@ module Pptx
 
   # The rows of a table.
   class TableRows
+    include DeconstructToArray
+
+    include Sliceable
     include Enumerable
 
     def initialize(tbl, table)
@@ -120,14 +127,16 @@ module Pptx
     def size = @element.tr_list.size
     alias length size
 
-    def [](index)
-      tr = @element.tr_list[index]
-      tr && TableRow.new(tr, @table)
+    def [](index, length = nil)
+      slice_members(@element.tr_list, index, length) { |tr| TableRow.new(tr, @table) }
     end
   end
 
   # The columns of a table.
   class TableColumns
+    include DeconstructToArray
+
+    include Sliceable
     include Enumerable
 
     def initialize(tbl, table)
@@ -145,9 +154,10 @@ module Pptx
     def size = @element.tblGrid.gridCol_list.size
     alias length size
 
-    def [](index)
-      col = @element.tblGrid.gridCol_list[index]
-      col && TableColumn.new(col, @table)
+    def [](index, length = nil)
+      slice_members(@element.tblGrid.gridCol_list, index, length) do |col|
+        TableColumn.new(col, @table)
+      end
     end
   end
 
@@ -189,6 +199,10 @@ module Pptx
 
   # One cell of a table.
   class Cell
+    include PatternMatching
+
+    pattern_keys :text, :span_width, :span_height, :merge_origin?, :spanned?, :vertical_anchor
+
     attr_reader :element, :parent
 
     def initialize(tc, parent)

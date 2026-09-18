@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pptx/pattern_matching"
+
 require "pptx/element_proxy"
 require "pptx/enum/chart"
 require "pptx/chart/format"
@@ -10,6 +12,10 @@ module Pptx
   # Creating a chart is the well-covered path; reading one back is currently
   # limited to its type, series and cached values.
   class Chart < PartElementProxy
+    include PatternMatching
+
+    pattern_keys :plot_type, :categories, :series
+
     PLOT_TAG_TO_TYPE = {
       "c:barChart" => :BAR, "c:lineChart" => :LINE, "c:pieChart" => :PIE,
       "c:doughnutChart" => :DOUGHNUT, "c:areaChart" => :AREA,
@@ -125,6 +131,10 @@ module Pptx
 
   # One series as read back from a chart's cached XML.
   class ChartSeriesView < ElementProxy
+    include PatternMatching
+
+    pattern_keys :name, :values
+
     def initialize(ser, chart)
       super(ser)
       @chart = chart

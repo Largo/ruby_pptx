@@ -69,9 +69,8 @@ module Pptx
     def size = member_elements.size
     alias length size
 
-    def [](index)
-      element = member_elements[index]
-      element && shape_factory(element)
+    def [](index, length = nil)
+      slice_members(member_elements, index, length) { |element| shape_factory(element) }
     end
 
     def fetch(index)

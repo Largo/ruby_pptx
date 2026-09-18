@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pptx/pattern_matching"
+
 require "pptx/element_proxy"
 require "pptx/shapes/shape_tree"
 require "pptx/dml/fill"
@@ -40,6 +42,10 @@ module Pptx
 
   # One slide in a presentation.
   class Slide < BaseSlide
+    include PatternMatching
+
+    pattern_keys :slide_id, :name, :layout, :shapes, :placeholders
+
     # The id that identifies this slide within the presentation, stable across
     # reordering.
     def slide_id = part.slide_id
@@ -65,6 +71,8 @@ module Pptx
   #
   # Enumerable, and indexable by position.
   class Slides < ParentedElementProxy
+    include DeconstructToArray
+
     include Enumerable
 
     def initialize(sld_id_list, presentation)
@@ -87,9 +95,8 @@ module Pptx
     # Indexed access, supporting a negative index as Ruby arrays do.
     #
     # @return [Slide, nil] nil when +index+ is out of range
-    def [](index)
-      entry = @sld_id_list.sldId_list[index]
-      entry && part.related_slide(entry.rId)
+    def [](index, length = nil)
+      slice_members(@sld_id_list.sldId_list, index, length) { |entry| part.related_slide(entry.rId) }
     end
 
     # As {#[]}, but raises rather than returning nil.
@@ -126,6 +133,10 @@ module Pptx
 
   # A slide layout: the arrangement a slide inherits from.
   class SlideLayout < BaseSlide
+    include PatternMatching
+
+    pattern_keys :name, :type, :slide_master, :shapes, :placeholders
+
     # Placeholders PowerPoint renders from the layout rather than copying onto
     # each slide, so they are not cloned when a slide is created.
     LATENT_PLACEHOLDER_TYPES = [
@@ -166,6 +177,8 @@ module Pptx
 
   # The layouts belonging to one slide master.
   class SlideLayouts < ParentedElementProxy
+    include DeconstructToArray
+
     include Enumerable
 
     def initialize(sld_layout_id_list, slide_master)
@@ -189,11 +202,12 @@ module Pptx
     #
     #   layouts[1]
     #   layouts["Title and Content"]
-    def [](key)
+    def [](key, length = nil)
       return by_name(key) if key.is_a?(String)
 
-      entry = @sld_layout_id_list.sldLayoutId_list[key]
-      entry && part.related_slide_layout(entry.rId)
+      slice_members(@sld_layout_id_list.sldLayoutId_list, key, length) do |entry|
+        part.related_slide_layout(entry.rId)
+      end
     end
 
     def fetch(key)
@@ -273,6 +287,8 @@ module Pptx
 
   # The slide masters of a presentation.
   class SlideMasters < ParentedElementProxy
+    include DeconstructToArray
+
     include Enumerable
 
     def initialize(sld_master_id_list, presentation)
@@ -292,9 +308,10 @@ module Pptx
     def size = @sld_master_id_list.size
     alias length size
 
-    def [](index)
-      entry = @sld_master_id_list.sldMasterId_list[index]
-      entry && part.related_slide_master(entry.rId)
+    def [](index, length = nil)
+      slice_members(@sld_master_id_list.sldMasterId_list, index, length) do |entry|
+        part.related_slide_master(entry.rId)
+      end
     end
 
     # Add a slide master to the presentation, with its own theme.
