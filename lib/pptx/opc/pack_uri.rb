@@ -49,7 +49,7 @@ module Pptx
           else acc.push(seg)
           end
         end
-        absolute ? "/#{segments.join('/')}" : segments.join("/")
+        absolute ? "/#{segments.join("/")}" : segments.join("/")
       end
       private_class_method :normalize
 
@@ -113,7 +113,7 @@ module Pptx
         to   = @to_s.split("/").reject(&:empty?)
         common = 0
         common += 1 while common < from.length && common < to.length && from[common] == to[common]
-        ([".."] * (from.length - common) + to[common..]).join("/")
+        (([".."] * (from.length - common)) + to[common..]).join("/")
       end
 
       # The part name of the .rels part describing this part's relationships.

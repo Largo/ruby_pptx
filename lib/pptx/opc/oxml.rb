@@ -68,7 +68,7 @@ module Pptx
         required_attr "Type", type: ST::XsdAnyUri, as: :reltype
         required_attr "Target", type: ST::XsdAnyUri, as: :target_ref
         optional_attr "TargetMode", type: ST::ST_TargetMode,
-                      default: RELATIONSHIP_TARGET_MODE::INTERNAL, as: :targetMode
+                                    default: RELATIONSHIP_TARGET_MODE::INTERNAL, as: :targetMode
 
         def external? = targetMode == RELATIONSHIP_TARGET_MODE::EXTERNAL
       end
@@ -83,8 +83,11 @@ module Pptx
         end
 
         def add_rel(r_id, reltype, target, is_external: false)
-          target_mode = is_external ? RELATIONSHIP_TARGET_MODE::EXTERNAL
-                                    : RELATIONSHIP_TARGET_MODE::INTERNAL
+          target_mode = if is_external
+                          RELATIONSHIP_TARGET_MODE::EXTERNAL
+                        else
+                          RELATIONSHIP_TARGET_MODE::INTERNAL
+                        end
           add_relationship(rId: r_id, reltype: reltype, target_ref: target, targetMode: target_mode)
         end
 

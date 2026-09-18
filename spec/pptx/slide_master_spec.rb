@@ -286,7 +286,7 @@ RSpec.describe "defining a slide master in code" do
 
     it "gives each placeholder a distinct shape id" do
       3.times { layout.placeholders.add(:body) }
-      ids = layout.placeholders.map { |ph| ph.shape_id }
+      ids = layout.placeholders.map(&:shape_id)
       expect(ids.uniq.size).to eq(3)
     end
 
@@ -326,7 +326,7 @@ RSpec.describe "defining a slide master in code" do
         l.placeholders.add(:title, at: [Pptx.inches(0.5), Pptx.inches(0.3)],
                                    size: [Pptx.inches(9), Pptx.inches(1.25)])
         l.placeholders.add(:body, idx: 1, at: [Pptx.inches(0.5), Pptx.inches(1.75)],
-                                          size: [Pptx.inches(9), Pptx.inches(4.5)])
+                                  size: [Pptx.inches(9), Pptx.inches(4.5)])
       end
     end
 
@@ -456,7 +456,7 @@ RSpec.describe "defining a slide master in code" do
         layout.placeholders.add(:title, at: [Pptx.inches(0.5), Pptx.inches(0.3)],
                                         size: [Pptx.inches(9), Pptx.inches(1.25)])
         layout.placeholders.add(:body, idx: 1, at: [Pptx.inches(0.5), Pptx.inches(1.75)],
-                                               size: [Pptx.inches(9), Pptx.inches(4.5)])
+                                       size: [Pptx.inches(9), Pptx.inches(4.5)])
         slide = deck.slides.add(layout)
         slide.shapes.title.text = "Built from a hand-made master"
         slide.placeholders[1].text_frame.text = "Alpha\nBeta"

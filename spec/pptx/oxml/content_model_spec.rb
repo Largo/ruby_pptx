@@ -9,7 +9,6 @@ RSpec.describe Pptx::Oxml::ContentModel do
   # schema in only for the duration of this file's examples.
   pristine_registry = Pptx::Oxml::Registry.registered
 
-
   # A cut-down but faithful slice of the real schema: <a:xfrm> holds an
   # optional <a:off> then an optional <a:ext>, and carries a `rot` attribute.
   # These register themselves globally, so the registry is restored afterwards.
@@ -70,7 +69,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
   def element(xml) = Pptx::Oxml::Element.parse(xml)
 
   def xfrm(inner = "")
-    element(%(<a:xfrm #{Pptx::Oxml::Ns.nsdecls('a', 'r')}>#{inner}</a:xfrm>))
+    element(%(<a:xfrm #{Pptx::Oxml::Ns.nsdecls("a", "r")}>#{inner}</a:xfrm>))
   end
 
   describe "dispatch" do
@@ -79,7 +78,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
     end
 
     it "wraps an unmodelled tag in the base Element" do
-      expect(element(%(<a:unknown #{Pptx::Oxml::Ns.nsdecls('a')}/>))).to be_an_instance_of(Pptx::Oxml::Element)
+      expect(element(%(<a:unknown #{Pptx::Oxml::Ns.nsdecls("a")}/>))).to be_an_instance_of(Pptx::Oxml::Element)
     end
 
     it "returns equal wrappers for the same node" do
@@ -115,7 +114,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
     end
 
     it "handles a namespace-prefixed attribute" do
-      blip = element(%(<a:blip #{Pptx::Oxml::Ns.nsdecls('a', 'r')}/>))
+      blip = element(%(<a:blip #{Pptx::Oxml::Ns.nsdecls("a", "r")}/>))
       blip.embed = "rId3"
       aggregate_failures do
         expect(blip.embed).to eq("rId3")
@@ -171,7 +170,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
 
     it "inserts in schema order regardless of call order" do
       e = xfrm
-      e.get_or_add_ext          # the later sibling, added first
+      e.get_or_add_ext # the later sibling, added first
       e.get_or_add_off
       expect(e.node.element_children.map(&:name)).to eq(%w[off ext])
     end
@@ -179,7 +178,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
 
   describe "zero_or_more" do
     it "exposes a list rather than a singular accessor" do
-      p = element(%(<a:p #{Pptx::Oxml::Ns.nsdecls('a')}><a:r/><a:r/></a:p>))
+      p = element(%(<a:p #{Pptx::Oxml::Ns.nsdecls("a")}><a:r/><a:r/></a:p>))
       aggregate_failures do
         expect(p.r_list.size).to eq(2)
         expect(p).not_to respond_to(:r)
@@ -187,7 +186,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
     end
 
     it "keeps repeated children before their successor" do
-      p = element(%(<a:p #{Pptx::Oxml::Ns.nsdecls('a')}/>))
+      p = element(%(<a:p #{Pptx::Oxml::Ns.nsdecls("a")}/>))
       p.get_or_add_endParaRPr
       p.add_r
       p.add_r
@@ -197,7 +196,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
   end
 
   describe "zero_or_one_choice" do
-    subject(:sp_pr) { element(%(<a:spPr #{Pptx::Oxml::Ns.nsdecls('a')}/>)) }
+    subject(:sp_pr) { element(%(<a:spPr #{Pptx::Oxml::Ns.nsdecls("a")}/>)) }
 
     it "reports the member present, or nil" do
       expect(sp_pr.eg_fillProperties).to be_nil
@@ -235,7 +234,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
   # python-pptx uses its enumerations directly as attribute types; ours satisfy
   # the same from_xml/to_xml contract, so they drop straight into the DSL.
   describe "an enumeration used as an attribute type" do
-    subject(:body_pr) { element(%(<a:bodyPr #{Pptx::Oxml::Ns.nsdecls('a')}/>)) }
+    subject(:body_pr) { element(%(<a:bodyPr #{Pptx::Oxml::Ns.nsdecls("a")}/>)) }
 
     it "reads an XML value as the enum member" do
       body_pr.set("anchor", "ctr")
@@ -280,7 +279,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
     it "does not redeclare a namespace already in scope" do
       e = xfrm
       e.get_or_add_off
-      expect(e.xml.scan(/xmlns:a=/).size).to eq(1)
+      expect(e.xml.scan("xmlns:a=").size).to eq(1)
     end
   end
 end

@@ -81,7 +81,6 @@ module Pptx
 
     def name=(value)
       @element.name = value.to_s
-      value
     end
 
     # The GUID PowerPoint uses to identify this section.

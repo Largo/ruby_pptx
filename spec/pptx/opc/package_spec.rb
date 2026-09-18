@@ -74,8 +74,16 @@ RSpec.describe Pptx::Opc::OpcPackage do
     end
 
     it "is stable: saving twice produces the same package" do
-      first = Tempfile.create(["a", ".pptx"]) { |f| f.close; described_class.open(fixture).save(f.path); ruby_pptx_manifest(f.path) }
-      second = Tempfile.create(["b", ".pptx"]) { |f| f.close; described_class.open(fixture).save(f.path); ruby_pptx_manifest(f.path) }
+      first = Tempfile.create(["a", ".pptx"]) do |f|
+        f.close
+        described_class.open(fixture).save(f.path)
+        ruby_pptx_manifest(f.path)
+      end
+      second = Tempfile.create(["b", ".pptx"]) do |f|
+        f.close
+        described_class.open(fixture).save(f.path)
+        ruby_pptx_manifest(f.path)
+      end
       expect(first).to eq(second)
     end
   end

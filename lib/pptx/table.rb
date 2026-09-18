@@ -40,28 +40,24 @@ module Pptx
 
     def first_row=(value)
       @element.firstRow = value
-      value
     end
 
     def first_col? = @element.firstCol
 
     def first_col=(value)
       @element.firstCol = value
-      value
     end
 
     def last_row? = @element.lastRow
 
     def last_row=(value)
       @element.lastRow = value
-      value
     end
 
     def last_col? = @element.lastCol
 
     def last_col=(value)
       @element.lastCol = value
-      value
     end
 
     # Whether alternate rows are shaded. Spelled out where python-pptx says
@@ -70,14 +66,12 @@ module Pptx
 
     def banded_rows=(value)
       @element.bandRow = value
-      value
     end
 
     def banded_columns? = @element.bandCol
 
     def banded_columns=(value)
       @element.bandCol = value
-      value
     end
 
     # @api private
@@ -169,7 +163,6 @@ module Pptx
     def height=(value)
       @element.h = value
       @table.notify_height_changed
-      value
     end
 
     def cells = @element.tc_list.map { |tc| Cell.new(tc, @table) }
@@ -189,7 +182,6 @@ module Pptx
     def width=(value)
       @element.w = value
       @table.notify_width_changed
-      value
     end
 
     def inspect = "#<Pptx::TableColumn width=#{width&.inches}in>"
@@ -212,7 +204,6 @@ module Pptx
 
     def text=(value)
       text_frame.text = value
-      value
     end
 
     def fill = @fill ||= FillFormat.from_fill_parent(cell_properties)
@@ -222,35 +213,30 @@ module Pptx
 
     def vertical_anchor=(value)
       cell_properties.anchor = value
-      value
     end
 
     def margin_left = cell_properties.marL
 
     def margin_left=(value)
       cell_properties.marL = value
-      value
     end
 
     def margin_right = cell_properties.marR
 
     def margin_right=(value)
       cell_properties.marR = value
-      value
     end
 
     def margin_top = cell_properties.marT
 
     def margin_top=(value)
       cell_properties.marT = value
-      value
     end
 
     def margin_bottom = cell_properties.marB
 
     def margin_bottom=(value)
       cell_properties.marB = value
-      value
     end
 
     # How many columns this cell spans.
@@ -278,9 +264,7 @@ module Pptx
     #   already contains a merge -- merging over a merge produces a table
     #   PowerPoint cannot lay out
     def merge(other)
-      unless @element.tbl == other.element.tbl
-        raise Error, "cannot merge cells from different tables"
-      end
+      raise Error, "cannot merge cells from different tables" unless @element.tbl == other.element.tbl
 
       range = @element.tbl.cell_range(@element, other.element)
       raise Error, "the range already contains a merged cell" if range.contains_merged_cell?

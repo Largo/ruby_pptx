@@ -84,6 +84,6 @@ RSpec.describe Pptx::Opc::PackURI do
 
   it "acts as a String where one is expected" do
     expect(File.join("x", described_class.new("/a.xml"))).to eq("x/a.xml")
-    expect("part #{described_class.new('/a.xml')}").to eq("part /a.xml")
+    expect("part #{described_class.new("/a.xml")}").to eq("part /a.xml")
   end
 end

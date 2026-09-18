@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 RSpec.describe Pptx::Oxml::SimpleTypes do
-  simple_types = Pptx::Oxml::SimpleTypes
   define_method(:st) { Pptx::Oxml::SimpleTypes }
 
   # Every case is checked against python-pptx itself, so these assert real

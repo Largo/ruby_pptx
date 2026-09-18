@@ -62,14 +62,14 @@ end
 RSpec.describe "Pptx::Slides#add_table_pages" do
   let(:presentation) { Pptx::Presentation.new_default }
   let(:layout) { presentation.slide_layouts["Blank"] }
-  let(:header) { ["Region", "Q1", "Q2"] }
+  let(:header) { %w[Region Q1 Q2] }
   let(:rows) { [header] + (1..17).map { |i| ["Row #{i}", i * 10, i * 20] } }
 
   def add_pages(**options)
     presentation.slides.add_table_pages(
       rows, layout: layout,
-      left: Pptx.inches(0.5), top: Pptx.inches(1),
-      width: Pptx.inches(9), height: Pptx.inches(5), **options
+            left: Pptx.inches(0.5), top: Pptx.inches(1),
+            width: Pptx.inches(9), height: Pptx.inches(5), **options
     )
   end
 
@@ -110,7 +110,7 @@ RSpec.describe "Pptx::Slides#add_table_pages" do
   it "fits on one slide when the data is short" do
     presentation.slides.add_table_pages(
       [header, ["A", 1, 2]], layout: layout,
-      left: 0, top: 0, width: Pptx.inches(9), height: Pptx.inches(5)
+                             left: 0, top: 0, width: Pptx.inches(9), height: Pptx.inches(5)
     )
     expect(presentation.slides.size).to eq(1)
   end
@@ -129,7 +129,7 @@ RSpec.describe "Pptx::Slides#add_table_pages" do
     ragged = [%w[A B C], %w[1 2], %w[3 4 5 6]]
     slides = presentation.slides.add_table_pages(
       ragged, layout: layout, left: 0, top: 0,
-      width: Pptx.inches(9), height: Pptx.inches(5), header: false
+              width: Pptx.inches(9), height: Pptx.inches(5), header: false
     )
     expect(slides.first.shapes.first.table.column_count).to eq(4)
   end

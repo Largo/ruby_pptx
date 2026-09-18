@@ -31,7 +31,7 @@ module Pptx
       ["wmf", CONTENT_TYPE::X_WMF],
       ["wmv", CONTENT_TYPE::WMV],
       ["xlsx", CONTENT_TYPE::SML_SHEET],
-      ["xml", CONTENT_TYPE::XML],
+      ["xml", CONTENT_TYPE::XML]
     ].freeze
   end
 end

@@ -28,7 +28,6 @@ module Pptx
     def position=(value)
       @element.get_or_add_legendPos.val =
         Enum::XL_LEGEND_POSITION.to_xml(Enum::XL_LEGEND_POSITION.fetch(value))
-      value
     end
 
     # True when the legend sits inside the plot area rather than beside it.
@@ -36,7 +35,6 @@ module Pptx
 
     def include_in_layout=(value)
       @element.get_or_add_overlay.val = value
-      value
     end
 
     def inspect = "#<Pptx::ChartLegend #{position&.name}>"
@@ -56,7 +54,6 @@ module Pptx
 
     def text=(value)
       text_frame.text = value
-      value
     end
 
     def inspect = "#<Pptx::ChartTitle #{text.inspect}>"
@@ -65,25 +62,22 @@ module Pptx
   # One axis of a chart.
   class ChartAxis < ElementProxy
     # Whether the axis is drawn. A `c:delete` of 1 hides it.
-    def visible? = !(@element.delete&.val || false)
+    def visible? = !@element.delete&.val
 
     def visible=(value)
       @element.get_or_add_delete.val = !value
-      value
     end
 
     def major_gridlines? = !@element.majorGridlines.nil?
 
     def major_gridlines=(value)
       value ? @element.get_or_add_majorGridlines : @element.remove_majorGridlines
-      value
     end
 
     def minor_gridlines? = !@element.minorGridlines.nil?
 
     def minor_gridlines=(value)
       value ? @element.get_or_add_minorGridlines : @element.remove_minorGridlines
-      value
     end
 
     # The fixed end of the scale, or nil when PowerPoint scales automatically.
@@ -91,28 +85,24 @@ module Pptx
 
     def maximum_scale=(value)
       @element.scaling.maximum = value
-      value
     end
 
     def minimum_scale = @element.scaling.minimum
 
     def minimum_scale=(value)
       @element.scaling.minimum = value
-      value
     end
 
     def major_unit = @element.majorUnit&.val
 
     def major_unit=(value)
       value.nil? ? @element.remove_majorUnit : (@element.get_or_add_majorUnit.val = value)
-      value
     end
 
     def minor_unit = @element.minorUnit&.val
 
     def minor_unit=(value)
       value.nil? ? @element.remove_minorUnit : (@element.get_or_add_minorUnit.val = value)
-      value
     end
 
     # The number format of the tick labels, e.g. "0.0%".
@@ -123,10 +113,9 @@ module Pptx
       format.formatCode = value
       # An explicit format is no longer taken from the source data.
       format.sourceLinked = false
-      value
     end
 
-    def has_title? = !@element.title.nil?
+    def title? = !@element.title.nil?
 
     def title
       @element.title.nil? ? nil : ChartTitle.new(@element.title)
@@ -136,7 +125,7 @@ module Pptx
     def title=(text)
       if text.nil?
         @element.remove_title
-        return nil
+        return
       end
 
       element = @element.title || begin
@@ -165,7 +154,6 @@ module Pptx
 
     def gap_width=(value)
       @element.get_or_add_gapWidth.val = value
-      value
     end
 
     # How far bars in a group overlap, -100 to 100.
@@ -173,7 +161,6 @@ module Pptx
 
     def overlap=(value)
       @element.get_or_add_overlap.val = value
-      value
     end
 
     # Whether each data point gets its own colour, as a pie does.
@@ -181,7 +168,6 @@ module Pptx
 
     def vary_by_categories=(value)
       @element.get_or_add_varyColors.val = value
-      value
     end
 
     # Whether this plot shows data labels at all.
@@ -190,7 +176,6 @@ module Pptx
     def data_labels=(value)
       value ? @element.get_or_add_default_dLbls : @element.remove_dLbls
       @data_labels = nil
-      value
     end
 
     # The data-label settings, switched on with PowerPoint's defaults if the
@@ -226,7 +211,6 @@ module Pptx
       format = @element.get_or_add_numFmt
       format.formatCode = value
       format.sourceLinked = false
-      value
     end
 
     # @return [Pptx::Enum::XL_LABEL_POSITION, nil]
@@ -238,12 +222,11 @@ module Pptx
     def position=(value)
       if value.nil?
         @element.remove_dLblPos
-        return nil
+        return
       end
 
       @element.get_or_add_dLblPos.val =
         Enum::XL_LABEL_POSITION.to_xml(Enum::XL_LABEL_POSITION.fetch(value))
-      value
     end
 
     def inspect = "#<Pptx::ChartDataLabels value=#{show_value?}>"

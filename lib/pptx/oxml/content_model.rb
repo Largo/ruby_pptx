@@ -18,7 +18,8 @@ module Pptx
     # | `optional_attr`     | `name`, `name=`                                      |
     # | `required_attr`     | `name`, `name=`                                      |
     # | `one_and_only_one`  | `name` (raises if absent)                            |
-    # | `zero_or_one`       | `name`, `get_or_add_name`, `add_name`, `new_name`, `insert_name`, `remove_name` |
+    # | `zero_or_one`       | `name`, `get_or_add_name`, `add_name`, `new_name`,
+    #                         `insert_name`, `remove_name` |
     # | `zero_or_more`      | `name_list`, `add_name`, `new_name`, `insert_name`    |
     # | `one_or_more`       | as `zero_or_more`                                    |
     # | `zero_or_one_choice`| `name`, `remove_name`, plus per-choice accessors and `get_or_change_to_x` |
@@ -114,7 +115,7 @@ module Pptx
       end
 
       # An `EG_*` group, at most one member of which may be present.
-      def zero_or_one_choice(choices, successors: [], as:)
+      def zero_or_one_choice(choices, as:, successors: [])
         member_tags = choices.map(&:nsptag)
 
         define_method(as) { first_child_found_in(*member_tags) }
@@ -166,10 +167,10 @@ module Pptx
       # Define +name+ unless the class (or an ancestor) already has it, so a
       # hand-written override placed above the macro wins. A definition placed
       # below the macro wins by simply replacing it.
-      def define_once(name, &body)
+      def define_once(name, &)
         return if method_defined?(name) || private_method_defined?(name)
 
-        define_method(name, &body)
+        define_method(name, &)
       end
 
       # "r:embed" -> "embed", "macro" -> "macro"

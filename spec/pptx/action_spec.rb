@@ -40,7 +40,7 @@ RSpec.describe Pptx::ActionSetting do
       shape.hyperlink = "https://second.example"
       aggregate_failures do
         expect(shape.hyperlink).to eq("https://second.example")
-        expect(shape.element.xml.scan(/<a:hlinkClick/).size).to eq(1)
+        expect(shape.element.xml.scan("<a:hlinkClick").size).to eq(1)
         expect(slide.part.rels.count(&:external?)).to eq(1)
       end
     end

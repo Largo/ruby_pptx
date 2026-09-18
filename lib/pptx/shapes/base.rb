@@ -32,7 +32,6 @@ module Pptx
 
     def name=(value)
       @element.nvXxPr.cNvPr.name = value.to_s
-      value
     end
 
     # @return [Length, nil] nil when the shape inherits its position
@@ -40,28 +39,24 @@ module Pptx
 
     def left=(value)
       @element.x = value
-      value
     end
 
     def top = @element.y
 
     def top=(value)
       @element.y = value
-      value
     end
 
     def width = @element.cx
 
     def width=(value)
       @element.cx = value
-      value
     end
 
     def height = @element.cy
 
     def height=(value)
       @element.cy = value
-      value
     end
 
     # Clockwise rotation in degrees.
@@ -69,7 +64,6 @@ module Pptx
 
     def rotation=(value)
       @element.rot = value
-      value
     end
 
     def placeholder? = @element.placeholder?
@@ -91,7 +85,6 @@ module Pptx
 
     def hyperlink=(url)
       click_action.address = url
-      url
     end
 
     # Placeholder position and type, or nil when this is not a placeholder.

@@ -15,6 +15,7 @@ module Pptx
     # `p:spTree` and `p:grpSp`: a shape tree or a group of shapes.
     class CT_GroupShape < Element
       include BaseShapeElement
+
       tag "p:spTree", "p:grpSp"
 
       one_and_only_one "p:nvGrpSpPr"
@@ -108,7 +109,7 @@ module Pptx
 
       def self.new_grpSp(id, name)
         Element.parse(<<~XML)
-          <p:grpSp #{Ns.nsdecls('a', 'p', 'r')}>
+          <p:grpSp #{Ns.nsdecls("a", "p", "r")}>
             <p:nvGrpSpPr>
               <p:cNvPr id="#{id}" name="#{CT_Picture.escape(name)}"/>
               <p:cNvGrpSpPr/>

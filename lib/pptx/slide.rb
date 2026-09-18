@@ -12,7 +12,6 @@ module Pptx
 
     def name=(value)
       @element.cSld.name = value.to_s
-      value
     end
 
     def shape_tree = @element.spTree
@@ -69,7 +68,7 @@ module Pptx
     include Enumerable
 
     def initialize(sld_id_list, presentation)
-      super(sld_id_list, presentation)
+      super
       @sld_id_list = sld_id_list
     end
 
@@ -155,7 +154,6 @@ module Pptx
 
     def type=(value)
       @element.type = value&.to_s
-      value
     end
 
     # The slides based on this layout.
@@ -171,7 +169,7 @@ module Pptx
     include Enumerable
 
     def initialize(sld_layout_id_list, slide_master)
-      super(sld_layout_id_list, slide_master)
+      super
       @sld_layout_id_list = sld_layout_id_list
     end
 
@@ -278,7 +276,7 @@ module Pptx
     include Enumerable
 
     def initialize(sld_master_id_list, presentation)
-      super(sld_master_id_list, presentation)
+      super
       @sld_master_id_list = sld_master_id_list
     end
 

@@ -102,16 +102,14 @@ module Pptx
     #
     # @return [Array(Pptx::Length, Pptx::Length)]
     def native_size
-      if vector?
-        raise Error, "an SVG has no native pixel size; size it from its raster fallback"
-      end
+      raise Error, "an SVG has no native pixel size; size it from its raster fallback" if vector?
 
       horz_dpi, vert_dpi = dpi
       [Length.emu((EMU_PER_INCH * width_px / horz_dpi).to_i),
        Length.emu((EMU_PER_INCH * height_px / vert_dpi).to_i)]
     end
 
-    def inspect = "#<Pptx::Image #{format} #{width_px}x#{height_px} #{dpi.join('x')}dpi>"
+    def inspect = "#<Pptx::Image #{format} #{width_px}x#{height_px} #{dpi.join("x")}dpi>"
 
     private
 
@@ -299,7 +297,7 @@ module Pptx
       case type
       when 3 then payload.unpack1(short)      # SHORT
       when 4 then payload.unpack1(long)       # LONG
-      when 5                                   # RATIONAL
+      when 5 # RATIONAL
         offset = payload.unpack1(long)
         numerator, denominator = blob.byteslice(offset, 8).unpack("#{long}#{long}")
         denominator.to_i.zero? ? nil : numerator.to_f / denominator

@@ -81,7 +81,6 @@ module Pptx
         end
       @presentation.slide_width = width
       @presentation.slide_height = height
-      value
     end
 
     private
@@ -108,7 +107,6 @@ module Pptx
         raise NotFoundError, "this slide's layout has no title placeholder"
 
       placeholder.text = text
-      text
     end
 
     # The text of the placeholder with `idx` 1, which is the body on a content
@@ -124,7 +122,6 @@ module Pptx
         raise NotFoundError, "this slide has no placeholder with idx #{idx}"
 
       placeholder.text = text
-      text
     end
 
     # Add a text box.

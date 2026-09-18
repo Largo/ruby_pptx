@@ -66,6 +66,12 @@ module Pptx
                                     2_133_600 / 9_144_000.0, 365_125 / 6_858_000.0]]
     ].freeze
 
+    SIZES = {
+      full: Oxml::SimpleTypes::ST_PlaceholderSize::FULL,
+      half: Oxml::SimpleTypes::ST_PlaceholderSize::HALF,
+      quarter: Oxml::SimpleTypes::ST_PlaceholderSize::QUARTER
+    }.freeze
+
     private
 
     def scale(fraction, extent) = Length.emu((fraction * extent.emu).round)
@@ -82,24 +88,16 @@ module Pptx
       return idx unless idx.nil?
 
       used = member_elements.filter_map(&:ph_idx)
-      ((1..).find { |candidate| !used.include?(candidate) })
+      (1..).find { |candidate| !used.include?(candidate) }
     end
 
     def orient_value(orient)
       return nil if orient.nil?
 
-      unless orient == :vertical
-        raise ArgumentError, "orient must be :vertical or nil, got #{orient.inspect}"
-      end
+      raise ArgumentError, "orient must be :vertical or nil, got #{orient.inspect}" unless orient == :vertical
 
       Oxml::SimpleTypes::ST_Direction::VERT
     end
-
-    SIZES = {
-      full: Oxml::SimpleTypes::ST_PlaceholderSize::FULL,
-      half: Oxml::SimpleTypes::ST_PlaceholderSize::HALF,
-      quarter: Oxml::SimpleTypes::ST_PlaceholderSize::QUARTER
-    }.freeze
 
     def sz_value(sz)
       return nil if sz.nil?

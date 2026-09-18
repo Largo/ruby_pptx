@@ -20,7 +20,7 @@ module Pptx
                      presentationPr viewPr tableStyles].freeze
 
       class << self
-        def dir = ENV["OOXML_SCHEMAS"]
+        def dir = ENV.fetch("OOXML_SCHEMAS", nil)
 
         def available? = !dir.nil? && File.exist?(File.join(dir.to_s, "pml.xsd"))
 

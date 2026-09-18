@@ -53,7 +53,7 @@ module Pptx
       FAMILIES.each { |family, names| return family if names.include?(member.name) }
       raise Error,
             "creating a #{member.name} chart is not supported yet; " \
-            "supported types: #{FAMILIES.values.flatten.sort.join(', ')}"
+            "supported types: #{FAMILIES.values.flatten.sort.join(", ")}"
     end
 
     def supported?(chart_type)
@@ -220,8 +220,8 @@ module Pptx
         text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
       end
 
-      def all_series_xml(&block)
-        chart_data.series.map(&block).join
+      def all_series_xml(&)
+        chart_data.series.map(&).join
       end
     end
 
@@ -293,8 +293,6 @@ module Pptx
       def overlap
         STACKED_TYPES.include?(chart_type.name) ? %(        <c:overlap val="100"/>\n) : ""
       end
-
-      def indent(text, spaces) = super
 
       def series_blocks = all_series_xml { |series| series_xml(series) }
 

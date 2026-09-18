@@ -24,8 +24,8 @@ module Pptx
 
     CT_SHEET_MAIN = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"
     CT_WORKSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
-    RT_OFFICE_DOCUMENT = "#{NS_OFC_RELS}/officeDocument"
-    RT_WORKSHEET = "#{NS_OFC_RELS}/worksheet"
+    RT_OFFICE_DOCUMENT = "#{NS_OFC_RELS}/officeDocument".freeze
+    RT_WORKSHEET = "#{NS_OFC_RELS}/worksheet".freeze
 
     def initialize(chart_data)
       @chart_data = chart_data

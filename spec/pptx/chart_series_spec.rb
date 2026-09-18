@@ -4,6 +4,8 @@ RSpec.describe "chart series formatting and data replacement" do
   let(:presentation) { Pptx::Presentation.new_default }
   let(:slide) { presentation.slides.add(presentation.slide_layouts["Blank"]) }
 
+  SIX_BY_FOUR = [Pptx.inches(6), Pptx.inches(4)].freeze
+
   def data_of(categories, series)
     Pptx::ChartData.new.tap do |d|
       d.categories = categories
@@ -149,7 +151,7 @@ RSpec.describe "chart series formatting and data replacement" do
           data.add_series("Q1", [1, 2])
           data.add_series("Q2", [3, 4])
           chart = slide.shapes.add_chart(:column_clustered, data, at: [0, 0],
-                                         size: [Pptx.inches(6), Pptx.inches(4)]).chart
+                                                                  size: SIX_BY_FOUR).chart
           first = chart.series[0]
           first.format.fill.solid
           first.format.fill.fore_color.rgb = Pptx::RGBColor.new(0xC0, 0x50, 0x4D)
@@ -193,10 +195,10 @@ RSpec.describe "chart series formatting and data replacement" do
           data.add_series("Q1", [1, 2])
           data.add_series("Q2", [3, 4])
           chart = slide.shapes.add_chart(:column_clustered, data, at: [0, 0],
-                                         size: [Pptx.inches(6), Pptx.inches(4)]).chart
+                                                                  size: SIX_BY_FOUR).chart
 
           fresh = Pptx::ChartData.new
-          fresh.categories = ["North", "South", "Central"]
+          fresh.categories = %w[North South Central]
           fresh.add_series("A", [10, 20, 30])
           fresh.add_series("B", [40, 50, 60])
           fresh.add_series("C", [70, 80, 90])
@@ -235,7 +237,7 @@ RSpec.describe "chart series formatting and data replacement" do
           data.add_series("Q1", [1, 2])
           data.add_series("Q2", [3, 4])
           chart = slide.shapes.add_chart(:column_clustered, data, at: [0, 0],
-                                         size: [Pptx.inches(6), Pptx.inches(4)]).chart
+                                                                  size: SIX_BY_FOUR).chart
           fewer = Pptx::ChartData.new
           fewer.categories = ["Only"]
           fewer.add_series("Solo", [7])

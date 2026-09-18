@@ -61,10 +61,10 @@ RSpec.describe Pptx::ComboChartBuilder do
     end
 
     it "allows bar, line and area together" do
-      expect {
+      expect do
         builder.plot(:column_clustered, series: 0)
         builder.plot(:line, series: 1)
-      }.not_to raise_error
+      end.not_to raise_error
     end
   end
 

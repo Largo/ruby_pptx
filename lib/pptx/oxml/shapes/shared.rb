@@ -15,46 +15,46 @@ module Pptx
     # the accessors here read through to it and create it only on write.
     module BaseShapeElement
       def x = xfrm_attr(:x)
+
       def x=(value)
         set_xfrm_attr(:x, value)
-        value
       end
 
       def y = xfrm_attr(:y)
+
       def y=(value)
         set_xfrm_attr(:y, value)
-        value
       end
 
       def cx = xfrm_attr(:cx)
+
       def cx=(value)
         set_xfrm_attr(:cx, value)
-        value
       end
 
       def cy = xfrm_attr(:cy)
+
       def cy=(value)
         set_xfrm_attr(:cy, value)
-        value
       end
 
       def flipH = !xfrm_attr(:flipH).nil? && xfrm_attr(:flipH)
+
       def flipH=(value)
         set_xfrm_attr(:flipH, value)
-        value
       end
 
       def flipV = !xfrm_attr(:flipV).nil? && xfrm_attr(:flipV)
+
       def flipV=(value)
         set_xfrm_attr(:flipV, value)
-        value
       end
 
       # Clockwise rotation in degrees; 0.0 when not set.
       def rot = xfrm&.rot || 0.0
+
       def rot=(value)
-        (get_or_add_xfrm.rot = value)
-        value
+        get_or_add_xfrm.rot = value
       end
 
       # The `a:xfrm` grandchild, or nil. `p:grpSp` overrides this, since its
@@ -129,38 +129,58 @@ module Pptx
       optional_attr "flipV", type: SimpleTypes::XsdBoolean, default: false
 
       def x = off&.x
+
       def x=(value)
-        (get_or_add_off.x = value)
-        value
+        get_or_add_off.x = value
       end
 
       def y = off&.y
+
       def y=(value)
-        (get_or_add_off.y = value)
-        value
+        get_or_add_off.y = value
       end
 
       def cx = ext&.cx
+
       def cx=(value)
-        (get_or_add_ext.cx = value)
-        value
+        get_or_add_ext.cx = value
       end
 
       def cy = ext&.cy
+
       def cy=(value)
-        (get_or_add_ext.cy = value)
-        value
+        get_or_add_ext.cy = value
       end
 
       # Both children carry required attributes, so a newly created one must
       # be given zeroes rather than left empty and invalid.
-      def new_off = build("a:off").tap { |off| off.x = 0; off.y = 0 }
+      def new_off
+        build("a:off").tap do |off|
+          off.x = 0
+          off.y = 0
+        end
+      end
 
-      def new_ext = build("a:ext").tap { |ext| ext.cx = 0; ext.cy = 0 }
+      def new_ext
+        build("a:ext").tap do |ext|
+          ext.cx = 0
+          ext.cy = 0
+        end
+      end
 
-      def new_chOff = build("a:chOff").tap { |off| off.x = 0; off.y = 0 }
+      def new_chOff
+        build("a:chOff").tap do |off|
+          off.x = 0
+          off.y = 0
+        end
+      end
 
-      def new_chExt = build("a:chExt").tap { |ext| ext.cx = 0; ext.cy = 0 }
+      def new_chExt
+        build("a:chExt").tap do |ext|
+          ext.cx = 0
+          ext.cy = 0
+        end
+      end
     end
 
     # `p:cNvPr`, the non-visual drawing properties every shape carries.
@@ -186,9 +206,9 @@ module Pptx
       tag "p:ph"
       optional_attr "type", type: Enum::PP_PLACEHOLDER, default: Enum::PP_PLACEHOLDER::OBJECT
       optional_attr "orient", type: SimpleTypes::ST_Direction,
-                    default: SimpleTypes::ST_Direction::HORZ
+                              default: SimpleTypes::ST_Direction::HORZ
       optional_attr "sz", type: SimpleTypes::ST_PlaceholderSize,
-                    default: SimpleTypes::ST_PlaceholderSize::FULL
+                          default: SimpleTypes::ST_PlaceholderSize::FULL
       optional_attr "idx", type: SimpleTypes::XsdUnsignedInt, default: 0
     end
 

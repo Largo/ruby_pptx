@@ -1,0 +1,170 @@
+AllCops:
+  TargetRubyVersion: 3.3
+  NewCops: enable
+  Exclude:
+    - tmp/**/*
+    - vendor/**/*
+    # Emitted by tools/; regenerate these, do not reformat them.
+    - lib/pptx/autoshape_spec.rb
+    - lib/pptx/opc/constants.rb
+    - lib/pptx/enum/**/*
+
+# --------------------------------------------------------------------------
+# The oxml layer mirrors OOXML
+#
+# `Pptx::Oxml::CT_Shape`, `#cSld`, `#sldLayoutIdLst`, `bgPr` -- these are the
+# names in the ECMA-376 schema, and keeping them verbatim is what makes the
+# XML, the specification and this code readable side by side. It is also what
+# lets an upstream python-pptx commit be read as a patch against this port.
+# Renaming them to snake_case would be more conventional Ruby and a great deal
+# less useful.
+# --------------------------------------------------------------------------
+Naming/ClassAndModuleCamelCase:
+  Exclude:
+    - lib/pptx/oxml/**/*
+    - lib/pptx/enum/**/*
+    - lib/pptx/opc/oxml.rb
+    # CONTENT_TYPE and RELATIONSHIP_TYPE are namespaces of constants, named
+    # for the constants they hold, exactly as python-pptx names them.
+    - lib/pptx/opc/constants.rb
+    # Specs define throwaway CT_* elements to exercise the content-model DSL.
+    - spec/**/*
+
+Naming/MethodName:
+  Exclude:
+    - lib/pptx/oxml/**/*
+    - lib/pptx/opc/oxml.rb
+    - lib/pptx/chart/xml_writer.rb
+
+Naming/VariableName:
+  Exclude:
+    - lib/pptx/oxml/**/*
+
+# `get_or_add_x` is the name python-pptx gives these throughout, and the API
+# layer reaches for the same word when it does the same thing.
+Naming/AccessorMethodName:
+  Exclude:
+    - lib/pptx/oxml/**/*
+    - lib/pptx/action.rb
+
+# `convert_from_xml` returning a boolean is the simple-type protocol every
+# type implements, not a predicate that forgot its question mark.
+Naming/PredicateMethod:
+  Exclude:
+    - lib/pptx/oxml/**/*
+    - spec/**/*
+
+# `accent1`, `lvl1pPr`, `dk2` and `tx1` are schema names, not numbered
+# variables, and every one of them would have to be exempted individually.
+Naming/VariableNumber:
+  Enabled: false
+
+# `cx`, `cy`, `x`, `y`, `sz`, `r_id` are the OOXML attribute names.
+Naming/MethodParameterName:
+  MinNameLength: 1
+
+# `length * 2` scales by a factor; naming the argument `other` would suggest
+# multiplying two lengths, which is exactly what Length refuses to do.
+Naming/BinaryOperatorParameterName:
+  Exclude:
+    - lib/pptx/length.rb
+
+# --------------------------------------------------------------------------
+# House style
+# --------------------------------------------------------------------------
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+# EMU values run to eight digits and are far easier to check with separators.
+Style/NumericLiterals:
+  MinDigits: 6
+
+Layout/LineLength:
+  Max: 110
+
+# A class whose name and single public method say what it is does not need a
+# comment repeating them; the ones that need explaining have it.
+Style/Documentation:
+  Enabled: false
+
+# --------------------------------------------------------------------------
+# Metrics
+#
+# The content-model DSL and the chart XML writers are declarative: a long
+# method there is a long list, not tangled logic. Splitting them to satisfy a
+# line count would make them harder to check against the schema.
+# --------------------------------------------------------------------------
+Metrics/ClassLength:
+  Max: 250
+  Exclude:
+    - lib/pptx/oxml/**/*
+    - lib/pptx/chart/**/*
+
+Metrics/ModuleLength:
+  Max: 250
+  Exclude:
+    - lib/pptx/oxml/**/*
+    - lib/pptx/enum/**/*
+    - spec/**/*
+
+Metrics/MethodLength:
+  Max: 20
+  Exclude:
+    - spec/**/*
+    - lib/pptx/oxml/**/*
+    - lib/pptx/image.rb
+    - lib/pptx/chart/xml_writer.rb
+    - lib/pptx/chart/combo.rb
+
+# A spec that builds a fixture deck is a linear script; its branch count says
+# nothing about how hard it is to read.
+Metrics/AbcSize:
+  Max: 30
+  Exclude:
+    - spec/**/*
+    - lib/pptx/oxml/**/*
+    - lib/pptx/chart/xml_writer.rb
+    - lib/pptx/image.rb
+
+# Keyword arguments name themselves at the call site, so a long keyword list
+# is a menu of options rather than a row of unlabelled positions.
+Metrics/ParameterLists:
+  Max: 6
+  CountKeywordArgs: false
+  Exclude:
+    - lib/pptx/oxml/**/*
+
+# A binary-format parser is a flat sequence of cases dictated by the format.
+# Splitting one to reduce a branch count hides the structure it is following.
+Metrics/CyclomaticComplexity:
+  Max: 10
+  Exclude:
+    - lib/pptx/image.rb
+
+Metrics/PerceivedComplexity:
+  Max: 10
+  Exclude:
+    - lib/pptx/image.rb
+
+Metrics/BlockLength:
+  Exclude:
+    - spec/**/*
+    - lib/pptx/oxml/**/*
+    - lib/pptx/enum/**/*
+
+# Generated enum files define their members inside a block.
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - spec/**/*
+    - lib/pptx/enum/**/*
+
+Style/WordArray:
+  MinSize: 3
+
+# `format("%02X%02X%02X", r, g, b)` is clearer than naming each of three
+# identical hex fields.
+Style/FormatStringToken:
+  EnforcedStyle: unannotated

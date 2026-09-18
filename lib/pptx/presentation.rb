@@ -36,7 +36,7 @@ module Pptx
       end
 
       # A new presentation based on the built-in default template.
-      def new_default = open(nil)
+      def new_default = Presentation.open(nil)
 
       def default_template_path
         File.expand_path("templates/default.pptx", __dir__)
@@ -85,7 +85,6 @@ module Pptx
 
     def slide_width=(width)
       @element.get_or_add_sldSz.cx = width
-      width
     end
 
     # @return [Length, nil]
@@ -93,7 +92,6 @@ module Pptx
 
     def slide_height=(height)
       @element.get_or_add_sldSz.cy = height
-      height
     end
 
     # Write this presentation to a path or an IO stream.

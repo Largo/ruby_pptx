@@ -54,7 +54,7 @@ RSpec.describe "fitting text to a shape" do
     it "gives a space no ink but still advances the pen" do
       aggregate_failures do
         expect(metrics.text_extents(" ", 18)).to eq([0, 0])
-        expect(metrics.text_extents("a a", 18).first).to be > (metrics.text_extents("aa", 18).first)
+        expect(metrics.text_extents("a a", 18).first).to be > metrics.text_extents("aa", 18).first
       end
     end
 
@@ -166,10 +166,11 @@ RSpec.describe "fitting text to a shape" do
     end
 
     it "picks a smaller size for a smaller box" do
-      big = described_class.best_fit_font_size("Annual revenue report", extents: [Pptx.inches(8), Pptx.inches(3)],
-                                                                       max_size: 54, font_file: font)
-      small = described_class.best_fit_font_size("Annual revenue report", extents: [Pptx.inches(2), Pptx.inches(0.6)],
-                                                                         max_size: 54, font_file: font)
+      text = "Annual revenue report"
+      big = described_class.best_fit_font_size(text, max_size: 54, font_file: font,
+                                                     extents: [Pptx.inches(8), Pptx.inches(3)])
+      small = described_class.best_fit_font_size(text, max_size: 54, font_file: font,
+                                                       extents: [Pptx.inches(2), Pptx.inches(0.6)])
       expect(small).to be < big
     end
 
@@ -368,7 +369,7 @@ RSpec.describe "fitting text to a shape" do
     it "chooses exactly the same size in the large majority of cases" do
       cases = corpus_cases
       theirs = python_sizes(cases)
-      comparable = cases.zip(theirs).reject { |_, expected| expected.nil? }
+      comparable = cases.zip(theirs).compact
       exact = comparable.count do |(text, w, h, max_size), expected|
         Pptx::TextFitter.best_fit_font_size(text, extents: [w, h], max_size: max_size,
                                                   font_file: SANS) == expected

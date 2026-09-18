@@ -179,9 +179,9 @@ RSpec.describe Pptx::GroupShape do
 
   it "grows when a shape is added inside it" do
     group = slide.shapes.add_group_shape([box(2, 2)])
-    expect {
+    expect do
       group.shapes.add_shape(:oval, at: [0, 0], size: [Pptx.inches(1), Pptx.inches(1)])
-    }.to change { group.left }.from(Pptx.inches(2)).to(Pptx.emu(0))
+    end.to change { group.left }.from(Pptx.inches(2)).to(Pptx.emu(0))
   end
 
   it "keeps its child coordinate space in step with its extents" do

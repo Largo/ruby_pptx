@@ -28,7 +28,6 @@ module Pptx
 
       def text=(value)
         t.text = CT_RegularTextRun.escape_control_chars(value.to_s)
-        value
       end
 
       # XML 1.0 cannot carry most control characters, so PowerPoint writes
@@ -113,7 +112,7 @@ module Pptx
 
       def autofit=(value)
         remove_eg_textAutoFit
-        return value if value.nil?
+        return if value.nil?
 
         member = Enum::MSO_AUTO_SIZE.fetch(value)
         case member.name
@@ -123,7 +122,6 @@ module Pptx
         else
           raise ArgumentError, "#{member} cannot be assigned as an autofit setting"
         end
-        value
       end
     end
 
@@ -131,7 +129,7 @@ module Pptx
     class CT_TextNormalAutofit < Element
       tag "a:normAutofit"
       optional_attr "fontScale", type: SimpleTypes::ST_TextFontScalePercentOrPercentString,
-                    default: 100.0
+                                 default: 100.0
     end
 
     # `a:spcPct`, spacing as a multiple of line height.
@@ -193,11 +191,10 @@ module Pptx
 
       def line_spacing=(value)
         remove_lnSpc
-        return value if value.nil?
+        return if value.nil?
 
         spacing = get_or_add_lnSpc
         value.is_a?(Pptx::Length) ? spacing.set_spc_pts(value) : spacing.set_spc_pct(value)
-        value
       end
 
       def space_before = spcBef&.spcPts&.val
@@ -205,7 +202,6 @@ module Pptx
       def space_before=(value)
         remove_spcBef
         get_or_add_spcBef.set_spc_pts(value) unless value.nil?
-        value
       end
 
       def space_after = spcAft&.spcPts&.val
@@ -213,7 +209,6 @@ module Pptx
       def space_after=(value)
         remove_spcAft
         get_or_add_spcAft.set_spc_pts(value) unless value.nil?
-        value
       end
     end
 
@@ -228,7 +223,7 @@ module Pptx
       CONTENT_TAGS = %w[a:r a:br a:fld].freeze
 
       # A run is created with its required `a:t` already in place.
-      def new_r = build_from_xml(%(<a:r #{Ns.nsdecls('a')}><a:t/></a:r>))
+      def new_r = build_from_xml(%(<a:r #{Ns.nsdecls("a")}><a:t/></a:r>))
 
       def add_run(text = nil)
         run = add_r
@@ -278,7 +273,7 @@ module Pptx
 
         def txbody_xml
           <<~XML
-            <p:txBody #{Ns.nsdecls('a', 'p')}>
+            <p:txBody #{Ns.nsdecls("a", "p")}>
               <a:bodyPr/>
               <a:lstStyle/>
               <a:p/>

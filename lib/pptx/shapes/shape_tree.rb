@@ -54,7 +54,7 @@ module Pptx
     include Enumerable
 
     def initialize(sp_tree, parent)
-      super(sp_tree, parent)
+      super
       @sp_tree = sp_tree
     end
 
@@ -168,7 +168,6 @@ module Pptx
   # Adding to a group changes the group's extents, so every method here ends
   # by recalculating them. On a slide that is a no-op.
   class BaseGroupShapes < BaseShapes
-
     # Add an auto shape.
     #
     #   shapes.add_shape(:rounded_rectangle,
@@ -370,8 +369,8 @@ module Pptx
     # The loudspeaker still PowerPoint shows for a video with no poster frame.
     def default_poster_frame
       StringIO.new(File.binread(
-        File.expand_path("../templates/media-speaker.png", __dir__)
-      ))
+                     File.expand_path("../templates/media-speaker.png", __dir__)
+                   ))
     end
 
     # Play controls appear only for a movie listed in the slide's timing tree.
@@ -505,7 +504,7 @@ module Pptx
     include Enumerable
 
     def initialize(sp_tree, parent)
-      super(sp_tree, parent)
+      super
       @sp_tree = sp_tree
     end
 

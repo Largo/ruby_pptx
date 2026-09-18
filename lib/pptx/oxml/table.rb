@@ -54,8 +54,8 @@ module Pptx
       optional_attr "hMerge", type: SimpleTypes::XsdBoolean, default: false
       optional_attr "vMerge", type: SimpleTypes::XsdBoolean, default: false
 
-      CELL_XML = <<~XML
-        <a:tc #{Ns.nsdecls('a')}>
+      CELL_XML = <<~XML.freeze
+        <a:tc #{Ns.nsdecls("a")}>
           <a:txBody>
             <a:bodyPr/>
             <a:lstStyle/>
@@ -132,7 +132,7 @@ module Pptx
 
       def self.tbl_xml(table_style_id)
         <<~XML
-          <a:tbl #{Ns.nsdecls('a')}>
+          <a:tbl #{Ns.nsdecls("a")}>
             <a:tblPr firstRow="1" bandRow="1">
               <a:tableStyleId>#{table_style_id}</a:tableStyleId>
             </a:tblPr>

@@ -25,7 +25,6 @@ module Pptx
       @element.name = value
       @element.clrScheme.name = value
       @element.fontScheme.name = value
-      value
     end
 
     # @return [ThemeColors]
@@ -86,14 +85,12 @@ module Pptx
 
     def major=(value)
       @element.majorFont.typeface = value
-      value
     end
 
     def minor = @element.minorFont.typeface
 
     def minor=(value)
       @element.minorFont.typeface = value
-      value
     end
 
     def inspect = "#<Pptx::ThemeFonts major=#{major.inspect} minor=#{minor.inspect}>"

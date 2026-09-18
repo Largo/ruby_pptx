@@ -49,7 +49,6 @@ module Pptx
     def legend=(value)
       value ? chart_element.get_or_add_legend : chart_element.remove_legend
       @legend = nil
-      value
     end
 
     # @return [ChartLegend, nil] nil when the chart has no legend
@@ -70,7 +69,7 @@ module Pptx
     def title=(text)
       if text.nil?
         chart_element.remove_title
-        return nil
+        return
       end
 
       ChartTitle.new(ensure_title).text = text
@@ -122,10 +121,6 @@ module Pptx
         created
       end
     end
-
-    def chart_element = @element.chart
-
-    def plot_area = chart_element.plotArea
   end
 
   # One series as read back from a chart's cached XML.
@@ -236,7 +231,7 @@ module Pptx
     # The fragments are written for a document that already declares the chart
     # namespaces; parsed on their own they need their own declaration.
     def namespaced(fragment)
-      fragment.sub(/\A<(c:\w+)/, %(<\\1 #{Oxml::Ns.nsdecls('c', 'a', 'r')}))
+      fragment.sub(/\A<(c:\w+)/, %(<\\1 #{Oxml::Ns.nsdecls("c", "a", "r")}))
     end
   end
 end

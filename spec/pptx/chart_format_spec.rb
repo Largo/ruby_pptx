@@ -74,7 +74,7 @@ RSpec.describe "chart formatting" do
       chart.title = "Second"
       aggregate_failures do
         expect(chart.title.text).to eq("Second")
-        expect(chart.element.xml.scan(/<c:title>/).size).to eq(1)
+        expect(chart.element.xml.scan("<c:title>").size).to eq(1)
       end
     end
 
@@ -180,10 +180,10 @@ RSpec.describe "chart formatting" do
       axis = chart.value_axis
       axis.title = "Millions"
       aggregate_failures do
-        expect(axis.has_title?).to be(true)
+        expect(axis.title?).to be(true)
         expect(axis.title.text).to eq("Millions")
         axis.title = nil
-        expect(axis.has_title?).to be(false)
+        expect(axis.title?).to be(false)
       end
     end
   end
@@ -324,7 +324,7 @@ RSpec.describe "chart formatting" do
           prs = Pptx::Presentation.new_default
           slide = prs.slides.add(prs.slide_layouts[6])
           data = Pptx::ChartData.new
-          data.categories = ["East", "West", "Mid"]
+          data.categories = %w[East West Mid]
           data.add_series("Q1", [1, 2, 3])
           data.add_series("Q2", [4, 5, 6])
           chart = slide.shapes.add_chart(:column_clustered, data,

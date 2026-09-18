@@ -50,7 +50,7 @@ module Pptx
 
           def validate_float_in_range(value, min_inclusive, max_inclusive)
             validate_float(value)
-            return if value >= min_inclusive && value <= max_inclusive
+            return if value.between?(min_inclusive, max_inclusive)
 
             raise RangeError,
                   "value must be in range #{min_inclusive} to #{max_inclusive} inclusive, " \
@@ -59,7 +59,7 @@ module Pptx
 
           def validate_int_in_range(value, min_inclusive, max_inclusive)
             validate_int(value)
-            return if value >= min_inclusive && value <= max_inclusive
+            return if value.between?(min_inclusive, max_inclusive)
 
             raise RangeError,
                   "value must be in range #{min_inclusive} to #{max_inclusive} inclusive, " \
@@ -197,7 +197,7 @@ module Pptx
           # Normalized to a positive value; the modulo absorbs negative and
           # greater-than-360 inputs.
           def convert_to_xml(value)
-            ((round_half_even(value * DEGREE_INCREMENTS)) % THREE_SIXTY).to_s
+            (round_half_even(value * DEGREE_INCREMENTS) % THREE_SIXTY).to_s
           end
 
           def validate(value) = BaseFloatType.validate(value)
@@ -307,9 +307,9 @@ module Pptx
             unless str_value.length == 6
               raise ArgumentError, "RGB string must be six characters long, got #{str_value.inspect}"
             end
-            unless str_value.match?(/\A\h{6}\z/)
-              raise ArgumentError, "RGB string must be a valid hex string, got #{str_value.inspect}"
-            end
+            return if str_value.match?(/\A\h{6}\z/)
+
+            raise ArgumentError, "RGB string must be a valid hex string, got #{str_value.inspect}"
           end
         end
       end
@@ -336,7 +336,7 @@ module Pptx
 
           def validate(value)
             super
-            return if value >= 0 && value <= 20_116_800
+            return if value.between?(0, 20_116_800)
 
             raise RangeError,
                   "value must be in range 0-20116800 inclusive (0-1584 points), got #{value}"
@@ -424,11 +424,11 @@ module Pptx
       # value is rejected rather than written through.
       class ST_SlideLayoutType < XsdString
         VALUES = %w[
-        title tx twoColTx tbl txAndChart chartAndTx dgm chart txAndClipArt clipArtAndTx
-        titleOnly blank txAndObj objAndTx objOnly obj txAndMedia mediaAndTx objOverTx txOverObj
-        txAndTwoObj twoObjAndTx twoObjOverTx fourObj vertTx clipArtAndVertTx vertTitleAndTx
-        vertTitleAndTxOverChart twoObj objAndTwoObj twoObjAndObj cust secHead twoTxTwoObj objTx
-        picTx
+          title tx twoColTx tbl txAndChart chartAndTx dgm chart txAndClipArt clipArtAndTx
+          titleOnly blank txAndObj objAndTx objOnly obj txAndMedia mediaAndTx objOverTx txOverObj
+          txAndTwoObj twoObjAndTx twoObjOverTx fourObj vertTx clipArtAndVertTx vertTitleAndTx
+          vertTitleAndTxOverChart twoObj objAndTwoObj twoObjAndObj cust secHead twoTxTwoObj objTx
+          picTx
         ].freeze
 
         def self.validate(value)
@@ -454,7 +454,7 @@ module Pptx
 
           def validate(value)
             validate_int(value)
-            return if value >= 914_400 && value <= 51_206_400
+            return if value.between?(914_400, 51_206_400)
 
             raise RangeError,
                   "value must be in range 914400 to 51206400 (1-56 inches), got #{value}"
@@ -492,7 +492,7 @@ module Pptx
 
           def validate(value)
             BaseFloatType.validate(value)
-            return if value >= 1.0 && value <= 100.0
+            return if value.between?(1.0, 100.0)
 
             raise RangeError, "value must be in range 1.0..100.0 (percent), got #{value}"
           end

@@ -18,6 +18,7 @@ module Pptx
     # `p:pic`, a picture (or a movie, which is a picture with media relations).
     class CT_Picture < Element
       include BaseShapeElement
+
       tag "p:pic"
       one_and_only_one "p:nvPicPr"
       one_and_only_one "p:blipFill"
@@ -32,7 +33,7 @@ module Pptx
       # A `p:pic` displaying the image related by +r_id+.
       def self.new_pic(id, name, desc, r_id, x, y, cx, cy)
         Element.parse(<<~XML)
-          <p:pic #{Ns.nsdecls('a', 'p', 'r')}>
+          <p:pic #{Ns.nsdecls("a", "p", "r")}>
             <p:nvPicPr>
               <p:cNvPr id="#{id}" name="#{escape(name)}" descr="#{escape(desc)}"/>
               <p:cNvPicPr>
@@ -67,7 +68,7 @@ module Pptx
       # which is the still PowerPoint shows before the video plays.
       def self.new_video_pic(id, name, video_r_id, media_r_id, poster_r_id, x, y, cx, cy)
         Element.parse(<<~XML)
-          <p:pic #{Ns.nsdecls('a', 'p', 'r')}>
+          <p:pic #{Ns.nsdecls("a", "p", "r")}>
             <p:nvPicPr>
               <p:cNvPr id="#{id}" name="#{escape(name)}">
                 <a:hlinkClick r:id="" action="ppaction://media"/>
@@ -79,7 +80,7 @@ module Pptx
                 <a:videoFile r:link="#{video_r_id}"/>
                 <p:extLst>
                   <p:ext uri="{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}">
-                    <p14:media #{Ns.nsdecls('p14')} r:embed="#{media_r_id}"/>
+                    <p14:media #{Ns.nsdecls("p14")} r:embed="#{media_r_id}"/>
                   </p:ext>
                 </p:extLst>
               </p:nvPr>
@@ -134,6 +135,7 @@ module Pptx
     # `p:cxnSp`, a connector.
     class CT_Connector < Element
       include BaseShapeElement
+
       tag "p:cxnSp"
       one_and_only_one "p:nvCxnSpPr"
       one_and_only_one "p:spPr"
@@ -147,7 +149,7 @@ module Pptx
         flip << %( flipV="1") if flip_v
 
         Element.parse(<<~XML)
-          <p:cxnSp #{Ns.nsdecls('a', 'p')}>
+          <p:cxnSp #{Ns.nsdecls("a", "p")}>
             <p:nvCxnSpPr>
               <p:cNvPr id="#{id}" name="#{CT_Picture.escape(name)}"/>
               <p:cNvCxnSpPr/>
@@ -184,6 +186,7 @@ module Pptx
     # `p:graphicFrame`, the container for a table, chart or embedded object.
     class CT_GraphicalObjectFrame < Element
       include BaseShapeElement
+
       tag "p:graphicFrame"
       one_and_only_one "p:nvGraphicFramePr"
       one_and_only_one "p:xfrm"
@@ -215,7 +218,7 @@ module Pptx
         # object such as a table is placed inside it.
         def new_graphic_frame(id, name, x, y, cx, cy)
           Element.parse(<<~XML)
-            <p:graphicFrame #{Ns.nsdecls('a', 'p')}>
+            <p:graphicFrame #{Ns.nsdecls("a", "p")}>
               <p:nvGraphicFramePr>
                 <p:cNvPr id="#{id}" name="#{CT_Picture.escape(name)}"/>
                 <p:cNvGraphicFramePr>
@@ -259,6 +262,7 @@ module Pptx
     # `p:contentPart`, which this library carries through without modelling.
     class CT_ContentPart < Element
       include BaseShapeElement
+
       tag "p:contentPart"
     end
   end

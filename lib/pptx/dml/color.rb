@@ -91,7 +91,6 @@ module Pptx
       raise TypeError, "expected an RGBColor, got #{value.class}" unless value.is_a?(RGBColor)
 
       @parent.get_or_change_to_srgbClr.val = value.to_s
-      value
     end
 
     # @return [Pptx::Enum::MSO_THEME_COLOR, nil] nil unless a theme colour is set
@@ -104,7 +103,6 @@ module Pptx
 
     def theme_color=(value)
       @parent.get_or_change_to_schemeClr.val = Enum::MSO_THEME_COLOR.fetch(value)
-      value
     end
 
     # A luminance adjustment between -1.0 and 1.0: negative is darker (a
@@ -128,9 +126,7 @@ module Pptx
       end
 
       element = color_element
-      if element.nil?
-        raise Error, "cannot set brightness before a colour; set rgb or theme_color first"
-      end
+      raise Error, "cannot set brightness before a colour; set rgb or theme_color first" if element.nil?
 
       element.clear_lum
       if value.positive?
@@ -139,7 +135,6 @@ module Pptx
       elsif value.negative?
         element.add_lumMod(1.0 + value)
       end
-      value
     end
 
     def inspect = "#<Pptx::ColorFormat type=#{type&.name.inspect} rgb=#{rgb&.to_s.inspect}>"

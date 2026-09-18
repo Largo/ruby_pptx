@@ -42,7 +42,7 @@ RSpec.describe Pptx::Oxml::Ns do
 
   describe ".clark_name_of" do
     it "derives the registry key from a parsed node" do
-      xml = %(<p:cSld #{described_class.nsdecls('p')}/>)
+      xml = %(<p:cSld #{described_class.nsdecls("p")}/>)
       node = Nokogiri::XML(xml).root
       expect(described_class.clark_name_of(node)).to eq("{#{p_uri}}cSld")
     end

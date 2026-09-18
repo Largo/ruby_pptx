@@ -32,7 +32,7 @@ module Pptx
       def get_or_add_section_list
         section_list || begin
           ext = get_or_add_extLst.add_ext(uri: SECTION_LIST_EXT_URI)
-          ext.append(ext.build_from_xml(%(<p14:sectionLst #{Ns.nsdecls('p14')}/>)))
+          ext.append(ext.build_from_xml(%(<p14:sectionLst #{Ns.nsdecls("p14")}/>)))
           section_list
         end
       end
@@ -74,7 +74,7 @@ module Pptx
         simple_next = ([MIN_SLIDE_ID - 1] + used).max + 1
         return simple_next if simple_next <= MAX_SLIDE_ID
 
-        valid = used.select { |id| id.between?(MIN_SLIDE_ID, MAX_SLIDE_ID) }.sort
+        valid = used.grep(MIN_SLIDE_ID..MAX_SLIDE_ID).sort
         return MIN_SLIDE_ID if valid.empty?
 
         valid.each_with_index do |used_id, i|

@@ -94,7 +94,7 @@ RSpec.describe Pptx::SlideShapes do
       master = slide.layout.slide_master
       aggregate_failures do
         expect(master.shapes.size).to be > 0
-        expect(master.placeholders.map { |ph| ph.class }).to all(eq(Pptx::MasterPlaceholder))
+        expect(master.placeholders.map(&:class)).to all(eq(Pptx::MasterPlaceholder))
         expect(master.placeholders.by_type(Pptx::Enum::PP_PLACEHOLDER::TITLE)).not_to be_nil
       end
     end
@@ -161,7 +161,8 @@ RSpec.describe Pptx::SlideShapes do
     subject(:shapes) { presentation.slides.add(presentation.slide_layouts["Blank"]).shapes }
 
     it "adds an auto shape named after its type" do
-      shape = shapes.add_shape(Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE, at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(2), Pptx.inches(1)])
+      shape = shapes.add_shape(Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE,
+                               at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(2), Pptx.inches(1)])
       aggregate_failures do
         expect(shape.name).to eq("Rounded Rectangle 1")
         expect(shape.shape_type).to eq(Pptx::Enum::MSO_SHAPE_TYPE::AUTO_SHAPE)
@@ -251,9 +252,12 @@ RSpec.describe Pptx::SlideShapes do
         ruby: lambda { |path|
           prs = Pptx::Presentation.new_default
           slide = prs.slides.add(prs.slide_layouts[6])
-          slide.shapes.add_shape(Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE, at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(2), Pptx.inches(1)])
-          slide.shapes.add_shape(Pptx::Enum::MSO_SHAPE::CHEVRON, at: [Pptx.inches(1), Pptx.inches(2)], size: [Pptx.inches(2), Pptx.inches(1)])
-          slide.shapes.add_textbox(at: [Pptx.inches(1), Pptx.inches(3)], size: [Pptx.inches(4), Pptx.inches(1)])
+          slide.shapes.add_shape(Pptx::Enum::MSO_SHAPE::ROUNDED_RECTANGLE,
+                                 at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(2), Pptx.inches(1)])
+          slide.shapes.add_shape(Pptx::Enum::MSO_SHAPE::CHEVRON, at: [Pptx.inches(1), Pptx.inches(2)],
+                                                                 size: [Pptx.inches(2), Pptx.inches(1)])
+          slide.shapes.add_textbox(at: [Pptx.inches(1), Pptx.inches(3)],
+                                   size: [Pptx.inches(4), Pptx.inches(1)])
           prs.save(path)
         }
       )

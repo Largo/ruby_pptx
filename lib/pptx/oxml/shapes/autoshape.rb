@@ -115,6 +115,7 @@ module Pptx
     # `p:sp`, an auto shape, text box, placeholder or freeform.
     class CT_Shape < Element
       include BaseShapeElement
+
       tag "p:sp"
       one_and_only_one "p:nvSpPr"
       one_and_only_one "p:spPr"
@@ -134,7 +135,7 @@ module Pptx
         # inherits both from the corresponding placeholder on its layout.
         def new_placeholder_sp(id, name, ph_type, orient, sz, idx)
           sp = Element.parse(<<~XML)
-            <p:sp #{Ns.nsdecls('a', 'p')}>
+            <p:sp #{Ns.nsdecls("a", "p")}>
               <p:nvSpPr>
                 <p:cNvPr id="#{id}" name="#{escape(name)}"/>
                 <p:cNvSpPr>
@@ -153,14 +154,14 @@ module Pptx
           ph.sz = sz
 
           sp.append(CT_TextBody.new_element(sp)) if TEXTUAL_PLACEHOLDERS.include?(ph_type)
-          
+
           sp
         end
 
         # A `p:sp` configured as an auto shape with preset geometry.
         def new_autoshape_sp(id, name, prst, x, y, cx, cy)
           Element.parse(<<~XML)
-            <p:sp #{Ns.nsdecls('a', 'p')}>
+            <p:sp #{Ns.nsdecls("a", "p")}>
               <p:nvSpPr>
                 <p:cNvPr id="#{id}" name="#{escape(name)}"/>
                 <p:cNvSpPr/>
@@ -191,7 +192,7 @@ module Pptx
         # path list, ready for contours to be added.
         def new_freeform_sp(id, name, x, y, cx, cy)
           Element.parse(<<~XML)
-            <p:sp #{Ns.nsdecls('a', 'p')}>
+            <p:sp #{Ns.nsdecls("a", "p")}>
               <p:nvSpPr>
                 <p:cNvPr id="#{id}" name="#{escape(name)}"/>
                 <p:cNvSpPr/>
@@ -226,7 +227,7 @@ module Pptx
         # A `p:sp` configured as a text box.
         def new_textbox_sp(id, name, x, y, cx, cy)
           Element.parse(<<~XML)
-            <p:sp #{Ns.nsdecls('a', 'p')}>
+            <p:sp #{Ns.nsdecls("a", "p")}>
               <p:nvSpPr>
                 <p:cNvPr id="#{id}" name="#{escape(name)}"/>
                 <p:cNvSpPr txBox="1"/>
@@ -305,6 +306,5 @@ module Pptx
       # An auto shape has preset geometry and is not a text box.
       def autoshape? = !prstGeom.nil? && nvSpPr.cNvSpPr.txBox != true
     end
-
   end
 end

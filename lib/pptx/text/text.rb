@@ -18,14 +18,12 @@ module Pptx
   #   frame.text = "First line\nSecond line"
   #   frame.paragraphs.first.runs.first.font.bold = true
   class TextFrame
-    attr_reader :parent
+    attr_reader :parent, :element
 
     def initialize(tx_body, parent)
       @element = tx_body
       @parent = parent
     end
-
-    attr_reader :element
 
     def part = @parent.part
 
@@ -49,7 +47,6 @@ module Pptx
         @element.add_p.append_text(paragraph_text)
       end
       @element.unclear_content
-      value
     end
 
     # Remove all text, leaving a single empty paragraph.
@@ -63,28 +60,24 @@ module Pptx
 
     def margin_left=(value)
       body_properties.lIns = value
-      value
     end
 
     def margin_right = body_properties.rIns
 
     def margin_right=(value)
       body_properties.rIns = value
-      value
     end
 
     def margin_top = body_properties.tIns
 
     def margin_top=(value)
       body_properties.tIns = value
-      value
     end
 
     def margin_bottom = body_properties.bIns
 
     def margin_bottom=(value)
       body_properties.bIns = value
-      value
     end
 
     # @return [Pptx::Enum::MSO_ANCHOR, nil] nil when inherited
@@ -92,7 +85,6 @@ module Pptx
 
     def vertical_anchor=(value)
       body_properties.anchor = value
-      value
     end
 
     # @return [Pptx::Enum::MSO_AUTO_SIZE, nil] nil when inherited
@@ -100,7 +92,6 @@ module Pptx
 
     def auto_size=(value)
       body_properties.autofit = value
-      value
     end
 
     # True, false, or nil when the setting is inherited.
@@ -121,7 +112,6 @@ module Pptx
         when true then Oxml::SimpleTypes::ST_TextWrappingType::SQUARE
         when false then Oxml::SimpleTypes::ST_TextWrappingType::NONE
         end
-      value
     end
 
     # Shrink the text until it fits the shape, and apply that size to all of it.
@@ -165,8 +155,8 @@ module Pptx
     def apply_fit(family, size, bold, italic)
       self.auto_size = Enum::MSO_AUTO_SIZE::NONE
       self.word_wrap = true
-      each_character_properties do |rPr|
-        font = Font.new(rPr)
+      each_character_properties do |properties|
+        font = Font.new(properties)
         font.name = family
         font.size = Pptx.pt(size)
         font.bold = bold
@@ -214,7 +204,6 @@ module Pptx
     def text=(value)
       clear
       @element.append_text(value)
-      value
     end
 
     # Remove the content, keeping the paragraph and its properties.
@@ -228,7 +217,6 @@ module Pptx
 
     def alignment=(value)
       paragraph_properties.algn = value
-      value
     end
 
     # Outline level, 0 for the top level.
@@ -236,7 +224,6 @@ module Pptx
 
     def level=(value)
       paragraph_properties.lvl = value
-      value
     end
 
     # A Float is a number of lines; a {Pptx::Length} is a fixed distance.
@@ -244,21 +231,18 @@ module Pptx
 
     def line_spacing=(value)
       paragraph_properties.line_spacing = value
-      value
     end
 
     def space_before = paragraph_properties.space_before
 
     def space_before=(value)
       paragraph_properties.space_before = value
-      value
     end
 
     def space_after = paragraph_properties.space_after
 
     def space_after=(value)
       paragraph_properties.space_after = value
-      value
     end
 
     # The default character formatting for runs in this paragraph.
@@ -286,7 +270,6 @@ module Pptx
 
     def text=(value)
       @element.text = value
-      value
     end
 
     def font = Font.new(@element.get_or_add_rPr)
@@ -299,7 +282,6 @@ module Pptx
 
     def hyperlink=(url)
       click_action.address = url
-      url
     end
 
     def inspect = "#<Pptx::Run #{text.inspect}>"
@@ -321,14 +303,12 @@ module Pptx
 
     def bold=(value)
       @element.b = value
-      value
     end
 
     def italic = @element.i
 
     def italic=(value)
       @element.i = value
-      value
     end
 
     # The typeface name, or nil when inherited from the theme.
@@ -340,7 +320,6 @@ module Pptx
       else
         @element.get_or_add_latin.typeface = value
       end
-      value
     end
 
     # @return [Pptx::Length, nil]
@@ -351,7 +330,6 @@ module Pptx
 
     def size=(value)
       @element.sz = value.nil? ? nil : Pptx::Length.coerce(value).centipoints
-      value
     end
 
     # true for a single underline, false for none, a
@@ -373,7 +351,6 @@ module Pptx
         when false then Enum::MSO_UNDERLINE::NONE
         else value
         end
-      value
     end
 
     # @return [Pptx::Enum::MSO_LANGUAGE_ID, nil]
@@ -381,7 +358,6 @@ module Pptx
 
     def language=(value)
       @element.lang = value
-      value
     end
 
     # The fill of the text itself.

@@ -52,9 +52,7 @@ module Pptx
       def require_oracle!(what = "python-pptx", available: Differential.oracle_available?)
         return if available
 
-        if ENV["REQUIRE_ORACLE"]
-          raise "#{what} is not importable and REQUIRE_ORACLE is set"
-        end
+        raise "#{what} is not importable and REQUIRE_ORACLE is set" if ENV["REQUIRE_ORACLE"]
 
         skip "#{what} not importable"
       end
@@ -68,7 +66,7 @@ module Pptx
         raise "oracle failed (#{status.exitstatus}): #{err}" if out.empty?
 
         result = JSON.parse(out)
-        raise "python-pptx raised: #{result['error']}" unless result["ok"]
+        raise "python-pptx raised: #{result["error"]}" unless result["ok"]
 
         result
       end
@@ -107,7 +105,7 @@ module Pptx
       def canonicalize(name, data)
         return { "kind" => "binary", "sha" => Digest::SHA256.hexdigest(data) } unless xml?(name)
 
-        doc = Nokogiri::XML(data) { |cfg| cfg.noblanks }
+        doc = Nokogiri::XML(data, &:noblanks)
         if doc.errors.any?
           return { "kind" => "malformed", "error" => doc.errors.first.to_s,
                    "raw" => [data].pack("m0") }
@@ -162,10 +160,10 @@ module Pptx
           part #{name} differs from python-pptx
 
           --- python-pptx
-          #{(expected && (expected['c14n'] || expected['sha'])).to_s.lines.first(40).join}
+          #{(expected && (expected["c14n"] || expected["sha"])).to_s.lines.first(40).join}
 
           --- ruby_pptx
-          #{(actual && (actual['c14n'] || actual['sha'])).to_s.lines.first(40).join}
+          #{(actual && (actual["c14n"] || actual["sha"])).to_s.lines.first(40).join}
         MSG
       end
     end

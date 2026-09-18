@@ -56,7 +56,7 @@ module Pptx
 
       def add_no_fill_bgPr
         bgPr = build_from_xml(
-          %(<p:bgPr #{Ns.nsdecls('a', 'p')}><a:noFill/><a:effectLst/></p:bgPr>)
+          %(<p:bgPr #{Ns.nsdecls("a", "p")}><a:noFill/><a:effectLst/></p:bgPr>)
         )
         insert_bgPr(bgPr)
         bgPr
@@ -76,6 +76,7 @@ module Pptx
     # `p:sld`, the root of a slide part.
     class CT_Slide < Element
       include BaseSlideElement
+
       tag "p:sld"
       one_and_only_one "p:cSld"
       zero_or_one "p:clrMapOvr", successors: %w[p:transition p:timing p:extLst]
@@ -103,8 +104,8 @@ module Pptx
         timing.xpath("./p:tnLst/p:par/p:cTn/p:childTnLst").first
       end
 
-      TIMING_XML = <<~XML
-        <p:timing #{Ns.nsdecls('p')}>
+      TIMING_XML = <<~XML.freeze
+        <p:timing #{Ns.nsdecls("p")}>
           <p:tnLst>
             <p:par>
               <p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot">
@@ -115,8 +116,8 @@ module Pptx
         </p:timing>
       XML
 
-      SLD_XML = <<~XML
-        <p:sld #{Ns.nsdecls('a', 'p', 'r')}>
+      SLD_XML = <<~XML.freeze
+        <p:sld #{Ns.nsdecls("a", "p", "r")}>
           <p:cSld>
             <p:spTree>
               <p:nvGrpSpPr>
@@ -137,6 +138,7 @@ module Pptx
     # `p:sldLayout`, the root of a slide-layout part.
     class CT_SlideLayout < Element
       include BaseSlideElement
+
       tag "p:sldLayout"
       one_and_only_one "p:cSld"
       zero_or_one "p:clrMapOvr", successors: %w[p:transition p:timing p:hf p:extLst]
@@ -153,8 +155,8 @@ module Pptx
         layout
       end
 
-      SLD_LAYOUT_XML = <<~XML
-        <p:sldLayout #{Ns.nsdecls('a', 'p', 'r')} preserve="1">
+      SLD_LAYOUT_XML = <<~XML.freeze
+        <p:sldLayout #{Ns.nsdecls("a", "p", "r")} preserve="1">
           <p:cSld>
             <p:spTree>
               <p:nvGrpSpPr>
@@ -175,6 +177,7 @@ module Pptx
     # `p:sldMaster`, the root of a slide-master part.
     class CT_SlideMaster < Element
       include BaseSlideElement
+
       tag "p:sldMaster"
       one_and_only_one "p:cSld"
       one_and_only_one "p:clrMap"
@@ -221,6 +224,7 @@ module Pptx
     # `p:notesMaster`, the root of the notes-master part.
     class CT_NotesMaster < Element
       include BaseSlideElement
+
       tag "p:notesMaster"
       one_and_only_one "p:cSld"
 
@@ -233,6 +237,7 @@ module Pptx
     # master once the shape layer exists.
     class CT_NotesSlide < Element
       include BaseSlideElement
+
       tag "p:notes"
       one_and_only_one "p:cSld"
 
@@ -253,7 +258,7 @@ module Pptx
       # appear.
       def add_video(shape_id)
         append(build_from_xml(<<~XML))
-          <p:video #{Ns.nsdecls('p')}>
+          <p:video #{Ns.nsdecls("p")}>
             <p:cMediaNode vol="80000">
               <p:cTn id="#{next_time_node_id}" fill="hold" display="0">
                 <p:stCondLst>

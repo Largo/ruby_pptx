@@ -92,8 +92,10 @@ RSpec.describe "movies" do
       aggregate_failures do
         expect(reltypes).to include(Pptx::Opc::RELATIONSHIP_TYPE::MEDIA)
         expect(reltypes).to include(Pptx::Opc::RELATIONSHIP_TYPE::VIDEO)
-        media = slide.part.rels.select { |r| [Pptx::Opc::RELATIONSHIP_TYPE::MEDIA,
-                                              Pptx::Opc::RELATIONSHIP_TYPE::VIDEO].include?(r.reltype) }
+        media = slide.part.rels.select do |r|
+          [Pptx::Opc::RELATIONSHIP_TYPE::MEDIA,
+           Pptx::Opc::RELATIONSHIP_TYPE::VIDEO].include?(r.reltype)
+        end
         expect(media.map(&:target_part).uniq.size).to eq(1)
       end
     end
@@ -101,7 +103,7 @@ RSpec.describe "movies" do
     it "writes the legacy link, the modern embed and the click action" do
       xml = movie.element.xml.gsub(/\s+/, " ")
       aggregate_failures do
-        expect(xml).to match(/<a:videoFile r:link="rId\d+"\/>/)
+        expect(xml).to match(%r{<a:videoFile r:link="rId\d+"/>})
         expect(xml).to include('<p:ext uri="{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}">')
         expect(xml).to match(/<p14:media[^>]*r:embed="rId\d+"/)
         expect(xml).to include('action="ppaction://media"')

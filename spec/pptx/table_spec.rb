@@ -159,7 +159,8 @@ RSpec.describe Pptx::Picture do
   end
 
   it "stretches to fit when both dimensions are given" do
-    pic = slide.shapes.add_picture(image("png-96dpi.png"), at: [0, 0], width: Pptx.inches(5), height: Pptx.inches(1))
+    pic = slide.shapes.add_picture(image("png-96dpi.png"), at: [0, 0], width: Pptx.inches(5),
+                                                           height: Pptx.inches(1))
     aggregate_failures do
       expect(pic.width).to eq(Pptx.inches(5))
       expect(pic.height).to eq(Pptx.inches(1))

@@ -82,6 +82,7 @@ module Pptx
     # Reads a package that has been unzipped into a directory.
     class DirectoryReader < PhysicalReader
       def initialize(path)
+        super()
         @path = File.expand_path(path)
       end
 
@@ -110,6 +111,7 @@ module Pptx
     # Reads a zip-format package, given a path or an IO stream.
     class ZipReader < PhysicalReader
       def initialize(pkg_file)
+        super()
         @pkg_file = pkg_file
       end
 
@@ -137,12 +139,12 @@ module Pptx
         end
       end
 
-      def open_zip(&block)
+      def open_zip(&)
         if @pkg_file.is_a?(String)
-          Zip::File.open(@pkg_file, &block)
+          Zip::File.open(@pkg_file, &)
         else
           @pkg_file.rewind if @pkg_file.respond_to?(:rewind)
-          Zip::File.open_buffer(@pkg_file, &block)
+          Zip::File.open_buffer(@pkg_file, &)
         end
       rescue Zip::Error => e
         raise PackageNotFoundError, "not a readable OPC package: #{e.message}"
@@ -151,8 +153,8 @@ module Pptx
 
     # Writes a zip-format package to a path or an IO stream.
     class PhysicalWriter
-      def self.open(pkg_file, &block)
-        ZipWriter.open(pkg_file, &block)
+      def self.open(pkg_file, &)
+        ZipWriter.open(pkg_file, &)
       end
     end
 
@@ -168,6 +170,7 @@ module Pptx
       end
 
       def initialize(zip_output_stream)
+        super()
         @zos = zip_output_stream
       end
 

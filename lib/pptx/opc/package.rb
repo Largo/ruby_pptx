@@ -209,9 +209,7 @@ module Pptx
       end
 
       def partname=(partname)
-        unless partname.is_a?(PackURI)
-          raise TypeError, "partname must be a PackURI, got #{partname.class}"
-        end
+        raise TypeError, "partname must be a PackURI, got #{partname.class}" unless partname.is_a?(PackURI)
 
         @partname = partname
       end
@@ -358,9 +356,7 @@ module Pptx
         matches = select { |rel| rel.reltype == reltype }
         raise NotFoundError, "no relationship of type #{reltype.inspect}" if matches.empty?
 
-        if matches.size > 1
-          raise Error, "multiple relationships of type #{reltype.inspect} in collection"
-        end
+        raise Error, "multiple relationships of type #{reltype.inspect} in collection" if matches.size > 1
 
         matches.first.target_part
       end
@@ -419,10 +415,13 @@ module Pptx
       def add(reltype, target, external: false)
         r_id = next_r_id
         @rels[r_id] = Relationship.new(
-          @base_uri, r_id, reltype, external ? RELATIONSHIP_TARGET_MODE::EXTERNAL
-                                             : RELATIONSHIP_TARGET_MODE::INTERNAL, target
+          @base_uri, r_id, reltype, target_mode(external), target
         )
         r_id
+      end
+
+      def target_mode(external)
+        external ? RELATIONSHIP_TARGET_MODE::EXTERNAL : RELATIONSHIP_TARGET_MODE::INTERNAL
       end
 
       # The first unused rId from "rId1", filling any gap in the numbering.

@@ -39,7 +39,7 @@ RSpec.describe Pptx::Enum do
 
         ours = Pptx::Enum.const_get(enum_name)
         canonical = Pptx::Enum.const_get(spec["canonical"])
-        "#{enum_name} should alias #{spec['canonical']}" unless ours.equal?(canonical)
+        "#{enum_name} should alias #{spec["canonical"]}" unless ours.equal?(canonical)
       end
 
       expect(mismatches).to be_empty
@@ -54,7 +54,9 @@ RSpec.describe Pptx::Enum do
           next if m["xml"].nil?
 
           actual = enum.to_xml(enum[m["name"].to_sym])
-          "#{enum_name}.#{m['name']}.to_xml => #{actual.inspect}, want #{m['xml'].inspect}" unless actual == m["xml"]
+          unless actual == m["xml"]
+            "#{enum_name}.#{m["name"]}.to_xml => #{actual.inspect}, want #{m["xml"].inspect}"
+          end
         end
       end
 
@@ -71,7 +73,9 @@ RSpec.describe Pptx::Enum do
         enum = Pptx::Enum.const_get(enum_name)
         spec["from_xml"].filter_map do |xml_value, member_name|
           actual = enum.from_xml(xml_value).name.to_s
-          "#{enum_name}.from_xml(#{xml_value.inspect}) => #{actual}, want #{member_name}" unless actual == member_name
+          unless actual == member_name
+            "#{enum_name}.from_xml(#{xml_value.inspect}) => #{actual}, want #{member_name}"
+          end
         end
       end
 
@@ -88,14 +92,14 @@ RSpec.describe Pptx::Enum do
   def compare_members(enum, enum_name, members)
     members.filter_map do |m|
       ours = enum[m["name"].to_sym]
-      next "#{enum_name}.#{m['name']}: missing" if ours.nil?
-      next "#{enum_name}.#{m['name']}: value #{ours.value} != #{m['value']}" if ours.value != m["value"]
+      next "#{enum_name}.#{m["name"]}: missing" if ours.nil?
+      next "#{enum_name}.#{m["name"]}: value #{ours.value} != #{m["value"]}" if ours.value != m["value"]
 
       expected_xml = m["xml"]
       actual_xml = ours.xml_value? ? ours.xml_value : nil
       next if actual_xml == expected_xml
 
-      "#{enum_name}.#{m['name']}: xml #{actual_xml.inspect} != #{expected_xml.inspect}"
+      "#{enum_name}.#{m["name"]}: xml #{actual_xml.inspect} != #{expected_xml.inspect}"
     end
   end
 

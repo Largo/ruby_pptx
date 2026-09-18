@@ -164,7 +164,7 @@ module Pptx
       missing = %w[head maxp hhea hmtx cmap] - @tables.keys
       return if missing.empty?
 
-      raise Error, "#{@path} is missing required font tables: #{missing.join(', ')}"
+      raise Error, "#{@path} is missing required font tables: #{missing.join(", ")}"
     end
 
     # A Unicode BMP subtable is enough: presentation text outside the BMP falls

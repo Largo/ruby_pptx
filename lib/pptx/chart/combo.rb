@@ -18,7 +18,7 @@ module Pptx
   # each plot names the ones it draws.
   class ComboChartBuilder
     # What a plot draws and how.
-    PlotSpec = Struct.new(:chart_type, :series, :secondary_axis, keyword_init: true)
+    PlotSpec = Struct.new(:chart_type, :series, :secondary_axis)
 
     # The families that can share a category axis. A pie or a scatter cannot,
     # so they are not combinable.
@@ -57,9 +57,7 @@ module Pptx
 
       drawn = @specs.flat_map(&:series)
       duplicated = drawn.map(&:index).tally.select { |_, count| count > 1 }.keys
-      unless duplicated.empty?
-        raise Error, "series #{duplicated.inspect} appear in more than one plot"
-      end
+      raise Error, "series #{duplicated.inspect} appear in more than one plot" unless duplicated.empty?
 
       self
     end
@@ -164,7 +162,8 @@ module Pptx
     def plot_tail(family, spec)
       case family
       when :bar
-        ChartXmlWriter::BarChartWriter::STACKED_TYPES.include?(spec.chart_type.name) ? %(<c:overlap val="100"/>\n) : ""
+        stacked = ChartXmlWriter::BarChartWriter::STACKED_TYPES.include?(spec.chart_type.name)
+        stacked ? %(<c:overlap val="100"/>\n) : ""
       when :line
         %(<c:marker val="1"/>\n<c:smooth val="0"/>\n)
       else ""
@@ -217,7 +216,7 @@ module Pptx
           </c:scaling>
           <c:delete val="0"/>
           <c:axPos val="#{position}"/>
-          #{position == 'l' ? "<c:majorGridlines/>" : ''}
+          #{"<c:majorGridlines/>" if position == "l"}
           <c:numFmt formatCode="General" sourceLinked="1"/>
           <c:majorTickMark val="out"/>
           <c:minorTickMark val="none"/>

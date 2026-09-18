@@ -50,6 +50,11 @@ jobs:
       # REQUIRE_ORACLE turns "python-pptx is missing" from a skip into a
       # failure. Without it a broken Python setup would quietly drop the 47
       # differential specs and still report green.
+      # One version is enough; style does not vary by Ruby.
+      - name: Check style
+        if: matrix.ruby == '3.3'
+        run: bundle exec rubocop --format github
+
       - name: Run the specs
         env:
           REQUIRE_ORACLE: "1"

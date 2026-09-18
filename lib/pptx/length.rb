@@ -98,7 +98,7 @@ module Pptx
 
     def to_s = "#{@emu}emu"
 
-    def inspect = "#<Pptx::Length #{@emu}emu (#{format('%g', inches)}in)>"
+    def inspect = "#<Pptx::Length #{@emu}emu (#{format("%g", inches)}in)>"
   end
 
   class << self

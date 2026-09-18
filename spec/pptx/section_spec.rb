@@ -96,7 +96,8 @@ RSpec.describe Pptx::Sections do
   end
 
   it "gives each section a brace-wrapped uppercase GUID" do
-    expect(sections.add("Intro").id).to match(/\A\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}\z/)
+    guid = /\A\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\}\z/
+    expect(sections.add("Intro").id).to match(guid)
   end
 
   describe "the XML it writes" do
@@ -149,7 +150,7 @@ RSpec.describe Pptx::Sections do
 
         aggregate_failures do
           expect(out).to include('name="Introduction"', 'name="Content"')
-          expect(out.scan(/<p14:sldId /).size).to eq(3)
+          expect(out.scan("<p14:sldId ").size).to eq(3)
         end
 
         reopened = Pptx::Presentation.open(file.path)

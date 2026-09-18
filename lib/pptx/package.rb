@@ -97,7 +97,7 @@ module Pptx
       end.sort
 
       idx = indexes.each_with_index.find { |used, i| (i + 1) < used }&.last&.succ ||
-            indexes.size + 1
+            (indexes.size + 1)
       Opc::PackURI.new("#{prefix}#{idx}.#{ext}")
     end
   end

@@ -60,6 +60,7 @@ module Pptx
     # DrawingML, so {Pptx::ColorFormat} drives them unchanged.
     class CT_ThemeColor < Element
       include ColorChoice
+
       tag(*CT_ColorScheme::SLOTS.map { |slot| "a:#{slot}" })
     end
 
@@ -86,7 +87,6 @@ module Pptx
 
       def typeface=(value)
         latin.typeface = value
-        value
       end
     end
   end

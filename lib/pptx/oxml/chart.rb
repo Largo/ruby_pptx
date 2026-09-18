@@ -74,14 +74,12 @@ module Pptx
 
       def maximum=(value)
         value.nil? ? remove_max : (get_or_add_max.val = value)
-        value
       end
 
       def minimum = min&.val
 
       def minimum=(value)
         value.nil? ? remove_min : (get_or_add_min.val = value)
-        value
       end
     end
 
@@ -135,7 +133,7 @@ module Pptx
       # title is typed rather than taken from the data.
       def self.new_title(context)
         context.build_from_xml(<<~XML)
-          <c:title #{Ns.nsdecls('c', 'a')}>
+          <c:title #{Ns.nsdecls("c", "a")}>
             <c:tx>
               <c:rich>
                 <a:bodyPr/>
@@ -188,8 +186,8 @@ module Pptx
       # kind of label named and turned off, with leader lines allowed. An
       # empty `c:dLbls` would not satisfy the schema, which wants the group
       # present.
-      DEFAULT_XML = <<~XML
-        <c:dLbls #{Ns.nsdecls('c')}>
+      DEFAULT_XML = <<~XML.freeze
+        <c:dLbls #{Ns.nsdecls("c")}>
           <c:showLegendKey val="0"/>
           <c:showVal val="0"/>
           <c:showCatName val="0"/>

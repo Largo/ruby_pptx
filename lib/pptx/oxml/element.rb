@@ -65,7 +65,9 @@ module Pptx
 
       def self.nsptag = @nsptags&.first
 
-      def self.nsptags = @nsptags
+      class << self
+        attr_reader :nsptags
+      end
 
       # Wrap +node+ in the class registered for its tag.
       #
@@ -197,7 +199,7 @@ module Pptx
       def build_from_xml(xml)
         # noblanks matches Element.parse, so an indented XML literal does not
         # smuggle whitespace text nodes into the tree.
-        fragment = @node.parse(xml) { |config| config.noblanks }
+        fragment = @node.parse(xml, &:noblanks)
         raise InvalidXmlError, "fragment produced no element: #{xml.inspect}" if fragment.first.nil?
 
         Element.wrap(fragment.first)
@@ -210,7 +212,6 @@ module Pptx
 
       def text=(value)
         @node.content = value.to_s
-        value
       end
 
       # Declare +prefix+ on this element even if nothing uses it yet.
@@ -239,7 +240,7 @@ module Pptx
 
       def set(attr_name, value)
         pfx, local = prefixed_attr_parts(attr_name)
-        return (@node[attr_name.to_s] = value.to_s) unless pfx
+        return @node[attr_name.to_s] = value.to_s unless pfx
 
         uri = Ns.nsuri(pfx)
         if (existing = @node.attribute_with_ns(local, uri))

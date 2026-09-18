@@ -98,10 +98,10 @@ RSpec.describe "SVG pictures" do
     end
 
     it "refuses a fallback for a raster, which would be meaningless" do
-      expect {
+      expect do
         slide.shapes.add_picture(image("png-96dpi.png"), at: [0, 0],
                                                          fallback: image("gif.gif"))
-      }.to raise_error(ArgumentError, /only meaningful for a vector/)
+      end.to raise_error(ArgumentError, /only meaningful for a vector/)
     end
 
     it "leaves a plain raster picture without an extension list" do

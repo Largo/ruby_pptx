@@ -7,6 +7,7 @@ module Pptx
     # `a:solidFill`, a single flat colour.
     class CT_SolidColorFillProperties < Element
       include ColorChoice
+
       tag "a:solidFill"
     end
 
@@ -23,6 +24,7 @@ module Pptx
     # `a:gs`, one stop in a gradient.
     class CT_GradientStop < Element
       include ColorChoice
+
       tag "a:gs"
       required_attr "pos", type: SimpleTypes::ST_PositiveFixedPercentage
     end
@@ -49,8 +51,8 @@ module Pptx
 
       # The default gradient PowerPoint writes: two stops of the same theme
       # colour, one lightened, angled across the shape.
-      DEFAULT_XML = <<~XML
-        <a:gradFill #{Ns.nsdecls('a')} rotWithShape="1">
+      DEFAULT_XML = <<~XML.freeze
+        <a:gradFill #{Ns.nsdecls("a")} rotWithShape="1">
           <a:gsLst>
             <a:gs pos="0">
               <a:schemeClr val="accent1">
@@ -96,8 +98,8 @@ module Pptx
       def add_svg_blip(r_id)
         ext_list = get_or_add_extLst
         ext_list.append(ext_list.build_from_xml(<<~XML))
-          <a:ext #{Ns.nsdecls('a')} uri="#{SVG_EXT_URI}">
-            <asvg:svgBlip #{Ns.nsdecls('asvg', 'r')} r:embed="#{r_id}"/>
+          <a:ext #{Ns.nsdecls("a")} uri="#{SVG_EXT_URI}">
+            <asvg:svgBlip #{Ns.nsdecls("asvg", "r")} r:embed="#{r_id}"/>
           </a:ext>
         XML
         self

@@ -113,9 +113,7 @@ RSpec.describe "relationship loading robustness" do
 
   def rels_xml(*relationships)
     Pptx::Oxml::Element.parse(
-      %(<Relationships xmlns="#{Pptx::Opc::NAMESPACE::OPC_RELATIONSHIPS}">) +
-      relationships.join +
-      "</Relationships>"
+      "<Relationships xmlns=\"#{Pptx::Opc::NAMESPACE::OPC_RELATIONSHIPS}\">#{relationships.join}</Relationships>"
     )
   end
 

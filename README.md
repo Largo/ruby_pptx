@@ -172,7 +172,13 @@ require "pptx/core_ext"   # opt-in numeric sugar
 ```bash
 bundle install
 bundle exec rspec
+bundle exec rubocop
 ```
+
+`.rubocop.yml` records where this codebase deliberately departs from the
+default style — chiefly that the `oxml` layer keeps the OOXML schema's own
+names (`CT_Shape`, `#cSld`, `accent1`) so the XML, the specification and the
+Ruby read side by side.
 
 Specs compare the packages this gem writes against the ones python-pptx writes
 for the same operation, part by part, on canonicalised XML. To run those:

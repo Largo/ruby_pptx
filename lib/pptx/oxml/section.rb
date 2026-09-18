@@ -52,7 +52,7 @@ module Pptx
 
       def add_section(name, id = CT_Section.new_id)
         build_from_xml(
-          %(<p14:section #{Ns.nsdecls('p14')} name="#{escape(name)}" id="#{id}">) +
+          %(<p14:section #{Ns.nsdecls("p14")} name="#{escape(name)}" id="#{id}">) \
           "<p14:sldIdLst/></p14:section>"
         ).tap { |element| append(element) }
       end

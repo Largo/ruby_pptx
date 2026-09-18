@@ -69,10 +69,9 @@ module Pptx
     # Set, change or (with nil) remove the hyperlink.
     def address=(url)
       clear
-      return url if url.nil? || url.empty?
+      return if url.nil? || url.empty?
 
       get_or_add_hlink.rId = part.relate_to(url, Opc::RELATIONSHIP_TYPE::HYPERLINK, external: true)
-      url
     end
 
     # The URL this click opens, or nil when the click is not a hyperlink.
@@ -90,12 +89,11 @@ module Pptx
 
     def target_slide=(slide)
       clear
-      return slide if slide.nil?
+      return if slide.nil?
 
       link = get_or_add_hlink
       link.action = "#{Oxml::CT_Hyperlink::ACTION_SCHEME}hlinksldjump"
       link.rId = part.relate_to(slide.part, Opc::RELATIONSHIP_TYPE::SLIDE)
-      slide
     end
 
     # Remove whatever this click does, and the relationship behind it.

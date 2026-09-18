@@ -80,9 +80,7 @@ module Pptx
     #
     # @raise [Error] unless the fill is patterned
     def back_color
-      unless type&.name == :PATTERNED
-        raise Error, "fill type #{type&.name.inspect} has no background colour"
-      end
+      raise Error, "fill type #{type&.name.inspect} has no background colour" unless type&.name == :PATTERNED
 
       ColorFormat.from_color_choice_parent(fill_element.get_or_add_bgClr)
     end
@@ -97,7 +95,6 @@ module Pptx
     def pattern=(value)
       patterned unless type&.name == :PATTERNED
       fill_element.prst = value
-      value
     end
 
     def inspect = "#<Pptx::FillFormat type=#{type&.name.inspect}>"
@@ -114,7 +111,7 @@ module Pptx
     end
 
     # The `a:ln` element, added if not present.
-    def element = @ln ||= @parent.get_or_add_ln
+    def element = @element ||= @parent.get_or_add_ln
 
     def fill = @fill ||= FillFormat.from_fill_parent(element)
 
@@ -132,7 +129,6 @@ module Pptx
 
     def width=(value)
       element.w = value.nil? ? Pptx::Length.emu(0) : value
-      value
     end
 
     def inspect = "#<Pptx::LineFormat width=#{width&.pt}>"

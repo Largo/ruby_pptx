@@ -47,7 +47,7 @@ module Pptx
       end
 
       def self.new_element
-        Element.parse(%(<cp:coreProperties #{Ns.nsdecls('cp', 'dc', 'dcterms')}/>))
+        Element.parse(%(<cp:coreProperties #{Ns.nsdecls("cp", "dc", "dcterms")}/>))
       end
 
       TEXT_PROPERTIES.each do |name, nsptag|
@@ -71,9 +71,7 @@ module Pptx
         end
 
         define_method("#{name}=") do |value|
-          unless value.is_a?(Time)
-            raise TypeError, "#{name} requires a Time, got #{value.class}"
-          end
+          raise TypeError, "#{name} requires a Time, got #{value.class}" unless value.is_a?(Time)
 
           element = public_send("get_or_add_#{Ns.split_tag(nsptag).last}")
           element.text = value.getutc.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -102,7 +100,6 @@ module Pptx
         end
 
         get_or_add_revision.text = value.to_s
-        value
       end
 
       # Parse a W3CDTF timestamp, which may be a year, a year-month, a date,

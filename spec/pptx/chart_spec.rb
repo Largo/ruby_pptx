@@ -9,14 +9,15 @@ RSpec.describe Pptx::Chart do
 
   let(:chart_data) do
     Pptx::ChartData.new.tap do |data|
-      data.categories = ["East", "West", "Midwest"]
+      data.categories = %w[East West Midwest]
       data.add_series("Q1", [1.2, 2.0, 3.5])
       data.add_series("Q2", [4.1, 5.0, 6.2])
     end
   end
 
   def add_chart(type = Pptx::Enum::XL_CHART_TYPE::COLUMN_CLUSTERED, data: chart_data)
-    slide.shapes.add_chart(type, data, at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(8), Pptx.inches(5)])
+    slide.shapes.add_chart(type, data, at: [Pptx.inches(1), Pptx.inches(1)],
+                                       size: [Pptx.inches(8), Pptx.inches(5)])
   end
 
   describe "adding a chart" do
@@ -50,7 +51,7 @@ RSpec.describe Pptx::Chart do
       chart = frame.chart
       aggregate_failures do
         expect(chart.plot_type).to eq(:BAR)
-        expect(chart.categories).to eq(["East", "West", "Midwest"])
+        expect(chart.categories).to eq(%w[East West Midwest])
         expect(chart.series.map(&:name)).to eq(%w[Q1 Q2])
         expect(chart.series.first.values).to eq([1.2, 2.0, 3.5])
       end
@@ -131,12 +132,12 @@ RSpec.describe Pptx::Chart do
 
     # Ruby's nil is Python's None; everything else renders the same.
     def python_list(values)
-      "(#{values.map { |v| v.nil? ? 'None' : v.inspect }.join(', ')},)"
+      "(#{values.map { |v| v.nil? ? "None" : v.inspect }.join(", ")},)"
     end
 
     # Each family takes its own kind of data, so the fixture and the oracle
     # script are chosen to match.
-    CATEGORIES = ["East", "West", "Mid"].freeze
+    CATEGORIES = %w[East West Mid].freeze
     CATEGORY_SERIES = [["Q1", [1.2, 2.0, nil]], ["Q2", [4, 5, 6]]].freeze
     XY_SERIES = [["Alpha", [[1, 10], [2, 20]]], ["Beta", [[3, 30]]]].freeze
     BUBBLE_SERIES = [["B", [[1, 10, 5], [2, 20, 6]]]].freeze
@@ -240,10 +241,11 @@ RSpec.describe Pptx::Chart do
           prs = Pptx::Presentation.new_default
           slide = prs.slides.add(prs.slide_layouts[6])
           data = Pptx::ChartData.new
-          data.categories = ["East", "West", "Midwest"]
+          data.categories = %w[East West Midwest]
           data.add_series("Q1", [1.2, 2.0, 3.5])
           data.add_series("Q2", [4.1, 5.0, 6.2])
-          slide.shapes.add_chart(Pptx::Enum::XL_CHART_TYPE::COLUMN_CLUSTERED, data, at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(8), Pptx.inches(5)])
+          slide.shapes.add_chart(Pptx::Enum::XL_CHART_TYPE::COLUMN_CLUSTERED, data,
+                                 at: [Pptx.inches(1), Pptx.inches(1)], size: [Pptx.inches(8), Pptx.inches(5)])
           prs.save(path)
         },
         ignore: ["ppt/embeddings/Microsoft_Excel_Sheet1.xlsx"]
@@ -276,7 +278,7 @@ RSpec.describe Pptx::Chart do
       chart = result["charts"].first
       aggregate_failures do
         expect(chart["chart_type"]).to eq("COLUMN_CLUSTERED (51)")
-        expect(chart["categories"]).to eq(["East", "West", "Midwest"])
+        expect(chart["categories"]).to eq(%w[East West Midwest])
         expect(chart["series"]).to eq(
           [{ "name" => "Q1", "values" => [1.2, 2.0, 3.5] },
            { "name" => "Q2", "values" => [4.1, 5.0, 6.2] }]

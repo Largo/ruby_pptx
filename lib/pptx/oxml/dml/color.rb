@@ -52,6 +52,7 @@ module Pptx
     # `a:srgbClr`, a literal RGB colour.
     class CT_SRgbColor < Element
       include BaseColorElement
+
       tag "a:srgbClr"
       required_attr "val", type: SimpleTypes::ST_HexColorRGB
     end
@@ -59,6 +60,7 @@ module Pptx
     # `a:schemeClr`, a reference to a theme colour.
     class CT_SchemeColor < Element
       include BaseColorElement
+
       tag "a:schemeClr"
       required_attr "val", type: Enum::MSO_THEME_COLOR
     end
@@ -66,24 +68,28 @@ module Pptx
     # `a:hslClr`, a hue/saturation/luminance colour.
     class CT_HslColor < Element
       include BaseColorElement
+
       tag "a:hslClr"
     end
 
     # `a:sysClr`, a system colour such as "windowText".
     class CT_SystemColor < Element
       include BaseColorElement
+
       tag "a:sysClr"
     end
 
     # `a:prstClr`, a named preset colour.
     class CT_PresetColor < Element
       include BaseColorElement
+
       tag "a:prstClr"
     end
 
     # `a:scrgbClr`, a percentage-based RGB colour.
     class CT_ScRgbColor < Element
       include BaseColorElement
+
       tag "a:scrgbClr"
     end
 
@@ -102,6 +108,7 @@ module Pptx
     # `a:fgClr` and `a:bgClr`, which are colours and nothing else.
     class CT_Color < Element
       include ColorChoice
+
       tag "a:fgClr", "a:bgClr"
     end
   end

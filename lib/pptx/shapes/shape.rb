@@ -20,7 +20,6 @@ module Pptx
 
     def text=(value)
       text_frame.text = value
-      value
     end
 
     # The shape's fill.
@@ -68,28 +67,24 @@ module Pptx
 
     def begin_x=(value)
       move_x(Length.coerce(value).emu, begin_point: true)
-      value
     end
 
     def begin_y = Length.emu(@element.flipV ? top.to_i + height.to_i : top.to_i)
 
     def begin_y=(value)
       move_y(Length.coerce(value).emu, begin_point: true)
-      value
     end
 
     def end_x = Length.emu(@element.flipH ? left.to_i : left.to_i + width.to_i)
 
     def end_x=(value)
       move_x(Length.coerce(value).emu, begin_point: false)
-      value
     end
 
     def end_y = Length.emu(@element.flipV ? top.to_i : top.to_i + height.to_i)
 
     def end_y=(value)
       move_y(Length.coerce(value).emu, begin_point: false)
-      value
     end
 
     # Attach the start of this connector to +shape+ at one of its connection

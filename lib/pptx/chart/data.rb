@@ -23,7 +23,7 @@ module Pptx
     WORKSHEET_NAME = "Sheet1"
     DEFAULT_NUMBER_FORMAT = "General"
 
-    attr_reader :series, :number_format
+    attr_reader :series, :number_format, :categories
 
     def initialize(number_format: DEFAULT_NUMBER_FORMAT)
       @categories = []
@@ -31,11 +31,8 @@ module Pptx
       @number_format = number_format
     end
 
-    def categories = @categories
-
     def categories=(values)
       @categories = values.to_a
-      values
     end
 
     # Add a series of values, one per category.
@@ -57,7 +54,7 @@ module Pptx
     # True when every category is a number, which makes the category axis
     # numeric rather than textual.
     def numeric_categories?
-      !@categories.empty? && @categories.all? { |c| c.is_a?(Numeric) }
+      !@categories.empty? && @categories.all?(Numeric)
     end
 
     # @api private

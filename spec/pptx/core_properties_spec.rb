@@ -30,7 +30,7 @@ RSpec.describe Pptx::Oxml::CT_CoreProperties do
       core_props.author = "Second"
       aggregate_failures do
         expect(core_props.author).to eq("Second")
-        expect(core_props.xml.scan(/<dc:creator>/).size).to eq(1)
+        expect(core_props.xml.scan("<dc:creator>").size).to eq(1)
       end
     end
 
@@ -105,9 +105,9 @@ RSpec.describe Pptx::Oxml::CT_CoreProperties do
 
       aggregate_failures do
         expect(xml.lines.first).to include('xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"')
-        expect(xml).to match(%r{<dcterms:created xsi:type="dcterms:W3CDTF">})
-        expect(xml).to match(%r{<cp:lastPrinted>2026})
-        expect(xml.scan(/xmlns:xsi=/).size).to eq(1)
+        expect(xml).to match(/<dcterms:created xsi:type="dcterms:W3CDTF">/)
+        expect(xml).to match(/<cp:lastPrinted>2026/)
+        expect(xml.scan("xmlns:xsi=").size).to eq(1)
       end
     end
   end

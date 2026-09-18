@@ -162,7 +162,7 @@ RSpec.describe Pptx::FreeformBuilder do
       shape = builder.convert_to_shape
       xml = shape.element.xml
       aggregate_failures do
-        expect(xml.scan(/<a:moveTo>/).size).to eq(2)
+        expect(xml.scan("<a:moveTo>").size).to eq(2)
         expect(xml).to include("<a:close/>")
       end
     end
