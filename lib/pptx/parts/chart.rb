@@ -31,6 +31,14 @@ module Pptx
         part
       end
 
+      # A chart part drawing several plots over the same categories.
+      def self.new_combo_chart(builder, package)
+        part = load(package.next_partname(PARTNAME_TEMPLATE), Opc::CONTENT_TYPE::DML_CHART,
+                    package, ComboChartWriter.new(builder.validate!).xml)
+        part.workbook.replace_with(builder.chart_data.xlsx_blob)
+        part
+      end
+
       def chart = @chart ||= Chart.new(element, self)
 
       def workbook = @workbook ||= ChartWorkbook.new(element, self)

@@ -268,6 +268,32 @@ module Pptx
       shape_factory(frame)
     end
 
+    # Add a chart drawing several plots over the same categories.
+    #
+    #   shapes.add_combo_chart(data, at: [x, y], size: [w, h]) do |combo|
+    #     combo.plot :column_clustered, series: "Revenue"
+    #     combo.plot :line, series: "Margin", secondary_axis: true
+    #   end
+    #
+    # All the series live in one ChartData, since they share a worksheet; each
+    # plot names the ones it draws. PowerPoint can do this and python-pptx
+    # cannot, so there is no reference implementation to compare against.
+    #
+    # @return [GraphicFrame] use its `#chart` to reach the chart itself
+    def add_combo_chart(chart_data, at:, size:)
+      builder = ComboChartBuilder.new(chart_data)
+      yield builder if block_given?
+
+      left, top = at
+      width, height = size
+      r_id = part.add_combo_chart_part(builder)
+      id = next_shape_id
+      frame = @sp_tree.add_graphic_frame_chart(id, "Chart #{id - 1}", r_id,
+                                               left, top, width, height)
+      recalculate_extents
+      shape_factory(frame)
+    end
+
     # Add a table of +rows+ by +cols+.
     #
     # @return [GraphicFrame] use its `#table` to reach the table itself

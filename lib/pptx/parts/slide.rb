@@ -22,6 +22,14 @@ module Pptx
         relate_to(chart_part, Opc::RELATIONSHIP_TYPE::CHART)
       end
 
+      # Create a combo chart part and relate this slide to it.
+      #
+      # @return [String] the relationship id of the new chart part
+      def add_combo_chart_part(builder)
+        chart_part = ChartPart.new_combo_chart(builder, package)
+        relate_to(chart_part, Opc::RELATIONSHIP_TYPE::CHART)
+      end
+
       # Relate this slide to the media part holding +video+.
       #
       # Two relationships are made to the same part, one MEDIA and one VIDEO.

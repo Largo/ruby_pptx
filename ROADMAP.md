@@ -162,6 +162,7 @@ Remaining upstream code, measured:
 | ~~Video~~ | ~~234~~ | **done** — `add_movie`, with the loudspeaker poster frame when none is given. |
 | `fit_text` — TTF parsing and line layout | 724 | Only `TextFrame#fit_text` needs it. |
 | Series-level formatting | part of `series.py` | Per-series fill and line; the plot-level surface is done. |
+| `replace_data` on an existing chart | part of `chart.py` | Rewrite a chart's series without rebuilding it. |
 
 **Beyond python-pptx, still open:**
 
@@ -169,9 +170,13 @@ Remaining upstream code, measured:
 - **Defining a slide master in code** — needs a theme part with colour, font and
   format schemes plus `p:txStyles` before a layout can inherit. Genuinely
   large; starting from a template remains the practical route.
-- **Combo charts / secondary axes** — the plot collection and axis surface now
-  exist, so this is writing a chart space with two plot elements and a second
-  `c:valAx`. Tractable; not started.
+- ~~**Combo charts / secondary axes**~~ — **done**. `add_combo_chart(data) { |c|
+  c.plot :column_clustered, series: "Revenue"; c.plot :line, series: "Margin",
+  secondary_axis: true }`. No oracle exists, so it is checked against the
+  schema's requirements -- plot-area ordering, exactly two `axId` per plot,
+  every id backed by an axis and every axis used -- and by having python-pptx,
+  which reads multi-plot charts even though it never writes one, read the
+  result back.
 
 **Suggested order for what remains**: ~~connectors and groups~~, ~~freeform~~,
 ~~video~~. `fit_text` last — it needs a TTF parser and a line-breaking

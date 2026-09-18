@@ -103,7 +103,10 @@ module Pptx
         @chart_data = chart_data
       end
 
-      private
+      # Protected rather than private: ComboChartWriter builds its plots from
+      # the same fragments, and is a sibling rather than a subclass of the
+      # per-family writers.
+      protected
 
       attr_reader :chart_type, :chart_data
 

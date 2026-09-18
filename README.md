@@ -90,8 +90,16 @@ end
 deck.save("out.pptx")
 ```
 
-Three things python-pptx does not do: **SVG pictures**, **slide sections**, and
-**paging a long table across as many slides as it needs**.
+Four things python-pptx does not do: **SVG pictures**, **slide sections**,
+**paging a long table across as many slides as it needs**, and **combo charts**
+with a secondary axis.
+
+```ruby
+slide.shapes.add_combo_chart(data, at: [x, y], size: [w, h]) do |combo|
+  combo.plot :column_clustered, series: "Revenue"
+  combo.plot :line, series: "Margin", secondary_axis: true
+end
+```
 
 ```ruby
 # PowerPoint wants a raster stand-in beside the vector, and this gem has no
