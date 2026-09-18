@@ -58,6 +58,8 @@ line = slide.shapes.add_connector(:straight, begin_at: [0, 0], end_at: [0, 0])
 line.begin_connect(box, 3)
 group = slide.shapes.add_group_shape([box, table_frame])
 
+slide.shapes.add_movie("clip.mp4", at: [x, y], size: [w, h], content_type: "video/mp4")
+
 prs.save("out.pptx")
 ```
 

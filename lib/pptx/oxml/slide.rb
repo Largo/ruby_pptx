@@ -86,6 +86,35 @@ module Pptx
 
       def bg = cSld.bg
 
+      # The node list a `p:video` entry hangs off, which is what makes
+      # PowerPoint show play controls under a movie.
+      #
+      # The precondition varies -- a slide may have no timing at all, or one
+      # already -- so an awkward case is replaced wholesale rather than
+      # patched. That can in principle discard existing timing information;
+      # python-pptx takes the same view.
+      def get_or_add_child_time_node_list
+        existing = xpath("./p:timing/p:tnLst/p:par/p:cTn/p:childTnLst").first
+        return existing if existing
+
+        remove(get_or_add_timing)
+        timing = build_from_xml(TIMING_XML)
+        insert_timing(timing)
+        timing.xpath("./p:tnLst/p:par/p:cTn/p:childTnLst").first
+      end
+
+      TIMING_XML = <<~XML
+        <p:timing #{Ns.nsdecls('p')}>
+          <p:tnLst>
+            <p:par>
+              <p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot">
+                <p:childTnLst/>
+              </p:cTn>
+            </p:par>
+          </p:tnLst>
+        </p:timing>
+      XML
+
       SLD_XML = <<~XML
         <p:sld #{Ns.nsdecls('a', 'p', 'r')}>
           <p:cSld>
@@ -160,6 +189,39 @@ module Pptx
     class CT_SlideTiming < Element
       tag "p:timing"
       zero_or_one "p:tnLst", successors: %w[p:bldLst p:extLst]
+    end
+
+    # `p:tnLst` and `p:childTnLst`, lists of timing nodes.
+    class CT_TimeNodeList < Element
+      tag "p:tnLst", "p:childTnLst"
+
+      # Register the movie with shape id +shape_id+ so its play controls
+      # appear.
+      def add_video(shape_id)
+        append(build_from_xml(<<~XML))
+          <p:video #{Ns.nsdecls('p')}>
+            <p:cMediaNode vol="80000">
+              <p:cTn id="#{next_time_node_id}" fill="hold" display="0">
+                <p:stCondLst>
+                  <p:cond delay="indefinite"/>
+                </p:stCondLst>
+              </p:cTn>
+              <p:tgtEl>
+                <p:spTgt spid="#{shape_id}"/>
+              </p:tgtEl>
+            </p:cMediaNode>
+          </p:video>
+        XML
+        self
+      end
+
+      private
+
+      # Timing node ids are scoped to the slide, so every existing one counts.
+      def next_time_node_id
+        used = xpath("/p:sld/p:timing//p:cTn/@id").map { |attr| attr.value.to_i }
+        (used.max || 0) + 1
+      end
     end
   end
 end

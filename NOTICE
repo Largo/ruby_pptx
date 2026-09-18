@@ -10,6 +10,7 @@ that project. The following files are copied from it verbatim:
     lib/pptx/templates/notes.xml
     lib/pptx/templates/notesMaster.xml
     lib/pptx/templates/theme.xml
+    lib/pptx/templates/media-speaker.png
 
 python-pptx is distributed under the MIT License, reproduced in full below.
 

@@ -59,6 +59,50 @@ module Pptx
         XML
       end
 
+      # A `p:pic` showing a video.
+      #
+      # The video is referenced three times over: as a legacy `a:videoFile`
+      # link, as a `p14:media` embed for PowerPoint 2010 and later, and as the
+      # `ppaction://media` click action. The blip points at a poster frame,
+      # which is the still PowerPoint shows before the video plays.
+      def self.new_video_pic(id, name, video_r_id, media_r_id, poster_r_id, x, y, cx, cy)
+        Element.parse(<<~XML)
+          <p:pic #{Ns.nsdecls('a', 'p', 'r')}>
+            <p:nvPicPr>
+              <p:cNvPr id="#{id}" name="#{escape(name)}">
+                <a:hlinkClick r:id="" action="ppaction://media"/>
+              </p:cNvPr>
+              <p:cNvPicPr>
+                <a:picLocks noChangeAspect="1"/>
+              </p:cNvPicPr>
+              <p:nvPr>
+                <a:videoFile r:link="#{video_r_id}"/>
+                <p:extLst>
+                  <p:ext uri="{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}">
+                    <p14:media #{Ns.nsdecls('p14')} r:embed="#{media_r_id}"/>
+                  </p:ext>
+                </p:extLst>
+              </p:nvPr>
+            </p:nvPicPr>
+            <p:blipFill>
+              <a:blip r:embed="#{poster_r_id}"/>
+              <a:stretch>
+                <a:fillRect/>
+              </a:stretch>
+            </p:blipFill>
+            <p:spPr>
+              <a:xfrm>
+                <a:off x="#{x.to_i}" y="#{y.to_i}"/>
+                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+              </a:xfrm>
+              <a:prstGeom prst="rect">
+                <a:avLst/>
+              </a:prstGeom>
+            </p:spPr>
+          </p:pic>
+        XML
+      end
+
       def self.escape(text)
         text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
       end

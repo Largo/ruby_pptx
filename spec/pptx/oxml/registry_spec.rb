@@ -58,7 +58,9 @@ RSpec.describe Pptx::Oxml::Registry do
     "a:path" => Pptx::Oxml::CT_Path2D,
     "a:moveTo" => Pptx::Oxml::CT_Path2DPoint,
     "a:lnTo" => Pptx::Oxml::CT_Path2DPoint,
-    "a:pt" => Pptx::Oxml::CT_AdjPoint2D
+    "a:pt" => Pptx::Oxml::CT_AdjPoint2D,
+    "p:timing" => Pptx::Oxml::CT_SlideTiming,
+    "p:tnLst" => Pptx::Oxml::CT_TimeNodeList
   }.each do |nsptag, expected_class|
     it "dispatches #{nsptag} to #{expected_class}" do
       expect(described_class.class_for(Pptx::Oxml::Ns.qn(nsptag))).to eq(expected_class)

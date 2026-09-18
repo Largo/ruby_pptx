@@ -22,6 +22,19 @@ module Pptx
         relate_to(chart_part, Opc::RELATIONSHIP_TYPE::CHART)
       end
 
+      # Relate this slide to the media part holding +video+.
+      #
+      # Two relationships are made to the same part, one MEDIA and one VIDEO.
+      # PowerPoint has embedded media two different ways over the years and
+      # writes both so either era can find it.
+      #
+      # @return [Array(String, String)] the media rId and the video rId
+      def get_or_add_video_media_part(video)
+        media_part = package.get_or_add_media_part(video)
+        [relate_to(media_part, Opc::RELATIONSHIP_TYPE::MEDIA),
+         relate_to(media_part, Opc::RELATIONSHIP_TYPE::VIDEO)]
+      end
+
       # The image part for +image_file+, related to this slide.
       #
       # Both the part and the relationship are reused when they already exist,

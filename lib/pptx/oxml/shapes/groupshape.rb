@@ -76,6 +76,13 @@ module Pptx
         frame
       end
 
+      def add_video_pic(id, name, video_r_id, media_r_id, poster_r_id, x, y, cx, cy)
+        pic = adopt_xml(CT_Picture.new_video_pic(id, name, video_r_id, media_r_id,
+                                                 poster_r_id, x, y, cx, cy))
+        insert_element_before(pic, "p:extLst")
+        pic
+      end
+
       def add_graphic_frame_table(id, name, rows, cols, x, y, cx, cy)
         frame = adopt_xml(
           CT_GraphicalObjectFrame.new_table_graphic_frame(id, name, rows, cols, x, y, cx, cy)

@@ -227,6 +227,33 @@ module Pptx
       shape_factory(pic)
     end
 
+    # Add a movie showing the video in +movie_file+.
+    #
+    # The size must be given: unlike a picture, a video is not interrogated
+    # for its dimensions. Nor is it interrogated for its type, so say what it
+    # is with +content_type+; PowerPoint plays "video/unknown" anyway, which
+    # is why that is the default.
+    #
+    # +poster_frame+ is the still shown before the video plays. Without one,
+    # the loudspeaker image PowerPoint uses is supplied.
+    #
+    # @return [Movie]
+    def add_movie(movie_file, at:, size:, poster_frame: nil,
+                  content_type: Video::UNKNOWN_CONTENT_TYPE)
+      left, top = at
+      width, height = size
+      video = Video.from_file(movie_file, content_type)
+      media_r_id, video_r_id = part.get_or_add_video_media_part(video)
+      _poster_part, poster_r_id = part.get_or_add_image_part(poster_frame || default_poster_frame)
+
+      id = next_shape_id
+      pic = @sp_tree.add_video_pic(id, video.filename, video_r_id, media_r_id, poster_r_id,
+                                   left, top, width, height)
+      register_video_timing(pic)
+      recalculate_extents
+      shape_factory(pic)
+    end
+
     # Add a chart of +chart_type+ depicting +chart_data+.
     #
     # @return [GraphicFrame] use its `#chart` to reach the chart itself
@@ -312,6 +339,21 @@ module Pptx
       yield builder if block_given?
       builder.close if close
       builder.convert_to_shape(origin_at: at)
+    end
+
+    # The loudspeaker still PowerPoint shows for a video with no poster frame.
+    def default_poster_frame
+      StringIO.new(File.binread(
+        File.expand_path("../templates/media-speaker.png", __dir__)
+      ))
+    end
+
+    # Play controls appear only for a movie listed in the slide's timing tree.
+    def register_video_timing(pic)
+      slide_element = @sp_tree.xpath("/p:sld").first
+      return if slide_element.nil?
+
+      slide_element.get_or_add_child_time_node_list.add_video(pic.shape_id)
     end
 
     # @api private

@@ -3,6 +3,7 @@
 require "pptx/opc/package"
 require "pptx/opc/constants"
 require "pptx/parts/core_properties"
+require "pptx/parts/media"
 require "pptx/parts/presentation"
 require "pptx/parts/slide"
 
@@ -22,6 +23,12 @@ module Pptx
 
     def presentation_part = main_document_part
 
+    # The media part holding +video+, created if the package has no part with
+    # the same content. Matched by SHA-1, as images are.
+    def get_or_add_media_part(video)
+      find_media_part(video.sha1) || Parts::MediaPart.new_media(self, video)
+    end
+
     # The image part holding +image_file+, created if the package has no part
     # with the same content.
     #
@@ -39,6 +46,24 @@ module Pptx
     def next_media_partname(ext) = next_media_like_partname("media", ext)
 
     private
+
+    def find_media_part(sha1)
+      media_parts.find { |part| part.respond_to?(:sha1) && part.sha1 == sha1 }
+    end
+
+    # Parts reached by a media relationship, each once.
+    def media_parts
+      seen = {}.compare_by_identity
+      each_rel.filter_map do |rel|
+        next if rel.external? || rel.reltype != Opc::RELATIONSHIP_TYPE::MEDIA
+
+        part = rel.target_part
+        next if seen.key?(part)
+
+        seen[part] = true
+        part
+      end
+    end
 
     def find_image_part(sha1)
       image_parts.find { |part| part.respond_to?(:sha1) && part.sha1 == sha1 }
@@ -98,5 +123,15 @@ end
   Pptx::Opc::CONTENT_TYPE::X_EMF => Pptx::Parts::ImagePart,
   Pptx::Opc::CONTENT_TYPE::X_WMF => Pptx::Parts::ImagePart,
   Pptx::Opc::CONTENT_TYPE::DML_CHART => Pptx::Parts::ChartPart,
-  Pptx::Opc::CONTENT_TYPE::SML_SHEET => Pptx::Parts::EmbeddedXlsxPart
+  Pptx::Opc::CONTENT_TYPE::SML_SHEET => Pptx::Parts::EmbeddedXlsxPart,
+  Pptx::Opc::CONTENT_TYPE::ASF => Pptx::Parts::MediaPart,
+  Pptx::Opc::CONTENT_TYPE::AVI => Pptx::Parts::MediaPart,
+  Pptx::Opc::CONTENT_TYPE::MOV => Pptx::Parts::MediaPart,
+  Pptx::Opc::CONTENT_TYPE::MP4 => Pptx::Parts::MediaPart,
+  Pptx::Opc::CONTENT_TYPE::MPG => Pptx::Parts::MediaPart,
+  Pptx::Opc::CONTENT_TYPE::MS_VIDEO => Pptx::Parts::MediaPart,
+  Pptx::Opc::CONTENT_TYPE::SWF => Pptx::Parts::MediaPart,
+  Pptx::Opc::CONTENT_TYPE::VIDEO => Pptx::Parts::MediaPart,
+  Pptx::Opc::CONTENT_TYPE::WMV => Pptx::Parts::MediaPart,
+  Pptx::Opc::CONTENT_TYPE::X_MS_VIDEO => Pptx::Parts::MediaPart
 }.each { |content_type, part_class| Pptx::Opc::PartFactory.register(content_type, part_class) }

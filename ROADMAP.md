@@ -159,7 +159,7 @@ Remaining upstream code, measured:
 | ~~Table cell merging~~ | — | **done**. |
 | ~~Freeform shape building~~ | ~~337~~ | **done** — `add_freeform` with a block, or `build_freeform` for geometry stamped more than once. |
 | ~~Connectors and groups~~ | ~~366~~ | **done** — `add_connector`, `add_group_shape`, connecting ends to shapes, groups that resize around their contents. |
-| Video (`media.py`, `parts/media.py`) | 234 | |
+| ~~Video~~ | ~~234~~ | **done** — `add_movie`, with the loudspeaker poster frame when none is given. |
 | `fit_text` — TTF parsing and line layout | 724 | Only `TextFrame#fit_text` needs it. |
 | Series-level formatting | part of `series.py` | Per-series fill and line; the plot-level surface is done. |
 
@@ -174,7 +174,7 @@ Remaining upstream code, measured:
   `c:valAx`. Tractable; not started.
 
 **Suggested order for what remains**: ~~connectors and groups~~, ~~freeform~~,
-then video. `fit_text` last — it needs a TTF parser and a line-breaking
+~~video~~. `fit_text` last — it needs a TTF parser and a line-breaking
 algorithm for one method.
 
 ## C. Before a release
