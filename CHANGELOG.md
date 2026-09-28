@@ -5,7 +5,7 @@ All notable changes to this gem are recorded here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Before 1.0 a minor
 version may change the public API.
 
-## [Unreleased]
+## [0.2.0] - 2026-09-28
 
 ### Added
 
@@ -111,5 +111,6 @@ or where matching it cannot be done. Each case is listed, with its reason, in
 - Getters that write to the document in python-pptx -- data-label flags, axis
   and chart titles -- do not here.
 
+[0.2.0]: https://github.com/Largo/ruby_pptx/releases/tag/v0.2.0
 [0.1.1]: https://github.com/Largo/ruby_pptx/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Largo/ruby_pptx/releases/tag/v0.1.0
