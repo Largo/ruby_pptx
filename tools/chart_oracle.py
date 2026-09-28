@@ -41,7 +41,8 @@ def main() -> int:
                 }
             )
 
-    json.dump({"charts": charts}, sys.stdout)
+    # A date cell reads back as a datetime; report it in ISO form.
+    json.dump({"charts": charts}, sys.stdout, default=lambda value: value.isoformat())
     return 0
 
 

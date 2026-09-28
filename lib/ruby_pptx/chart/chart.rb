@@ -358,6 +358,8 @@ module Pptx
     end
 
     def rewrite(chart_space)
+      # A date category's cached serial depends on the chart's date system.
+      @date_1904 = chart_space.date1904&.val || false
       plot_area = chart_space.chart.plotArea
       adjust_series_count(plot_area, @chart_data.series.size)
       plot_area.series_elements.zip(@chart_data.series) do |ser, series_data|
@@ -406,7 +408,7 @@ module Pptx
       ser.remove_tx
       ser.remove_cat
       ser.remove_val
-      tx, cat, val = SeriesFragments.new(@chart_data, series_data).fragments
+      tx, cat, val = SeriesFragments.new(@chart_data, series_data, date_1904: @date_1904).fragments
       ser.insert_tx(ser.build_from_xml(tx))
       ser.insert_cat(ser.build_from_xml(cat))
       ser.insert_val(ser.build_from_xml(val))
@@ -419,9 +421,10 @@ module Pptx
   # created, so a rewritten series and a freshly written one cannot drift
   # apart.
   class SeriesFragments < ChartXmlWriter::Base
-    def initialize(chart_data, series)
+    def initialize(chart_data, series, date_1904: false)
       super(nil, chart_data)
       @series = series
+      @date_1904 = date_1904
     end
 
     # @return [Array(String, String, String)] the tx, cat and val fragments

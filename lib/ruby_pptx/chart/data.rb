@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "ruby_pptx/errors"
+require "ruby_pptx/chart/categories"
 
 module Pptx
   # The categories and series a chart depicts.
@@ -10,6 +11,9 @@ module Pptx
   #   data.add_series("Q1", [1.2, 2.0, 3.5])
   #   data.add_series("Q2", [4.1, 5.0, 6.2])
   #
+  # Categories can be grouped, which draws a multi-level axis, and can be
+  # dates, which draws a date axis; see {ChartDataCategories}.
+  #
   # The values also become an embedded Excel workbook, which is what PowerPoint
   # opens when the user chooses "Edit Data". The worksheet references in the
   # chart XML are derived from the same layout, so the two always agree.
@@ -18,21 +22,22 @@ module Pptx
 
     # The row the first data value sits on; row 1 holds the series names.
     FIRST_DATA_ROW = 2
-    # Column A holds the category labels, so series start at column B.
-    FIRST_SERIES_COLUMN = 2
+    # Category labels fill the first columns, one per level; series follow.
     WORKSHEET_NAME = "Sheet1"
     DEFAULT_NUMBER_FORMAT = "General"
 
     attr_reader :series, :number_format, :categories
 
     def initialize(number_format: DEFAULT_NUMBER_FORMAT)
-      @categories = []
+      @categories = ChartDataCategories.new
       @series = []
       @number_format = number_format
     end
 
+    # Replace the categories: a list of labels, or a Hash of groups whose
+    # values are their sub-categories.
     def categories=(values)
-      @categories = values.to_a
+      @categories = values.is_a?(ChartDataCategories) ? values : ChartDataCategories.from(values)
     end
 
     # Add a series of values, one per category.
@@ -49,34 +54,38 @@ module Pptx
 
     def size = @series.size
 
-    def category_count = @categories.size
+    # The number of categories plotted: the leaves, when they are grouped.
+    def category_count = @categories.leaf_count
 
-    # True when every category is a number, which makes the category axis
-    # numeric rather than textual.
-    def numeric_categories?
-      !@categories.empty? && @categories.all?(Numeric)
-    end
+    # True when the categories are numbers or dates, which makes the category
+    # cache numeric rather than textual. Decided by the first category, as
+    # python-pptx decides it.
+    def numeric_categories? = @categories.numeric?
 
     # @api private
-    # Categories are always column A, one row per category.
+    # The category block: one column per level, one row per leaf.
     def categories_ref
-      last_row = FIRST_DATA_ROW + category_count - 1
-      "#{WORKSHEET_NAME}!$A$#{FIRST_DATA_ROW}:$A$#{last_row}"
+      raise Error, "chart data contains no categories" if @categories.depth.zero?
+
+      right = ChartData.column_reference(@categories.depth)
+      "#{WORKSHEET_NAME}!$A$#{FIRST_DATA_ROW}:$#{right}$#{FIRST_DATA_ROW + category_count - 1}"
     end
 
     # @api private
     def series_name_ref(series) = "#{WORKSHEET_NAME}!$#{column_letter(series)}$1"
 
     # @api private
+    # As long as the series itself, which python-pptx also measures by the
+    # series rather than by the categories.
     def series_values_ref(series)
       letter = column_letter(series)
-      last_row = FIRST_DATA_ROW + category_count - 1
+      last_row = FIRST_DATA_ROW + series.size - 1
       "#{WORKSHEET_NAME}!$#{letter}$#{FIRST_DATA_ROW}:$#{letter}$#{last_row}"
     end
 
     # @api private
-    # The Excel column letter for a series, e.g. the third series is "D".
-    def column_letter(series) = ChartData.column_reference(FIRST_SERIES_COLUMN + series.index)
+    # The Excel column letter for a series: after the category columns.
+    def column_letter(series) = ChartData.column_reference(1 + @categories.depth + series.index)
 
     # Excel's bijective base-26 column names: 1 => "A", 27 => "AA".
     def self.column_reference(column_number)

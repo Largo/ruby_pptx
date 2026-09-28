@@ -146,37 +146,16 @@ module Pptx
         XML
       end
 
+      # The categories: a numeric cache for numbers and dates, a string cache
+      # for a plain list, and a multi-level cache for grouped categories.
       def cat_xml(series)
         categories = chart_data.categories
-        points = categories.each_with_index.map do |category, index|
-          point_xml(index, format_value(category))
-        end.join
-
-        if chart_data.numeric_categories?
-          <<~XML
-            <c:cat>
-              <c:numRef>
-                <c:f>#{series.categories_ref}</c:f>
-                <c:numCache>
-                  <c:formatCode>#{chart_data.number_format}</c:formatCode>
-                  <c:ptCount val="#{categories.size}"/>
-            #{indent(points, 6).chomp}
-                </c:numCache>
-              </c:numRef>
-            </c:cat>
-          XML
+        if categories.numeric?
+          numeric_cat_xml(series, categories)
+        elsif categories.depth == 1
+          string_cat_xml(series, categories)
         else
-          <<~XML
-            <c:cat>
-              <c:strRef>
-                <c:f>#{series.categories_ref}</c:f>
-                <c:strCache>
-                  <c:ptCount val="#{categories.size}"/>
-            #{indent(points, 6).chomp}
-                </c:strCache>
-              </c:strRef>
-            </c:cat>
-          XML
+          multi_level_cat_xml(series, categories)
         end
       end
 
@@ -207,6 +186,92 @@ module Pptx
           </#{tag}>
         XML
       end
+
+      def numeric_cat_xml(series, categories)
+        points = categories.each_with_index.map do |category, index|
+          point_xml(index, category.numeric_str_val(date_1904: date_1904?))
+        end.join
+        <<~XML
+          <c:cat>
+            <c:numRef>
+              <c:f>#{series.categories_ref}</c:f>
+              <c:numCache>
+                <c:formatCode>#{categories.number_format}</c:formatCode>
+                <c:ptCount val="#{categories.leaf_count}"/>
+          #{indent(points, 6).chomp}
+              </c:numCache>
+            </c:numRef>
+          </c:cat>
+        XML
+      end
+
+      def string_cat_xml(series, categories)
+        points = categories.each_with_index.map do |category, index|
+          point_xml(index, escape(category.label))
+        end.join
+        <<~XML
+          <c:cat>
+            <c:strRef>
+              <c:f>#{series.categories_ref}</c:f>
+              <c:strCache>
+                <c:ptCount val="#{categories.leaf_count}"/>
+          #{indent(points, 6).chomp}
+              </c:strCache>
+            </c:strRef>
+          </c:cat>
+        XML
+      end
+
+      # One `c:lvl` per level, leaf level first. Each label sits at the leaf
+      # index where its run begins, so a parent's points are sparse.
+      def multi_level_cat_xml(series, categories)
+        levels = categories.levels.map do |level|
+          points = level.map { |index, label| point_xml(index, escape(label)) }.join
+          "<c:lvl>\n#{indent(points, 2)}</c:lvl>\n"
+        end.join
+        <<~XML
+          <c:cat>
+            <c:multiLvlStrRef>
+              <c:f>#{series.categories_ref}</c:f>
+              <c:multiLvlStrCache>
+                <c:ptCount val="#{categories.leaf_count}"/>
+          #{indent(levels, 6).chomp}
+              </c:multiLvlStrCache>
+            </c:multiLvlStrRef>
+          </c:cat>
+        XML
+      end
+
+      # The axis written instead of a category axis when the categories are
+      # dates. Bar, line and area charts share it, differing only in ids and
+      # position.
+      def date_ax_xml(ax_id, cross_ax_id, position)
+        <<~XML
+          <c:dateAx>
+            <c:axId val="#{ax_id}"/>
+            <c:scaling>
+              <c:orientation val="minMax"/>
+            </c:scaling>
+            <c:delete val="0"/>
+            <c:axPos val="#{position}"/>
+            <c:numFmt formatCode="#{chart_data.categories.number_format}" sourceLinked="1"/>
+            <c:majorTickMark val="out"/>
+            <c:minorTickMark val="none"/>
+            <c:tickLblPos val="nextTo"/>
+            <c:crossAx val="#{cross_ax_id}"/>
+            <c:crosses val="autoZero"/>
+            <c:auto val="1"/>
+            <c:lblOffset val="100"/>
+            <c:baseTimeUnit val="days"/>
+          </c:dateAx>
+        XML
+      end
+
+      def dates? = chart_data.categories.dates?
+
+      # A chart being written from scratch uses the 1900 date system;
+      # rewriting an existing chart's data honours the chart's own setting.
+      def date_1904? = @date_1904 || false
 
       def point_xml(index, value)
         %(<c:pt idx="#{index}">\n  <c:v>#{value}</c:v>\n</c:pt>\n)
@@ -297,6 +362,8 @@ module Pptx
       def series_blocks = all_series_xml { |series| series_xml(series) }
 
       def cat_ax_xml
+        return date_ax_xml(CAT_AX_ID, VAL_AX_ID, cat_ax_pos) if dates?
+
         <<~XML
           <c:catAx>
             <c:axId val="#{CAT_AX_ID}"/>
@@ -349,23 +416,7 @@ module Pptx
                   <c:axId val="#{CAT_AX_ID}"/>
                   <c:axId val="#{VAL_AX_ID}"/>
                 </c:lineChart>
-                <c:catAx>
-                  <c:axId val="#{CAT_AX_ID}"/>
-                  <c:scaling>
-                    <c:orientation val="minMax"/>
-                  </c:scaling>
-                  <c:delete val="0"/>
-                  <c:axPos val="b"/>
-                  <c:majorTickMark val="out"/>
-                  <c:minorTickMark val="none"/>
-                  <c:tickLblPos val="nextTo"/>
-                  <c:crossAx val="#{VAL_AX_ID}"/>
-                  <c:crosses val="autoZero"/>
-                  <c:auto val="1"/>
-                  <c:lblAlgn val="ctr"/>
-                  <c:lblOffset val="100"/>
-                  <c:noMultiLvlLbl val="0"/>
-                </c:catAx>
+          #{indent(cat_ax_xml, 6).chomp}
                 <c:valAx>
                   <c:axId val="#{VAL_AX_ID}"/>
                   <c:scaling/>
@@ -413,6 +464,30 @@ module Pptx
         all_series_xml do |series|
           series_xml(series, extra_before_cat: marker_none_xml, extra_after_val: smooth_xml)
         end
+      end
+
+      def cat_ax_xml
+        return date_ax_xml(CAT_AX_ID, VAL_AX_ID, "b") if dates?
+
+        <<~XML
+          <c:catAx>
+            <c:axId val="#{CAT_AX_ID}"/>
+            <c:scaling>
+              <c:orientation val="minMax"/>
+            </c:scaling>
+            <c:delete val="0"/>
+            <c:axPos val="b"/>
+            <c:majorTickMark val="out"/>
+            <c:minorTickMark val="none"/>
+            <c:tickLblPos val="nextTo"/>
+            <c:crossAx val="#{VAL_AX_ID}"/>
+            <c:crosses val="autoZero"/>
+            <c:auto val="1"/>
+            <c:lblAlgn val="ctr"/>
+            <c:lblOffset val="100"/>
+            <c:noMultiLvlLbl val="0"/>
+          </c:catAx>
+        XML
       end
     end
 
@@ -665,24 +740,7 @@ module Pptx
                   <c:axId val="#{CAT_AX_ID}"/>
                   <c:axId val="#{VAL_AX_ID}"/>
                 </c:areaChart>
-                <c:catAx>
-                  <c:axId val="#{CAT_AX_ID}"/>
-                  <c:scaling>
-                    <c:orientation val="minMax"/>
-                  </c:scaling>
-                  <c:delete val="0"/>
-                  <c:axPos val="b"/>
-                  <c:numFmt formatCode="General" sourceLinked="1"/>
-                  <c:majorTickMark val="out"/>
-                  <c:minorTickMark val="none"/>
-                  <c:tickLblPos val="nextTo"/>
-                  <c:crossAx val="#{VAL_AX_ID}"/>
-                  <c:crosses val="autoZero"/>
-                  <c:auto val="1"/>
-                  <c:lblAlgn val="ctr"/>
-                  <c:lblOffset val="100"/>
-                  <c:noMultiLvlLbl val="0"/>
-                </c:catAx>
+          #{indent(cat_ax_xml, 6).chomp}
                 <c:valAx>
                   <c:axId val="#{VAL_AX_ID}"/>
                   <c:scaling>
@@ -715,6 +773,31 @@ module Pptx
       def grouping = GROUPINGS.fetch(chart_type.name)
 
       def series_blocks = all_series_xml { |series| series_xml(series) }
+
+      def cat_ax_xml
+        return date_ax_xml(CAT_AX_ID, VAL_AX_ID, "b") if dates?
+
+        <<~XML
+          <c:catAx>
+            <c:axId val="#{CAT_AX_ID}"/>
+            <c:scaling>
+              <c:orientation val="minMax"/>
+            </c:scaling>
+            <c:delete val="0"/>
+            <c:axPos val="b"/>
+            <c:numFmt formatCode="General" sourceLinked="1"/>
+            <c:majorTickMark val="out"/>
+            <c:minorTickMark val="none"/>
+            <c:tickLblPos val="nextTo"/>
+            <c:crossAx val="#{VAL_AX_ID}"/>
+            <c:crosses val="autoZero"/>
+            <c:auto val="1"/>
+            <c:lblAlgn val="ctr"/>
+            <c:lblOffset val="100"/>
+            <c:noMultiLvlLbl val="0"/>
+          </c:catAx>
+        XML
+      end
     end
 
     # `c:radarChart`, values plotted on spokes around a centre.
