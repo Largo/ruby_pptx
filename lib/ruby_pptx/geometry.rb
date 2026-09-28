@@ -3,6 +3,14 @@
 require "ruby_pptx/length"
 
 module Pptx
+  # Shared by Point and Size.
+  module Geometry
+    # A coordinate must be a Length or whole EMU; nil is not a position.
+    def self.length(value, name)
+      Length.coerce(value) || raise(ArgumentError, "#{name} is required")
+    end
+  end
+
   # A position on a slide.
   #
   #   Pptx.point(Pptx.inches(1), Pptx.inches(2))
@@ -26,7 +34,7 @@ module Pptx
     end
 
     def initialize(x:, y:)
-      super(x: Length.from(x), y: Length.from(y))
+      super(x: Geometry.length(x, :x), y: Geometry.length(y, :y))
     end
 
     # Destructuring and splatting, which is what lets a Point stand in for the
@@ -57,7 +65,7 @@ module Pptx
     end
 
     def initialize(width:, height:)
-      super(width: Length.from(width), height: Length.from(height))
+      super(width: Geometry.length(width, :width), height: Geometry.length(height, :height))
     end
 
     def to_ary = [width, height]

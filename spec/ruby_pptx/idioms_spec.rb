@@ -253,10 +253,14 @@ RSpec.describe "Ruby idioms" do
 
     it "keeps an existing Length rather than rebuilding it" do
       length = Pptx.inches(1)
+      expect(Pptx.point(length, 0).x).to be(length)
+    end
+
+    # Length.coerce is strict, so a Point is too: a Float is not whole EMU.
+    it "refuses a nil or fractional coordinate" do
       aggregate_failures do
-        expect(Pptx::Length.from(length)).to be(length)
-        expect(Pptx::Length.from(100)).to eq(Pptx.emu(100))
-        expect(Pptx::Length.from(100)).to be_a(Pptx::Length)
+        expect { Pptx.point(nil, 0) }.to raise_error(ArgumentError, /x is required/)
+        expect { Pptx.point(1.5, 0) }.to raise_error(TypeError)
       end
     end
   end

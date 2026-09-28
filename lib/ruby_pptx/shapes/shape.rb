@@ -44,14 +44,78 @@ module Pptx
   end
 
   # A `p:pic` holding an image.
-  class Picture < BaseShape
+  class BasePicture < BaseShape
+    # Cropping, as the fraction of the image cut from each side: 0.25 is a
+    # quarter. Negative values extend the side past the image edge, and values
+    # above 1.0 are allowed, as in PowerPoint.
+    %i[left top right bottom].each do |side|
+      attribute = :"srcRect_#{side.to_s[0]}"
+      define_method(:"crop_#{side}") { @element.public_send(attribute) }
+      define_method(:"crop_#{side}=") { |value| @element.public_send(:"#{attribute}=", value) }
+    end
+
+    # The outline drawn around the picture.
+    def line = @line ||= LineFormat.new(@element.spPr)
+  end
+
+  # A `p:pic` showing a still image.
+  class Picture < BasePicture
     def shape_type = Enum::MSO_SHAPE_TYPE::PICTURE
+
+    # The image this picture shows: its bytes, format, size and resolution.
+    #
+    # @return [Pptx::Image]
+    # @raise [Error] when the picture links its image rather than embedding it
+    def image
+      r_id = @element.blip_rId
+      raise Error, "this picture has no embedded image" if r_id.nil?
+
+      part.related_part(r_id).image
+    end
+
+    # The auto shape the picture is masked by. A new picture is a rectangle,
+    # which crops nothing; an ellipse shows it through an oval.
+    #
+    # @return [Pptx::Enum::Member, nil] nil for a freeform mask, or no geometry
+    def auto_shape_type = @element.spPr.prstGeom&.prst
+
+    def auto_shape_type=(value)
+      member = Enum::MSO_AUTO_SHAPE_TYPE.fetch(value)
+      sp_pr = @element.spPr
+      geometry = sp_pr.prstGeom
+      if geometry.nil?
+        sp_pr.remove_custGeom
+        geometry = sp_pr.get_or_add_prstGeom
+      end
+      geometry.prst = member
+    end
   end
 
   # A `p:pic` that carries video rather than a still image.
-  class Movie < Picture
+  #
+  # Not a {Picture}: the image a movie holds is its poster frame, which is
+  # what {#poster_frame} returns, and a movie cannot be masked by a shape.
+  class Movie < BasePicture
     def shape_type = Enum::MSO_SHAPE_TYPE::MEDIA
+
+    def media_type = Enum::PP_MEDIA_TYPE::MOVIE
+
+    # The still shown before the movie plays, or nil if there is none.
+    #
+    # @return [Pptx::Image, nil]
+    def poster_frame
+      r_id = @element.blip_rId
+      r_id && part.related_part(r_id).image
+    end
+
+    # Playback settings. PowerPoint keeps these in the timing tree and
+    # python-pptx exposes none of them yet; the object exists so code written
+    # against either library finds it.
+    def media_format = @media_format ||= MediaFormat.new(@element)
   end
+
+  # Playback formatting for a movie. Deliberately empty; see {Movie#media_format}.
+  class MediaFormat < ElementProxy; end
 
   # A `p:cxnSp`: a line, optionally attached to shapes at either end.
   #

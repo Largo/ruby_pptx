@@ -25,11 +25,26 @@ module Pptx
       end
     end
 
-    # On a slide, a `p:sp` that is a placeholder gets the placeholder proxy.
-    def build_for_slide(shape_element, parent)
-      return SlidePlaceholder.new(shape_element, parent) if placeholder_sp?(shape_element)
+    # A slide placeholder's proxy depends on what it can be filled with.
+    SLIDE_PLACEHOLDER_CLASSES = {
+      BITMAP: :PicturePlaceholder, PICTURE: :PicturePlaceholder,
+      CHART: :ChartPlaceholder, TABLE: :TablePlaceholder
+    }.freeze
 
-      build(shape_element, parent)
+    # On a slide a placeholder gets a placeholder proxy: typed by what it can
+    # hold while empty, and a placeholder variant of the picture or graphic
+    # frame once it has been filled.
+    def build_for_slide(shape_element, parent)
+      return build(shape_element, parent) unless shape_element.placeholder?
+
+      case shape_element.nsptag
+      when "p:sp"
+        name = SLIDE_PLACEHOLDER_CLASSES.fetch(shape_element.ph_type.name, :SlidePlaceholder)
+        Pptx.const_get(name).new(shape_element, parent)
+      when "p:pic" then PlaceholderPicture.new(shape_element, parent)
+      when "p:graphicFrame" then PlaceholderGraphicFrame.new(shape_element, parent)
+      else build(shape_element, parent)
+      end
     end
 
     def build_for_layout(shape_element, parent)

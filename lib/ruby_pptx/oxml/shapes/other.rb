@@ -27,6 +27,58 @@ module Pptx
       # The `a:blip` inside this picture's fill.
       def blip = xpath("./p:blipFill/a:blip").first
 
+      # The relationship id of the image this picture shows, or nil.
+      def blip_rId = blip&.embed
+
+      # Cropping, as a fraction of the image cropped from each side. Reading
+      # gives 0.0 when there is no `a:srcRect`; writing creates one.
+      %w[l t r b].each do |side|
+        define_method(:"srcRect_#{side}") { blipFill.srcRect&.public_send(side) || 0.0 }
+        define_method(:"srcRect_#{side}=") do |value|
+          blipFill.get_or_add_srcRect.public_send(:"#{side}=", value)
+        end
+      end
+
+      def ln = spPr.ln
+
+      def get_or_add_ln = spPr.get_or_add_ln
+
+      # Crop so an image of +image_size+ fills +view_size+ exactly when
+      # stretched with its aspect ratio kept: the excess is cut equally from
+      # both ends of whichever dimension is too long. Both sizes are
+      # (width, height); only their ratios matter, so the units need not agree.
+      def crop_to_fit(image_size, view_size)
+        left, top, right, bottom = fill_cropping(image_size, view_size)
+        rect = blipFill.get_or_add_srcRect
+        rect.l = left
+        rect.t = top
+        rect.r = right
+        rect.b = bottom
+      end
+
+      # A picture placeholder once filled: a `p:pic` with no `a:xfrm`, so its
+      # position and size keep coming from the layout.
+      def self.new_ph_pic(id, name, desc, r_id)
+        Element.parse(<<~XML)
+          <p:pic #{Ns.nsdecls("p", "a", "r")}>
+            <p:nvPicPr>
+              <p:cNvPr id="#{id}" name="#{escape(name)}" descr="#{escape(desc)}"/>
+              <p:cNvPicPr>
+                <a:picLocks noGrp="1" noChangeAspect="1"/>
+              </p:cNvPicPr>
+              <p:nvPr/>
+            </p:nvPicPr>
+            <p:blipFill>
+              <a:blip r:embed="#{r_id}"/>
+              <a:stretch>
+                <a:fillRect/>
+              </a:stretch>
+            </p:blipFill>
+            <p:spPr/>
+          </p:pic>
+        XML
+      end
+
       # A movie is a `p:pic` whose non-visual properties name a video file.
       def movie? = !xpath("./p:nvPicPr/p:nvPr/a:videoFile").empty?
 
@@ -106,6 +158,24 @@ module Pptx
 
       def self.escape(text)
         text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
+      end
+
+      private
+
+      # (left, top, right, bottom) fractions to crop. The arithmetic is
+      # python-pptx's, step for step, so the percentages round identically.
+      def fill_cropping(image_size, view_size)
+        view_ratio = view_size[0].to_f / view_size[1]
+        image_ratio = image_size[0].to_f / image_size[1]
+        if view_ratio < image_ratio # image too wide
+          crop = (1.0 - (view_ratio / image_ratio)) / 2.0
+          [crop, 0.0, crop, 0.0]
+        elsif view_ratio > image_ratio # image too tall
+          crop = (1.0 - (image_ratio / view_ratio)) / 2.0
+          [0.0, crop, 0.0, crop]
+        else
+          [0.0, 0.0, 0.0, 0.0]
+        end
       end
     end
 
