@@ -181,8 +181,30 @@ Remaining upstream code, measured:
   which reads multi-plot charts even though it never writes one, read the
   result back.
 
-**What remains**: nothing in the port. Section C below is the release
-checklist.
+**What remains** — corrected 2026-09-28. This section once said "nothing in
+the port", and that was wrong. It tracked *modules*, and a module marked done
+could still be missing members. `tools/api_audit.rb` now checks python-pptx's
+public API member by member; section B3 below is what it found, and it is the
+list the port works through.
+
+## B3. Gaps found by the member-level audit
+
+Run `python3 tools/api_dump.py > api.json && ruby -Ilib tools/api_audit.rb api.json`.
+As of 2026-09-28 it reported, grouped by area:
+
+- **Speaker notes** — `Slide#notes_slide`, `NotesSlide` (`notes_text_frame`,
+  `notes_placeholder`), `NotesMaster`, `Presentation#notes_master`. Only the
+  `notes_slide?` predicate existed.
+- **Placeholder insertion** — `insert_picture`, `insert_table`, `insert_chart`.
+- **Pictures and movies** — `image` read-back, `crop_*`, `line`,
+  `auto_shape_type`; `Movie#media_format`, `media_type`, `poster_frame`.
+- **Shape formatting** — `LineFormat#dash_style`, `ShadowFormat`, autoshape
+  `adjustments`, gradient `gradient_angle` / `gradient_stops`.
+- **OLE objects** — `add_ole_object`, `OleFormat`.
+- **Chart detail** — axis titles, tick labels and marks, gridline format,
+  `reverse_order`, `crosses`; legend and data-label fonts; per-point data
+  labels, markers and formats; `smooth`, `invert_if_negative`; a plot's own
+  `series` and `categories`; `Chart#font`, `chart_style`, full `chart_type`.
 
 ## B2. Ruby idioms added after the port closed
 
