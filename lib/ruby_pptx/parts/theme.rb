@@ -20,7 +20,9 @@ module Pptx
         part
       end
 
-      def theme = @theme ||= Theme.new(element, self)
+      def theme
+        @theme ||= Theme.new(element, self)
+      end
     end
   end
 end

@@ -39,9 +39,13 @@ module Pptx
         part
       end
 
-      def chart = @chart ||= Chart.new(element, self)
+      def chart
+        @chart ||= Chart.new(element, self)
+      end
 
-      def workbook = @workbook ||= ChartWorkbook.new(element, self)
+      def workbook
+        @workbook ||= ChartWorkbook.new(element, self)
+      end
     end
 
     # The embedded workbook behind a chart.

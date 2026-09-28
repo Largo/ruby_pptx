@@ -8,7 +8,9 @@ require "ruby_pptx/table"
 module Pptx
   # A `p:sp`: an auto shape, a text box, or a placeholder.
   class Shape < BaseShape
-    def text_frame? = true
+    def text_frame?
+      true
+    end
 
     # The text inside this shape, creating an empty text body if it has none.
     def text_frame
@@ -16,27 +18,37 @@ module Pptx
     end
 
     # Shortcut for `text_frame.text`.
-    def text = text_frame.text
+    def text
+      text_frame.text
+    end
 
     def text=(value)
       text_frame.text = value
     end
 
     # The shape's fill.
-    def fill = @fill ||= FillFormat.from_fill_parent(@element.spPr)
+    def fill
+      @fill ||= FillFormat.from_fill_parent(@element.spPr)
+    end
 
     # The shape's outline.
-    def line = @line ||= LineFormat.new(@element.spPr)
+    def line
+      @line ||= LineFormat.new(@element.spPr)
+    end
 
     # The adjustment handles of this shape's geometry; empty for a freeform.
     #
     # @return [Adjustments]
-    def adjustments = @adjustments ||= Adjustments.new(@element.spPr.prstGeom)
+    def adjustments
+      @adjustments ||= Adjustments.new(@element.spPr.prstGeom)
+    end
 
     # The preset geometry of an auto shape.
     #
     # @return [Pptx::Enum::MSO_SHAPE, nil] nil unless this is an auto shape
-    def auto_shape_type = @element.autoshape? ? @element.prst : nil
+    def auto_shape_type
+      @element.autoshape? ? @element.prst : nil
+    end
 
     def shape_type
       return Enum::MSO_SHAPE_TYPE::PLACEHOLDER if placeholder?
@@ -60,12 +72,16 @@ module Pptx
     end
 
     # The outline drawn around the picture.
-    def line = @line ||= LineFormat.new(@element.spPr)
+    def line
+      @line ||= LineFormat.new(@element.spPr)
+    end
   end
 
   # A `p:pic` showing a still image.
   class Picture < BasePicture
-    def shape_type = Enum::MSO_SHAPE_TYPE::PICTURE
+    def shape_type
+      Enum::MSO_SHAPE_TYPE::PICTURE
+    end
 
     # The image this picture shows: its bytes, format, size and resolution.
     #
@@ -82,7 +98,9 @@ module Pptx
     # which crops nothing; an ellipse shows it through an oval.
     #
     # @return [Pptx::Enum::Member, nil] nil for a freeform mask, or no geometry
-    def auto_shape_type = @element.spPr.prstGeom&.prst
+    def auto_shape_type
+      @element.spPr.prstGeom&.prst
+    end
 
     def auto_shape_type=(value)
       member = Enum::MSO_AUTO_SHAPE_TYPE.fetch(value)
@@ -101,9 +119,13 @@ module Pptx
   # Not a {Picture}: the image a movie holds is its poster frame, which is
   # what {#poster_frame} returns, and a movie cannot be masked by a shape.
   class Movie < BasePicture
-    def shape_type = Enum::MSO_SHAPE_TYPE::MEDIA
+    def shape_type
+      Enum::MSO_SHAPE_TYPE::MEDIA
+    end
 
-    def media_type = Enum::PP_MEDIA_TYPE::MOVIE
+    def media_type
+      Enum::PP_MEDIA_TYPE::MOVIE
+    end
 
     # The still shown before the movie plays, or nil if there is none.
     #
@@ -116,7 +138,9 @@ module Pptx
     # Playback settings. PowerPoint keeps these in the timing tree and
     # python-pptx exposes none of them yet; the object exists so code written
     # against either library finds it.
-    def media_format = @media_format ||= MediaFormat.new(@element)
+    def media_format
+      @media_format ||= MediaFormat.new(@element)
+    end
   end
 
   # Playback formatting for a movie. Deliberately empty; see {Movie#media_format}.
@@ -128,29 +152,41 @@ module Pptx
   # points, so moving an end point may flip the box rather than move it. The
   # accessors here hide that.
   class Connector < BaseShape
-    def shape_type = Enum::MSO_SHAPE_TYPE::LINE
+    def shape_type
+      Enum::MSO_SHAPE_TYPE::LINE
+    end
 
-    def line = @line ||= LineFormat.new(@element.spPr)
+    def line
+      @line ||= LineFormat.new(@element.spPr)
+    end
 
-    def begin_x = Length.emu(@element.flipH ? left.to_i + width.to_i : left.to_i)
+    def begin_x
+      Length.emu(@element.flipH ? left.to_i + width.to_i : left.to_i)
+    end
 
     def begin_x=(value)
       move_x(Length.coerce(value).emu, begin_point: true)
     end
 
-    def begin_y = Length.emu(@element.flipV ? top.to_i + height.to_i : top.to_i)
+    def begin_y
+      Length.emu(@element.flipV ? top.to_i + height.to_i : top.to_i)
+    end
 
     def begin_y=(value)
       move_y(Length.coerce(value).emu, begin_point: true)
     end
 
-    def end_x = Length.emu(@element.flipH ? left.to_i : left.to_i + width.to_i)
+    def end_x
+      Length.emu(@element.flipH ? left.to_i : left.to_i + width.to_i)
+    end
 
     def end_x=(value)
       move_x(Length.coerce(value).emu, begin_point: false)
     end
 
-    def end_y = Length.emu(@element.flipV ? top.to_i : top.to_i + height.to_i)
+    def end_y
+      Length.emu(@element.flipV ? top.to_i : top.to_i + height.to_i)
+    end
 
     def end_y=(value)
       move_y(Length.coerce(value).emu, begin_point: false)
@@ -183,9 +219,13 @@ module Pptx
       self
     end
 
-    def begin_connected? = !@element.nvCxnSpPr.cNvCxnSpPr.stCxn.nil?
+    def begin_connected?
+      !@element.nvCxnSpPr.cNvCxnSpPr.stCxn.nil?
+    end
 
-    def end_connected? = !@element.nvCxnSpPr.cNvCxnSpPr.endCxn.nil?
+    def end_connected?
+      !@element.nvCxnSpPr.cNvCxnSpPr.endCxn.nil?
+    end
 
     def inspect
       "#<Pptx::Connector (#{begin_x.inches.round(2)}, #{begin_y.inches.round(2)}) -> " \
@@ -238,8 +278,13 @@ module Pptx
       raise Error, "a graphic frame has no shadow of its own; format the chart or table instead"
     end
 
-    def table? = @element.table?
-    def chart? = @element.chart?
+    def table?
+      @element.table?
+    end
+
+    def chart?
+      @element.chart?
+    end
 
     # The table inside this frame.
     #
@@ -274,7 +319,9 @@ module Pptx
       end
     end
 
-    def ole_object? = @element.ole_object?
+    def ole_object?
+      @element.ole_object?
+    end
 
     # The OLE object this frame holds.
     #
@@ -300,12 +347,18 @@ module Pptx
     end
 
     # The ProgID naming the program that opens the object, e.g. "Excel.Sheet.12".
-    def prog_id = @element.progId
+    def prog_id
+      @element.progId
+    end
 
     # Whether it appears as an icon rather than as a picture of its content.
-    def show_as_icon? = @element.showAsIcon
+    def show_as_icon?
+      @element.showAsIcon
+    end
 
-    def inspect = "#<Pptx::OleFormat #{prog_id.inspect}>"
+    def inspect
+      "#<Pptx::OleFormat #{prog_id.inspect}>"
+    end
   end
 
   # A `p:grpSp` containing other shapes.
@@ -314,15 +367,23 @@ module Pptx
   # contains, and are recomputed whenever its contents change.
   class GroupShape < BaseShape
     # A group keeps its effects in `p:grpSpPr` rather than `p:spPr`.
-    def shadow = @shadow ||= ShadowFormat.new(@element.grpSpPr)
+    def shadow
+      @shadow ||= ShadowFormat.new(@element.grpSpPr)
+    end
 
-    def shape_type = Enum::MSO_SHAPE_TYPE::GROUP
+    def shape_type
+      Enum::MSO_SHAPE_TYPE::GROUP
+    end
 
     # The shapes inside this group.
-    def shapes = @shapes ||= GroupShapes.new(@element, self)
+    def shapes
+      @shapes ||= GroupShapes.new(@element, self)
+    end
 
     # A group holds no text of its own, though the shapes in it may.
-    def text_frame? = false
+    def text_frame?
+      false
+    end
 
     # PowerPoint offers no click behaviour on a group; the shapes inside carry
     # their own.

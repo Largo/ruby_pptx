@@ -15,7 +15,9 @@ module Pptx
       #
       # @raise [NotFoundError] when there is no such relationship
       # @raise [Error] when there is more than one
-      def part_related_by(reltype) = rels.part_with_reltype(reltype)
+      def part_related_by(reltype)
+        rels.part_with_reltype(reltype)
+      end
 
       # Relate this part to +target+, returning the rId. An existing matching
       # relationship is reused rather than duplicated.
@@ -29,12 +31,18 @@ module Pptx
         end
       end
 
-      def related_part(r_id) = rels.fetch(r_id).target_part
+      def related_part(r_id)
+        rels.fetch(r_id).target_part
+      end
 
-      def target_ref(r_id) = rels.fetch(r_id).target_ref
+      def target_ref(r_id)
+        rels.fetch(r_id).target_ref
+      end
 
       # @return [Relationships]
-      def rels = raise(NotImplementedError, "#{self.class} must implement #rels")
+      def rels
+        raise(NotImplementedError, "#{self.class} must implement #rels")
+      end
     end
 
     # An OPC package: the object graph behind a .pptx file.
@@ -43,18 +51,26 @@ module Pptx
 
       # Open a package from a path, an IO stream, or a directory holding an
       # unzipped package.
-      def self.open(pkg_file) = new(pkg_file).load
+      def self.open(pkg_file)
+        new(pkg_file).load
+      end
 
       def initialize(pkg_file = nil)
         @pkg_file = pkg_file
       end
 
-      def rels = @rels ||= Relationships.new(PackURI::PACKAGE.base_uri)
+      def rels
+        @rels ||= Relationships.new(PackURI::PACKAGE.base_uri)
+      end
 
-      def drop_rel(r_id) = rels.delete(r_id)
+      def drop_rel(r_id)
+        rels.delete(r_id)
+      end
 
       # The presentation part, which is the package's main document part.
-      def main_document_part = part_related_by(RELATIONSHIP_TYPE::OFFICE_DOCUMENT)
+      def main_document_part
+        part_related_by(RELATIONSHIP_TYPE::OFFICE_DOCUMENT)
+      end
 
       # Every part in the package, each yielded once.
       def parts
@@ -125,7 +141,9 @@ module Pptx
     # Loads a package from its serialized form.
     class PackageLoader
       # @return [Array(Oxml::CT_Relationships, Hash{String=>Part})]
-      def self.load(pkg_file, package) = new(pkg_file, package).load
+      def self.load(pkg_file, package)
+        new(pkg_file, package).load
+      end
 
       def initialize(pkg_file, package)
         @pkg_file = pkg_file
@@ -140,7 +158,9 @@ module Pptx
 
       private
 
-      def reader = @reader ||= PackageReader.new(@pkg_file)
+      def reader
+        @reader ||= PackageReader.new(@pkg_file)
+      end
 
       def content_types
         @content_types ||= ContentTypeMap.from_xml(reader[PackURI::CONTENT_TYPES])
@@ -199,7 +219,9 @@ module Pptx
 
       attr_reader :partname, :content_type, :package
 
-      def self.load(partname, content_type, package, blob) = new(partname, content_type, package, blob)
+      def self.load(partname, content_type, package, blob)
+        new(partname, content_type, package, blob)
+      end
 
       def initialize(partname, content_type, package, blob = nil)
         @partname = partname
@@ -215,19 +237,27 @@ module Pptx
       end
 
       # @return [String] the bytes this part serializes to
-      def blob = @blob || ""
+      def blob
+        @blob || ""
+      end
 
       attr_writer :blob
 
-      def rels = @rels ||= Relationships.new(@partname.base_uri)
+      def rels
+        @rels ||= Relationships.new(@partname.base_uri)
+      end
 
       def load_rels_from_xml(xml_rels, parts)
         rels.load_from_xml(@partname.base_uri, xml_rels, parts)
       end
 
-      def drop_rel(r_id) = rels.delete(r_id)
+      def drop_rel(r_id)
+        rels.delete(r_id)
+      end
 
-      def inspect = "#<#{self.class.name} #{@partname}>"
+      def inspect
+        "#<#{self.class.name} #{@partname}>"
+      end
     end
 
     # A part whose payload is XML, which is most of them.
@@ -243,11 +273,15 @@ module Pptx
         @element = element
       end
 
-      def blob = Oxml.serialize_part_xml(@element)
+      def blob
+        Oxml.serialize_part_xml(@element)
+      end
 
       # This part. Objects further down the tree delegate up to find the part
       # they live in; the chain ends here.
-      def part = self
+      def part
+        self
+      end
 
       # Drop a relationship unless the XML still refers to it more than once.
       #
@@ -274,12 +308,18 @@ module Pptx
           @part_type_for[content_type] = part_class
         end
 
-        def part_class_for(content_type) = @part_type_for.fetch(content_type, Part)
+        def part_class_for(content_type)
+          @part_type_for.fetch(content_type, Part)
+        end
 
-        def registered = @part_type_for.dup
+        def registered
+          @part_type_for.dup
+        end
 
         # Test seam: restore a previous registration table.
-        def reset!(to) = (@part_type_for = to)
+        def reset!(to)
+          (@part_type_for = to)
+        end
 
         def build(partname, content_type, package, blob)
           part_class_for(content_type).load(partname, content_type, package, blob)
@@ -325,21 +365,41 @@ module Pptx
         @rels = {}
       end
 
-      def each(&) = @rels.each_value(&)
+      def each(&)
+        @rels.each_value(&)
+      end
 
-      def each_value(&) = @rels.each_value(&)
+      def each_value(&)
+        @rels.each_value(&)
+      end
 
-      def [](r_id) = @rels[r_id]
+      def [](r_id)
+        @rels[r_id]
+      end
 
       def fetch(r_id)
         @rels.fetch(r_id) { raise NotFoundError, "no relationship with key #{r_id.inspect}" }
       end
 
-      def key?(r_id) = @rels.key?(r_id)
-      def keys = @rels.keys
-      def size = @rels.size
-      def empty? = @rels.empty?
-      def delete(r_id) = @rels.delete(r_id)
+      def key?(r_id)
+        @rels.key?(r_id)
+      end
+
+      def keys
+        @rels.keys
+      end
+
+      def size
+        @rels.size
+      end
+
+      def empty?
+        @rels.empty?
+      end
+
+      def delete(r_id)
+        @rels.delete(r_id)
+      end
 
       # The rId of a relationship of +reltype+ to +target_part+, adding one if
       # no match exists.
@@ -458,7 +518,9 @@ module Pptx
       end
 
       # True when the target is outside the package, such as a URL.
-      def external? = @target_mode == RELATIONSHIP_TARGET_MODE::EXTERNAL
+      def external?
+        @target_mode == RELATIONSHIP_TARGET_MODE::EXTERNAL
+      end
 
       def target_part
         raise Error, "#target_part is undefined for an external relationship" if external?
@@ -474,9 +536,13 @@ module Pptx
 
       # The reference as written into the `.rels` item: a relative partname
       # internally, or the URL for an external relationship.
-      def target_ref = external? ? @target : target_partname.relative_ref(@base_uri)
+      def target_ref
+        external? ? @target : target_partname.relative_ref(@base_uri)
+      end
 
-      def inspect = "#<Pptx::Opc::Relationship #{@r_id} #{@reltype}>"
+      def inspect
+        "#<Pptx::Opc::Relationship #{@r_id} #{@reltype}>"
+      end
     end
   end
 end

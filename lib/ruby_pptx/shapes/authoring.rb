@@ -74,7 +74,9 @@ module Pptx
 
     private
 
-    def scale(fraction, extent) = Length.emu((fraction * extent.emu).round)
+    def scale(fraction, extent)
+      Length.emu((fraction * extent.emu).round)
+    end
 
     def place(shape, at, size)
       shape.left, shape.top = at if at

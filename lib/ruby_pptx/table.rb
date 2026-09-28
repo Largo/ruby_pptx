@@ -22,43 +22,63 @@ module Pptx
       @parent = parent
     end
 
-    def part = @parent.part
+    def part
+      @parent.part
+    end
 
     # The cell at +row_idx+, +col_idx+.
-    def cell(row_idx, col_idx) = Cell.new(@element.tc(row_idx, col_idx), self)
+    def cell(row_idx, col_idx)
+      Cell.new(@element.tc(row_idx, col_idx), self)
+    end
 
     # `table[0, 1]` reads better than `table.cell(0, 1)` in a loop.
     alias [] cell
 
-    def rows = @rows ||= TableRows.new(@element, self)
+    def rows
+      @rows ||= TableRows.new(@element, self)
+    end
 
-    def columns = @columns ||= TableColumns.new(@element, self)
+    def columns
+      @columns ||= TableColumns.new(@element, self)
+    end
 
-    def row_count = @element.tr_list.size
+    def row_count
+      @element.tr_list.size
+    end
 
-    def column_count = @element.tblGrid.gridCol_list.size
+    def column_count
+      @element.tblGrid.gridCol_list.size
+    end
 
     # Whether the first row is styled as a header. The same pattern applies to
     # first_col, last_row, last_col, horz_banding and vert_banding.
-    def first_row? = @element.firstRow
+    def first_row?
+      @element.firstRow
+    end
 
     def first_row=(value)
       @element.firstRow = value
     end
 
-    def first_col? = @element.firstCol
+    def first_col?
+      @element.firstCol
+    end
 
     def first_col=(value)
       @element.firstCol = value
     end
 
-    def last_row? = @element.lastRow
+    def last_row?
+      @element.lastRow
+    end
 
     def last_row=(value)
       @element.lastRow = value
     end
 
-    def last_col? = @element.lastCol
+    def last_col?
+      @element.lastCol
+    end
 
     def last_col=(value)
       @element.lastCol = value
@@ -66,13 +86,17 @@ module Pptx
 
     # Whether alternate rows are shaded. Spelled out where python-pptx says
     # `horz_banding`.
-    def banded_rows? = @element.bandRow
+    def banded_rows?
+      @element.bandRow
+    end
 
     def banded_rows=(value)
       @element.bandRow = value
     end
 
-    def banded_columns? = @element.bandCol
+    def banded_columns?
+      @element.bandCol
+    end
 
     def banded_columns=(value)
       @element.bandCol = value
@@ -102,7 +126,9 @@ module Pptx
       self
     end
 
-    def inspect = "#<Pptx::Table #{row_count}x#{column_count}>"
+    def inspect
+      "#<Pptx::Table #{row_count}x#{column_count}>"
+    end
   end
 
   # The rows of a table.
@@ -124,7 +150,9 @@ module Pptx
       self
     end
 
-    def size = @element.tr_list.size
+    def size
+      @element.tr_list.size
+    end
     alias length size
 
     def [](index, length = nil)
@@ -151,7 +179,9 @@ module Pptx
       self
     end
 
-    def size = @element.tblGrid.gridCol_list.size
+    def size
+      @element.tblGrid.gridCol_list.size
+    end
     alias length size
 
     def [](index, length = nil)
@@ -168,16 +198,22 @@ module Pptx
       @table = table
     end
 
-    def height = @element.h
+    def height
+      @element.h
+    end
 
     def height=(value)
       @element.h = value
       @table.notify_height_changed
     end
 
-    def cells = @element.tc_list.map { |tc| Cell.new(tc, @table) }
+    def cells
+      @element.tc_list.map { |tc| Cell.new(tc, @table) }
+    end
 
-    def inspect = "#<Pptx::TableRow height=#{height&.inches}in>"
+    def inspect
+      "#<Pptx::TableRow height=#{height&.inches}in>"
+    end
   end
 
   # One column of a table.
@@ -187,14 +223,18 @@ module Pptx
       @table = table
     end
 
-    def width = @element.w
+    def width
+      @element.w
+    end
 
     def width=(value)
       @element.w = value
       @table.notify_width_changed
     end
 
-    def inspect = "#<Pptx::TableColumn width=#{width&.inches}in>"
+    def inspect
+      "#<Pptx::TableColumn width=#{width&.inches}in>"
+    end
   end
 
   # One cell of a table.
@@ -210,44 +250,62 @@ module Pptx
       @parent = parent
     end
 
-    def part = @parent.part
+    def part
+      @parent.part
+    end
 
-    def text_frame = @text_frame ||= TextFrame.new(@element.get_or_add_txBody, self)
+    def text_frame
+      @text_frame ||= TextFrame.new(@element.get_or_add_txBody, self)
+    end
 
-    def text = text_frame.text
+    def text
+      text_frame.text
+    end
 
     def text=(value)
       text_frame.text = value
     end
 
-    def fill = @fill ||= FillFormat.from_fill_parent(cell_properties)
+    def fill
+      @fill ||= FillFormat.from_fill_parent(cell_properties)
+    end
 
     # @return [Pptx::Enum::MSO_ANCHOR, nil]
-    def vertical_anchor = cell_properties.anchor
+    def vertical_anchor
+      cell_properties.anchor
+    end
 
     def vertical_anchor=(value)
       cell_properties.anchor = value
     end
 
-    def margin_left = cell_properties.marL
+    def margin_left
+      cell_properties.marL
+    end
 
     def margin_left=(value)
       cell_properties.marL = value
     end
 
-    def margin_right = cell_properties.marR
+    def margin_right
+      cell_properties.marR
+    end
 
     def margin_right=(value)
       cell_properties.marR = value
     end
 
-    def margin_top = cell_properties.marT
+    def margin_top
+      cell_properties.marT
+    end
 
     def margin_top=(value)
       cell_properties.marT = value
     end
 
-    def margin_bottom = cell_properties.marB
+    def margin_bottom
+      cell_properties.marB
+    end
 
     def margin_bottom=(value)
       cell_properties.marB = value
@@ -257,16 +315,24 @@ module Pptx
     #
     # Only a merge origin carries the real span; on any other cell this reads
     # 1 whether or not it is part of a merge. Test {#merge_origin?} first.
-    def span_width = @element.gridSpan
+    def span_width
+      @element.gridSpan
+    end
 
     # How many rows this cell spans. See {#span_width} on when to trust it.
-    def span_height = @element.rowSpan
+    def span_height
+      @element.rowSpan
+    end
 
     # True when this cell is the top-left of a merged range.
-    def merge_origin? = @element.merge_origin?
+    def merge_origin?
+      @element.merge_origin?
+    end
 
     # True when this cell is covered by a merge rather than being its origin.
-    def spanned? = @element.spanned?
+    def spanned?
+      @element.spanned?
+    end
 
     # Merge this cell with +other+, which is the opposite corner of the range.
     #
@@ -307,10 +373,14 @@ module Pptx
       self
     end
 
-    def inspect = "#<Pptx::Cell #{text.inspect}>"
+    def inspect
+      "#<Pptx::Cell #{text.inspect}>"
+    end
 
     private
 
-    def cell_properties = @element.get_or_add_tcPr
+    def cell_properties
+      @element.get_or_add_tcPr
+    end
   end
 end

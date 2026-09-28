@@ -267,11 +267,15 @@ module Pptx
         XML
       end
 
-      def dates? = chart_data.categories.dates?
+      def dates?
+        chart_data.categories.dates?
+      end
 
       # A chart being written from scratch uses the 1900 date system;
       # rewriting an existing chart's data honours the chart's own setting.
-      def date_1904? = @date_1904 || false
+      def date_1904?
+        @date_1904 || false
+      end
 
       def point_xml(index, value)
         %(<c:pt idx="#{index}">\n  <c:v>#{value}</c:v>\n</c:pt>\n)
@@ -279,7 +283,9 @@ module Pptx
 
       # Floats keep their trailing ".0" here, unlike in the workbook, because
       # that is what the reference implementation writes.
-      def format_value(value) = value.is_a?(String) ? escape(value) : value.to_s
+      def format_value(value)
+        value.is_a?(String) ? escape(value) : value.to_s
+      end
 
       def escape(text)
         text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
@@ -343,23 +349,35 @@ module Pptx
 
       private
 
-      def bar? = BAR_TYPES.include?(chart_type.name)
+      def bar?
+        BAR_TYPES.include?(chart_type.name)
+      end
 
-      def bar_dir = bar? ? "bar" : "col"
+      def bar_dir
+        bar? ? "bar" : "col"
+      end
 
-      def grouping = GROUPINGS.fetch(chart_type.name)
+      def grouping
+        GROUPINGS.fetch(chart_type.name)
+      end
 
       # A bar chart's category axis runs down the left; a column chart's runs
       # along the bottom, and the value axis takes the other position.
-      def cat_ax_pos = bar? ? "l" : "b"
+      def cat_ax_pos
+        bar? ? "l" : "b"
+      end
 
-      def val_ax_pos = bar? ? "b" : "l"
+      def val_ax_pos
+        bar? ? "b" : "l"
+      end
 
       def overlap
         STACKED_TYPES.include?(chart_type.name) ? %(        <c:overlap val="100"/>\n) : ""
       end
 
-      def series_blocks = all_series_xml { |series| series_xml(series) }
+      def series_blocks
+        all_series_xml { |series| series_xml(series) }
+      end
 
       def cat_ax_xml
         return date_ax_xml(CAT_AX_ID, VAL_AX_ID, cat_ax_pos) if dates?
@@ -442,9 +460,13 @@ module Pptx
 
       private
 
-      def grouping = GROUPINGS.fetch(chart_type.name)
+      def grouping
+        GROUPINGS.fetch(chart_type.name)
+      end
 
-      def markers? = MARKER_TYPES.include?(chart_type.name)
+      def markers?
+        MARKER_TYPES.include?(chart_type.name)
+      end
 
       # A line chart without markers says so per series, by asking for the
       # "none" marker symbol.
@@ -458,7 +480,9 @@ module Pptx
         XML
       end
 
-      def smooth_xml = %(<c:smooth val="0"/>\n)
+      def smooth_xml
+        %(<c:smooth val="0"/>\n)
+      end
 
       def series_blocks
         all_series_xml do |series|
@@ -516,7 +540,9 @@ module Pptx
 
       # A pie plots one series only; any others live in the workbook but are
       # not drawn.
-      def series_blocks = series_xml(chart_data.series.first)
+      def series_blocks
+        series_xml(chart_data.series.first)
+      end
     end
 
     # Shared by the two families whose points carry their own x value rather
@@ -693,7 +719,9 @@ module Pptx
 
       private
 
-      def three_d? = chart_type.name == :BUBBLE_THREE_D_EFFECT
+      def three_d?
+        chart_type.name == :BUBBLE_THREE_D_EFFECT
+      end
 
       def series_blocks
         all_series_xml do |series|
@@ -770,9 +798,13 @@ module Pptx
 
       private
 
-      def grouping = GROUPINGS.fetch(chart_type.name)
+      def grouping
+        GROUPINGS.fetch(chart_type.name)
+      end
 
-      def series_blocks = all_series_xml { |series| series_xml(series) }
+      def series_blocks
+        all_series_xml { |series| series_xml(series) }
+      end
 
       def cat_ax_xml
         return date_ax_xml(CAT_AX_ID, VAL_AX_ID, "b") if dates?
@@ -884,7 +916,9 @@ module Pptx
 
       private
 
-      def radar_style = chart_type.name == :RADAR_FILLED ? "filled" : "marker"
+      def radar_style
+        chart_type.name == :RADAR_FILLED ? "filled" : "marker"
+      end
 
       # A plain radar draws lines without markers, which is said per series by
       # asking for the "none" symbol. The markers and filled variants do not.
@@ -947,7 +981,9 @@ module Pptx
       private
 
       # Unlike a pie, a doughnut draws every series as a concentric ring.
-      def series_blocks = all_series_xml { |series| series_xml(series) }
+      def series_blocks
+        all_series_xml { |series| series_xml(series) }
+      end
     end
   end
 end

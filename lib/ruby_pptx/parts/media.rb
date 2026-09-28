@@ -11,7 +11,9 @@ module Pptx
         new(package.next_media_partname(video.ext), video.content_type, package, video.blob)
       end
 
-      def sha1 = @sha1 ||= Digest::SHA1.hexdigest(blob)
+      def sha1
+        @sha1 ||= Digest::SHA1.hexdigest(blob)
+      end
     end
   end
 end

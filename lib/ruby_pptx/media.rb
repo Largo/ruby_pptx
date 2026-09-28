@@ -28,7 +28,9 @@ module Pptx
 
     attr_reader :blob, :content_type
 
-    def self.from_blob(blob, content_type, filename = nil) = new(blob, content_type, filename)
+    def self.from_blob(blob, content_type, filename = nil)
+      new(blob, content_type, filename)
+    end
 
     # Load from a path or an IO stream.
     def self.from_file(movie_file, content_type)
@@ -55,10 +57,16 @@ module Pptx
     end
 
     # The name PowerPoint shows for the shape.
-    def filename = @source_filename || "movie.#{ext}"
+    def filename
+      @source_filename || "movie.#{ext}"
+    end
 
-    def sha1 = @sha1 ||= Digest::SHA1.hexdigest(@blob)
+    def sha1
+      @sha1 ||= Digest::SHA1.hexdigest(@blob)
+    end
 
-    def inspect = "#<Pptx::Video #{filename} #{@content_type}>"
+    def inspect
+      "#<Pptx::Video #{filename} #{@content_type}>"
+    end
   end
 end

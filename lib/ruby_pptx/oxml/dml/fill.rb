@@ -74,7 +74,9 @@ module Pptx
         </a:gradFill>
       XML
 
-      def self.new_grad_fill(context) = context.build_from_xml(DEFAULT_XML)
+      def self.new_grad_fill(context)
+        context.build_from_xml(DEFAULT_XML)
+      end
     end
 
     # `a:blip`, the image reference inside a picture fill.
@@ -100,7 +102,9 @@ module Pptx
       end
 
       # The relationship id of the SVG, or nil when this is a plain raster.
-      def svg_rId = xpath("./a:extLst/a:ext/asvg:svgBlip/@r:embed").first&.value
+      def svg_rId
+        xpath("./a:extLst/a:ext/asvg:svgBlip/@r:embed").first&.value
+      end
     end
 
     # `a:extLst` as it appears on a blip.

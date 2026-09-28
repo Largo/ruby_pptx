@@ -64,9 +64,13 @@ module Pptx
     # Only date categories need a cell style -- a number format that makes
     # the serial numbers read as dates -- so only they get a styles part.
     # XY and bubble data have no categories, so never dates.
-    def dates? = @chart_data.respond_to?(:categories) && @chart_data.categories.dates?
+    def dates?
+      @chart_data.respond_to?(:categories) && @chart_data.categories.dates?
+    end
 
-    def declaration = %(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n)
+    def declaration
+      %(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n)
+    end
 
     def content_types_xml
       <<~XML
@@ -132,7 +136,9 @@ module Pptx
       end.join
     end
 
-    def depth = @chart_data.categories.depth
+    def depth
+      @chart_data.categories.depth
+    end
 
     def category_cells(rows)
       @chart_data.categories.levels.each_with_index do |level, level_index|

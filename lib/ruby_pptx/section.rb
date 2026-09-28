@@ -32,10 +32,14 @@ module Pptx
       self
     end
 
-    def size = section_elements.size
+    def size
+      section_elements.size
+    end
     alias length size
 
-    def empty? = size.zero?
+    def empty?
+      size.zero?
+    end
 
     # Indexed by position, or looked up by name.
     def [](key, length = nil)
@@ -45,7 +49,9 @@ module Pptx
     end
 
     # @return [Section, nil]
-    def by_name(name) = find { |section| section.name == name }
+    def by_name(name)
+      find { |section| section.name == name }
+    end
 
     # Add a section, optionally containing +slides+.
     #
@@ -69,11 +75,15 @@ module Pptx
       section
     end
 
-    def inspect = "#<Pptx::Sections #{map(&:name).inspect}>"
+    def inspect
+      "#<Pptx::Sections #{map(&:name).inspect}>"
+    end
 
     private
 
-    def section_elements = @presentation.element.section_list&.section_list || []
+    def section_elements
+      @presentation.element.section_list&.section_list || []
+    end
   end
 
   # One named section of a presentation.
@@ -87,14 +97,18 @@ module Pptx
       @presentation = presentation
     end
 
-    def name = @element.name
+    def name
+      @element.name
+    end
 
     def name=(value)
       @element.name = value.to_s
     end
 
     # The GUID PowerPoint uses to identify this section.
-    def id = @element.id
+    def id
+      @element.id
+    end
 
     # The slides in this section, in section order.
     #
@@ -104,7 +118,9 @@ module Pptx
       slide_ids.filter_map { |slide_id| @presentation.slides.by_id(slide_id) }
     end
 
-    def slide_ids = @element.sldIdLst.sldId_list.map(&:id)
+    def slide_ids
+      @element.sldIdLst.sldId_list.map(&:id)
+    end
 
     # Put +slide+ in this section. A slide belongs to at most one section, so
     # it is removed from any other first.
@@ -123,8 +139,12 @@ module Pptx
       slide
     end
 
-    def include?(slide) = slide_ids.include?(slide.slide_id)
+    def include?(slide)
+      slide_ids.include?(slide.slide_id)
+    end
 
-    def inspect = "#<Pptx::Section #{name.inspect} slides=#{slide_ids.size}>"
+    def inspect
+      "#<Pptx::Section #{name.inspect} slides=#{slide_ids.size}>"
+    end
   end
 end

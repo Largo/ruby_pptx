@@ -17,7 +17,9 @@ module Pptx
       # the Python original exactly.
       class BaseSimpleType
         class << self
-          def from_xml(xml_value) = convert_from_xml(xml_value)
+          def from_xml(xml_value)
+            convert_from_xml(xml_value)
+          end
 
           def to_xml(value)
             value = normalize(value)
@@ -29,12 +31,16 @@ module Pptx
           # passed anywhere an integer was expected. Our {Pptx::Length} is a
           # separate class, so unwrap it here and every type gains the same
           # affordance: `shape.width = Pptx.inches(1)` works.
-          def normalize(value) = value.is_a?(Pptx::Length) ? value.emu : value
+          def normalize(value)
+            value.is_a?(Pptx::Length) ? value.emu : value
+          end
 
           # Python's `round()` is round-half-to-even; Ruby's `Float#round`
           # defaults to half-up. Every rounding conversion here goes through
           # this helper so values landing exactly on .5 match python-pptx.
-          def round_half_even(value) = value.round(half: :even)
+          def round_half_even(value)
+            value.round(half: :even)
+          end
 
           def validate_float(value)
             return if value.is_a?(Numeric) && !value.is_a?(Complex)
@@ -76,26 +82,53 @@ module Pptx
 
       class BaseFloatType < BaseSimpleType
         class << self
-          def convert_from_xml(str_value) = Float(str_value)
-          def convert_to_xml(value) = Float(value).to_s
-          def validate(value) = validate_float(value)
+          def convert_from_xml(str_value)
+            Float(str_value)
+          end
+
+          def convert_to_xml(value)
+            Float(value).to_s
+          end
+
+          def validate(value)
+            validate_float(value)
+          end
         end
       end
 
       class BaseIntType < BaseSimpleType
         class << self
-          def convert_from_percent_literal(str_value) = Integer(str_value.delete("%"), 10)
-          def convert_from_xml(str_value) = Integer(str_value, 10)
-          def convert_to_xml(value) = value.to_i.to_s
-          def validate(value) = validate_int(value)
+          def convert_from_percent_literal(str_value)
+            Integer(str_value.delete("%"), 10)
+          end
+
+          def convert_from_xml(str_value)
+            Integer(str_value, 10)
+          end
+
+          def convert_to_xml(value)
+            value.to_i.to_s
+          end
+
+          def validate(value)
+            validate_int(value)
+          end
         end
       end
 
       class BaseStringType < BaseSimpleType
         class << self
-          def convert_from_xml(str_value) = str_value
-          def convert_to_xml(value) = value
-          def validate(value) = validate_string(value)
+          def convert_from_xml(str_value)
+            str_value
+          end
+
+          def convert_to_xml(value)
+            value
+          end
+
+          def validate(value)
+            validate_string(value)
+          end
         end
       end
 
@@ -110,7 +143,9 @@ module Pptx
             @members = mapping.values.freeze
           end
 
-          def members = @members || superclass.members
+          def members
+            @members || superclass.members
+          end
 
           def validate(value)
             validate_string(value)
@@ -137,7 +172,9 @@ module Pptx
             %w[1 true].include?(str_value)
           end
 
-          def convert_to_xml(value) = value ? "1" : "0"
+          def convert_to_xml(value)
+            value ? "1" : "0"
+          end
 
           def validate(value)
             return if [true, false].include?(value)
@@ -154,7 +191,9 @@ module Pptx
       class XsdId < BaseStringType; end
 
       class XsdInt < BaseIntType
-        def self.validate(value) = validate_int_in_range(value, -2_147_483_648, 2_147_483_647)
+        def self.validate(value)
+          validate_int_in_range(value, -2_147_483_648, 2_147_483_647)
+        end
       end
 
       class XsdLong < BaseIntType
@@ -171,15 +210,21 @@ module Pptx
       class XsdTokenEnumeration < BaseStringEnumerationType; end
 
       class XsdUnsignedByte < BaseIntType
-        def self.validate(value) = validate_int_in_range(value, 0, 255)
+        def self.validate(value)
+          validate_int_in_range(value, 0, 255)
+        end
       end
 
       class XsdUnsignedInt < BaseIntType
-        def self.validate(value) = validate_int_in_range(value, 0, 4_294_967_295)
+        def self.validate(value)
+          validate_int_in_range(value, 0, 4_294_967_295)
+        end
       end
 
       class XsdUnsignedShort < BaseIntType
-        def self.validate(value) = validate_int_in_range(value, 0, 65_535)
+        def self.validate(value)
+          validate_int_in_range(value, 0, 65_535)
+        end
       end
 
       # -- ST_* types from the ECMA-376 schema ------------------------------
@@ -200,7 +245,9 @@ module Pptx
             (round_half_even(value * DEGREE_INCREMENTS) % THREE_SIXTY).to_s
           end
 
-          def validate(value) = BaseFloatType.validate(value)
+          def validate(value)
+            BaseFloatType.validate(value)
+          end
         end
       end
 
@@ -223,7 +270,9 @@ module Pptx
             str_value.include?("%") ? convert_from_percent_literal(str_value) : super
           end
 
-          def validate(value) = validate_int_in_range(value, 0, 300)
+          def validate(value)
+            validate_int_in_range(value, 0, 300)
+          end
         end
       end
 
@@ -242,8 +291,13 @@ module Pptx
             end
           end
 
-          def convert_to_xml(value) = value.to_i.to_s
-          def validate(value) = ST_CoordinateUnqualified.validate(value)
+          def convert_to_xml(value)
+            value.to_i.to_s
+          end
+
+          def validate(value)
+            ST_CoordinateUnqualified.validate(value)
+          end
         end
       end
 
@@ -258,17 +312,26 @@ module Pptx
             end
           end
 
-          def convert_to_xml(value) = ST_Coordinate32Unqualified.convert_to_xml(value)
-          def validate(value) = ST_Coordinate32Unqualified.validate(value)
+          def convert_to_xml(value)
+            ST_Coordinate32Unqualified.convert_to_xml(value)
+          end
+
+          def validate(value)
+            ST_Coordinate32Unqualified.validate(value)
+          end
         end
       end
 
       class ST_Coordinate32Unqualified < XsdInt
-        def self.convert_from_xml(str_value) = Pptx::Length.emu(Integer(str_value, 10))
+        def self.convert_from_xml(str_value)
+          Pptx::Length.emu(Integer(str_value, 10))
+        end
       end
 
       class ST_CoordinateUnqualified < XsdLong
-        def self.validate(value) = validate_int_in_range(value, -27_273_042_329_600, 27_273_042_316_900)
+        def self.validate(value)
+          validate_int_in_range(value, -27_273_042_329_600, 27_273_042_316_900)
+        end
       end
 
       # `orient` on `<p:ph>`.
@@ -287,7 +350,9 @@ module Pptx
             str_value.include?("%") ? convert_from_percent_literal(str_value) : super
           end
 
-          def validate(value) = validate_int_in_range(value, 0, 500)
+          def validate(value)
+            validate_int_in_range(value, 0, 500)
+          end
         end
       end
 
@@ -300,7 +365,9 @@ module Pptx
       class ST_HexColorRGB < BaseStringType
         class << self
           # Upper-cased purely for consistency of output.
-          def convert_to_xml(value) = value.upcase
+          def convert_to_xml(value)
+            value.upcase
+          end
 
           def validate(value)
             str_value = validate_string(value)
@@ -326,13 +393,17 @@ module Pptx
             str_value.end_with?("%") ? convert_from_percent_literal(str_value) : Integer(str_value, 10)
           end
 
-          def validate(value) = validate_int_in_range(value, 0, 1000)
+          def validate(value)
+            validate_int_in_range(value, 0, 1000)
+          end
         end
       end
 
       class ST_LineWidth < XsdInt
         class << self
-          def convert_from_xml(str_value) = Pptx::Length.emu(Integer(str_value, 10))
+          def convert_from_xml(str_value)
+            Pptx::Length.emu(Integer(str_value, 10))
+          end
 
           def validate(value)
             super
@@ -345,7 +416,9 @@ module Pptx
       end
 
       class ST_MarkerSize < XsdUnsignedByte
-        def self.validate(value) = validate_int_in_range(value, 2, 72)
+        def self.validate(value)
+          validate_int_in_range(value, 2, 72)
+        end
       end
 
       # `val` on c:orientation (CT_Orientation).
@@ -360,7 +433,9 @@ module Pptx
             str_value.include?("%") ? convert_from_percent_literal(str_value) : super
           end
 
-          def validate(value) = validate_int_in_range(value, -100, 100)
+          def validate(value)
+            validate_int_in_range(value, -100, 100)
+          end
         end
       end
 
@@ -374,9 +449,13 @@ module Pptx
             Integer(str_value, 10) / 100_000.0
           end
 
-          def convert_to_xml(value) = round_half_even(value * 100_000.0).to_s
+          def convert_to_xml(value)
+            round_half_even(value * 100_000.0).to_s
+          end
 
-          def validate(value) = validate_float_in_range(value, -21_474.83648, 21_474.83647)
+          def validate(value)
+            validate_float_in_range(value, -21_474.83648, 21_474.83647)
+          end
 
           def convert_from_percent_literal_float(str_value)
             Float(str_value.delete_suffix("%")) / 100.0
@@ -391,8 +470,13 @@ module Pptx
 
       class ST_PositiveCoordinate < XsdLong
         class << self
-          def convert_from_xml(str_value) = Pptx::Length.emu(super)
-          def validate(value) = validate_int_in_range(value, 0, 27_273_042_316_900)
+          def convert_from_xml(str_value)
+            Pptx::Length.emu(super)
+          end
+
+          def validate(value)
+            validate_int_in_range(value, 0, 27_273_042_316_900)
+          end
         end
       end
 
@@ -410,13 +494,17 @@ module Pptx
 
       # ST_Percentage constrained to 0.0..1.0.
       class ST_PositiveFixedPercentage < ST_Percentage
-        def self.validate(value) = validate_float_in_range(value, 0.0, 1.0)
+        def self.validate(value)
+          validate_float_in_range(value, 0.0, 1.0)
+        end
       end
 
       class ST_RelationshipId < XsdString; end
 
       class ST_SlideId < XsdUnsignedInt
-        def self.validate(value) = validate_int_in_range(value, 256, 2_147_483_647)
+        def self.validate(value)
+          validate_int_in_range(value, 256, 2_147_483_647)
+        end
       end
 
       # The 36 layout kinds ST_SlideLayoutType allows. PowerPoint uses this to
@@ -443,14 +531,18 @@ module Pptx
       # the signed 32-bit maximum -- PowerPoint numbers them from 2147483648
       # upwards precisely so they cannot be confused with slide ids.
       class ST_SlideMasterId < XsdUnsignedInt
-        def self.validate(value) = validate_int_in_range(value, 2_147_483_648, 4_294_967_295)
+        def self.validate(value)
+          validate_int_in_range(value, 2_147_483_648, 4_294_967_295)
+        end
       end
 
       class ST_SlideLayoutId < ST_SlideMasterId; end
 
       class ST_SlideSizeCoordinate < BaseIntType
         class << self
-          def convert_from_xml(str_value) = Pptx::Length.emu(Integer(str_value, 10))
+          def convert_from_xml(str_value)
+            Pptx::Length.emu(Integer(str_value, 10))
+          end
 
           def validate(value)
             validate_int(value)
@@ -463,7 +555,9 @@ module Pptx
       end
 
       class ST_Style < XsdUnsignedByte
-        def self.validate(value) = validate_int_in_range(value, 1, 48)
+        def self.validate(value)
+          validate_int_in_range(value, 1, 48)
+        end
       end
 
       # `TargetMode` on a Relationship element.
@@ -488,7 +582,9 @@ module Pptx
             Integer(str_value, 10) / 1000.0
           end
 
-          def convert_to_xml(value) = (value * 1000.0).to_i.to_s
+          def convert_to_xml(value)
+            (value * 1000.0).to_i.to_s
+          end
 
           def validate(value)
             BaseFloatType.validate(value)
@@ -500,11 +596,15 @@ module Pptx
       end
 
       class ST_TextFontSize < BaseIntType
-        def self.validate(value) = validate_int_in_range(value, 100, 400_000)
+        def self.validate(value)
+          validate_int_in_range(value, 100, 400_000)
+        end
       end
 
       class ST_TextIndentLevelType < BaseIntType
-        def self.validate(value) = validate_int_in_range(value, 0, 8)
+        def self.validate(value)
+          validate_int_in_range(value, 0, 8)
+        end
       end
 
       # Line spacing as a multiple of line height, so 1.75 <-> "175000".
@@ -516,18 +616,30 @@ module Pptx
             Integer(str_value, 10) / 100_000.0
           end
 
-          def convert_to_xml(value) = round_half_even(value * 100_000.0).to_s
+          def convert_to_xml(value)
+            round_half_even(value * 100_000.0).to_s
+          end
 
-          def validate(value) = validate_float_in_range(value, 0.0, 132.0)
+          def validate(value)
+            validate_float_in_range(value, 0.0, 132.0)
+          end
         end
       end
 
       # Reads centipoints, exposes a {Pptx::Length}.
       class ST_TextSpacingPoint < BaseIntType
         class << self
-          def convert_from_xml(str_value) = Pptx::Length.centipoints(Integer(str_value, 10))
-          def convert_to_xml(value) = Pptx::Length.emu(value).centipoints.to_s
-          def validate(value) = validate_int_in_range(value, 0, 20_116_800)
+          def convert_from_xml(str_value)
+            Pptx::Length.centipoints(Integer(str_value, 10))
+          end
+
+          def convert_to_xml(value)
+            Pptx::Length.emu(value).centipoints.to_s
+          end
+
+          def validate(value)
+            validate_int_in_range(value, 0, 20_116_800)
+          end
         end
       end
 
@@ -554,8 +666,13 @@ module Pptx
             Pptx::Length.emu(round_half_even(Float(str_value[0...-2]) * multiplier))
           end
 
-          def convert_to_xml(value) = value.to_i.to_s
-          def validate(value) = validate_int(value)
+          def convert_to_xml(value)
+            value.to_i.to_s
+          end
+
+          def validate(value)
+            validate_int(value)
+          end
         end
       end
     end

@@ -13,13 +13,26 @@ module Pptx
   # Writing is not inherited -- setting a value applies it to this shape, which
   # is what stops it tracking the layout from then on.
   module InheritsDimensions
-    def left = effective(:left)
-    def top = effective(:top)
-    def width = effective(:width)
-    def height = effective(:height)
+    def left
+      effective(:left)
+    end
+
+    def top
+      effective(:top)
+    end
+
+    def width
+      effective(:width)
+    end
+
+    def height
+      effective(:height)
+    end
 
     # The placeholder one level up that this one inherits from, or nil.
-    def base_placeholder = raise(NotImplementedError, "#{self.class} must define base_placeholder")
+    def base_placeholder
+      raise(NotImplementedError, "#{self.class} must define base_placeholder")
+    end
 
     private
 
@@ -42,7 +55,9 @@ module Pptx
   class SlidePlaceholder < Shape
     include InheritsDimensions
 
-    def shape_type = Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    def shape_type
+      Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    end
 
     # Matched to the layout by `idx`, which is what ties the two together.
     def base_placeholder
@@ -129,14 +144,20 @@ module Pptx
   class PlaceholderPicture < Picture
     include InheritsDimensions
 
-    def shape_type = Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    def shape_type
+      Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    end
 
-    def base_placeholder = part.slide_layout.placeholders.by_idx(element.ph_idx)
+    def base_placeholder
+      part.slide_layout.placeholders.by_idx(element.ph_idx)
+    end
   end
 
   # A table or chart that fills a placeholder.
   class PlaceholderGraphicFrame < GraphicFrame
-    def placeholder? = true
+    def placeholder?
+      true
+    end
   end
 
   # A placeholder on a slide layout.
@@ -153,7 +174,9 @@ module Pptx
       DATE: :DATE, FOOTER: :FOOTER, SLIDE_NUMBER: :SLIDE_NUMBER
     }.freeze
 
-    def shape_type = Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    def shape_type
+      Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    end
 
     def base_placeholder
       base_type = BASE_TYPES[element.ph_type&.name]
@@ -169,9 +192,13 @@ module Pptx
   class NotesSlidePlaceholder < Shape
     include InheritsDimensions
 
-    def shape_type = Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    def shape_type
+      Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    end
 
-    def base_placeholder = part.notes_master.placeholders.by_type(element.ph_type)
+    def base_placeholder
+      part.notes_master.placeholders.by_type(element.ph_type)
+    end
   end
 
   # A placeholder on a slide master.
@@ -179,6 +206,8 @@ module Pptx
   # There is nothing above a master to inherit from, so its geometry is
   # whatever it carries itself.
   class MasterPlaceholder < Shape
-    def shape_type = Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    def shape_type
+      Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+    end
   end
 end

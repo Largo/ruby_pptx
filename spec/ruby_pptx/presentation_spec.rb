@@ -20,6 +20,36 @@ RSpec.describe Pptx::Presentation do
       end
     end
 
+    # A handle left for GC keeps the file locked on Windows, so it cannot be
+    # deleted or overwritten until a collection happens to run. Linux lets
+    # an open file be deleted, so the check there counts the process's open
+    # descriptors instead; GC is held off so it cannot close a leak first.
+    it "closes the file once it has been read" do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, "lock-check.pptx")
+        described_class.new_default.save(path)
+        open_on = lambda do
+          Dir.children("/proc/self/fd").count do |fd|
+            File.readlink("/proc/self/fd/#{fd}") == path
+          rescue SystemCallError
+            false
+          end
+        end
+
+        GC.disable
+        begin
+          described_class.open(path)
+          if File.directory?("/proc/self/fd")
+            expect(open_on.call).to eq(0)
+          else
+            expect { File.delete(path) }.not_to raise_error
+          end
+        ensure
+          GC.enable
+        end
+      end
+    end
+
     it "rejects an OPC package that is not a presentation" do
       # A .docx-shaped package would load as OPC but have the wrong main part.
       allow(Pptx::Package).to receive(:open).and_return(

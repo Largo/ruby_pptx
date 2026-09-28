@@ -5,6 +5,21 @@ All notable changes to this gem are recorded here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Before 1.0 a minor
 version may change the public API.
 
+## [0.1.1] - 2026-09-28
+
+### Fixed
+
+- `gem install ruby_pptx` failed on Windows while generating ri
+  documentation (`Errno::ENOENT` on a very long `.ri` path). RDoc 7 and
+  earlier, which Ruby 3.3 to 4.0 bundle, cannot parse endless method
+  definitions (`def x = ...`); each one ended its class early, so every later
+  class was documented inside the one before it. On other platforms the
+  install succeeded but the ri documentation was wrong. The library no longer
+  uses endless methods, and CI checks that RDoc places every class correctly.
+- `Presentation.open(path)` left a file handle open for every member of the
+  package until garbage collection, so on Windows the `.pptx` stayed locked
+  and could not be deleted or overwritten after opening it.
+
 ## [0.1.0] - 2026-09-28
 
 The first release: a Ruby port of [python-pptx](https://github.com/scanny/python-pptx)
@@ -80,4 +95,5 @@ or where matching it cannot be done. Each case is listed, with its reason, in
 - Getters that write to the document in python-pptx -- data-label flags, axis
   and chart titles -- do not here.
 
+[0.1.1]: https://github.com/Largo/ruby_pptx/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Largo/ruby_pptx/releases/tag/v0.1.0

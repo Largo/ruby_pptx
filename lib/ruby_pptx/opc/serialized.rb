@@ -20,11 +20,15 @@ module Pptx
       end
 
       # @return [Boolean] whether the package holds an item at +pack_uri+
-      def key?(pack_uri) = @reader.key?(pack_uri)
+      def key?(pack_uri)
+        @reader.key?(pack_uri)
+      end
 
       # @return [String] binary contents of the item at +pack_uri+
       # @raise [KeyError] when there is no such item
-      def [](pack_uri) = @reader[pack_uri]
+      def [](pack_uri)
+        @reader[pack_uri]
+      end
 
       # The XML of the `.rels` item belonging to +partname+, or nil when that
       # part has no relationships.
@@ -86,7 +90,9 @@ module Pptx
         @path = File.expand_path(path)
       end
 
-      def key?(pack_uri) = File.file?(path_for(pack_uri))
+      def key?(pack_uri)
+        File.file?(path_for(pack_uri))
+      end
 
       def [](pack_uri)
         File.binread(path_for(pack_uri))
@@ -115,7 +121,9 @@ module Pptx
         @pkg_file = pkg_file
       end
 
-      def key?(pack_uri) = blobs.key?(pack_uri.to_s)
+      def key?(pack_uri)
+        blobs.key?(pack_uri.to_s)
+      end
 
       def [](pack_uri)
         blobs.fetch(pack_uri.to_s) { raise KeyError, "no member #{pack_uri} in package" }
@@ -132,9 +140,11 @@ module Pptx
       def each_entry(&block)
         return enum_for(:each_entry) unless block
 
+        # get_input_stream without a block opens a file handle per member and
+        # leaves it for GC; on Windows that keeps the .pptx locked after open.
         open_zip do |zip|
           zip.each do |entry|
-            block.call(entry.name, entry.get_input_stream.read) if entry.file?
+            block.call(entry.name, entry.get_input_stream(&:read)) if entry.file?
           end
         end
       end

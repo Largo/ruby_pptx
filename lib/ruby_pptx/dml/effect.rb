@@ -16,7 +16,9 @@ module Pptx
     end
 
     # True when the shape takes its shadow from the style hierarchy.
-    def inherit? = @element.effectLst.nil?
+    def inherit?
+      @element.effectLst.nil?
+    end
 
     alias inherit inherit?
 
@@ -28,6 +30,8 @@ module Pptx
       value ? @element.remove_effectLst : @element.get_or_add_effectLst
     end
 
-    def inspect = "#<Pptx::ShadowFormat inherit=#{inherit?}>"
+    def inspect
+      "#<Pptx::ShadowFormat inherit=#{inherit?}>"
+    end
   end
 end

@@ -50,17 +50,25 @@ module Pptx
       series
     end
 
-    def each(&) = @series.each(&)
+    def each(&)
+      @series.each(&)
+    end
 
-    def size = @series.size
+    def size
+      @series.size
+    end
 
     # The number of categories plotted: the leaves, when they are grouped.
-    def category_count = @categories.leaf_count
+    def category_count
+      @categories.leaf_count
+    end
 
     # True when the categories are numbers or dates, which makes the category
     # cache numeric rather than textual. Decided by the first category, as
     # python-pptx decides it.
-    def numeric_categories? = @categories.numeric?
+    def numeric_categories?
+      @categories.numeric?
+    end
 
     # @api private
     # The category block: one column per level, one row per leaf.
@@ -72,7 +80,9 @@ module Pptx
     end
 
     # @api private
-    def series_name_ref(series) = "#{WORKSHEET_NAME}!$#{column_letter(series)}$1"
+    def series_name_ref(series)
+      "#{WORKSHEET_NAME}!$#{column_letter(series)}$1"
+    end
 
     # @api private
     # As long as the series itself, which python-pptx also measures by the
@@ -85,7 +95,9 @@ module Pptx
 
     # @api private
     # The Excel column letter for a series: after the category columns.
-    def column_letter(series) = ChartData.column_reference(1 + @categories.depth + series.index)
+    def column_letter(series)
+      ChartData.column_reference(1 + @categories.depth + series.index)
+    end
 
     # Excel's bijective base-26 column names: 1 => "A", 27 => "AA".
     def self.column_reference(column_number)
@@ -102,9 +114,13 @@ module Pptx
 
     # @api private
     # Bytes of the embedded Excel workbook holding this data.
-    def xlsx_blob = ChartWorkbookWriter.new(self).blob
+    def xlsx_blob
+      ChartWorkbookWriter.new(self).blob
+    end
 
-    def inspect = "#<Pptx::ChartData categories=#{category_count} series=#{size}>"
+    def inspect
+      "#<Pptx::ChartData categories=#{category_count} series=#{size}>"
+    end
   end
 
   # One series of a chart: a name and one value per category.
@@ -121,9 +137,13 @@ module Pptx
       @number_format = number_format
     end
 
-    def each(&) = @values.each(&)
+    def each(&)
+      @values.each(&)
+    end
 
-    def size = @values.size
+    def size
+      @values.size
+    end
 
     # Append one value, for building a series up point by point.
     #
@@ -134,14 +154,24 @@ module Pptx
       self
     end
 
-    def categories = @chart_data.categories
+    def categories
+      @chart_data.categories
+    end
 
-    def name_ref = @chart_data.series_name_ref(self)
+    def name_ref
+      @chart_data.series_name_ref(self)
+    end
 
-    def values_ref = @chart_data.series_values_ref(self)
+    def values_ref
+      @chart_data.series_values_ref(self)
+    end
 
-    def categories_ref = @chart_data.categories_ref
+    def categories_ref
+      @chart_data.categories_ref
+    end
 
-    def inspect = "#<Pptx::ChartSeries #{@name.inspect} #{size} values>"
+    def inspect
+      "#<Pptx::ChartSeries #{@name.inspect} #{size} values>"
+    end
   end
 end

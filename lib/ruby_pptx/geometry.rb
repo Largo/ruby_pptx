@@ -39,7 +39,9 @@ module Pptx
 
     # Destructuring and splatting, which is what lets a Point stand in for the
     # `[x, y]` array everywhere this library already unpacks one.
-    def to_ary = [x, y]
+    def to_ary
+      [x, y]
+    end
 
     def +(other)
       other = Point.from(other)
@@ -51,8 +53,13 @@ module Pptx
       Point.new(x: x - other.x, y: y - other.y)
     end
 
-    def to_s = "(#{x.inches.round(3)}in, #{y.inches.round(3)}in)"
-    def inspect = "#<Pptx::Point #{self}>"
+    def to_s
+      "(#{x.inches.round(3)}in, #{y.inches.round(3)}in)"
+    end
+
+    def inspect
+      "#<Pptx::Point #{self}>"
+    end
   end
 
   # The extent of a shape: a width and a height.
@@ -68,22 +75,37 @@ module Pptx
       super(width: Geometry.length(width, :width), height: Geometry.length(height, :height))
     end
 
-    def to_ary = [width, height]
+    def to_ary
+      [width, height]
+    end
 
     # Scale both extents, for `size * 2` or `size * 0.5`.
-    def *(factor) = Size.new(width: width * factor, height: height * factor)
+    def *(factor)
+      Size.new(width: width * factor, height: height * factor)
+    end
 
-    def aspect_ratio = width.emu.to_f / height.emu
+    def aspect_ratio
+      width.emu.to_f / height.emu
+    end
 
-    def to_s = "#{width.inches.round(3)}in x #{height.inches.round(3)}in"
-    def inspect = "#<Pptx::Size #{self}>"
+    def to_s
+      "#{width.inches.round(3)}in x #{height.inches.round(3)}in"
+    end
+
+    def inspect
+      "#<Pptx::Size #{self}>"
+    end
   end
 
   class << self
     # @return [Pptx::Point]
-    def point(x, y) = Point.new(x: x, y: y)
+    def point(x, y)
+      Point.new(x: x, y: y)
+    end
 
     # @return [Pptx::Size]
-    def size(width, height) = Size.new(width: width, height: height)
+    def size(width, height)
+      Size.new(width: width, height: height)
+    end
   end
 end

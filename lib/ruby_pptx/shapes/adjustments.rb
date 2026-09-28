@@ -21,7 +21,9 @@ module Pptx
     SCALE = 100_000.0
 
     Adjustment = Struct.new(:name, :default, :actual) do
-      def raw = actual || default
+      def raw
+        actual || default
+      end
     end
 
     # @param preset_geometry [Pptx::Oxml::Element, nil] the shape's
@@ -57,10 +59,14 @@ module Pptx
       self
     end
 
-    def size = @adjustments.size
+    def size
+      @adjustments.size
+    end
     alias length size
 
-    def inspect = "#<Pptx::Adjustments #{to_a.inspect}>"
+    def inspect
+      "#<Pptx::Adjustments #{to_a.inspect}>"
+    end
 
     private
 

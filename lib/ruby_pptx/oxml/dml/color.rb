@@ -17,9 +17,13 @@ module Pptx
         end
       end
 
-      def add_lumMod(value) = add_lumMod_element(value)
+      def add_lumMod(value)
+        add_lumMod_element(value)
+      end
 
-      def add_lumOff(value) = add_lumOff_element(value)
+      def add_lumOff(value)
+        add_lumOff_element(value)
+      end
 
       # Remove any luminance adjustment, returning self.
       def clear_lum

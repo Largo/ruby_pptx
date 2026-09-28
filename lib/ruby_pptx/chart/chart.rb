@@ -31,10 +31,14 @@ module Pptx
     # python-pptx's PlotTypeInspector does.
     #
     # @return [Pptx::Enum::Member] a member of XL_CHART_TYPE
-    def chart_type = ChartTypeInspector.chart_type(plot_area.plot_elements.first)
+    def chart_type
+      ChartTypeInspector.chart_type(plot_area.plot_elements.first)
+    end
 
     # The chart style number, 1 to 48, or nil when none is set.
-    def chart_style = @element.style&.val
+    def chart_style
+      @element.style&.val
+    end
 
     def chart_style=(value)
       @element.remove_style
@@ -42,7 +46,9 @@ module Pptx
     end
 
     # The default font for all text in the chart, created on first use.
-    def font = @font ||= Font.new(@element.defRPr)
+    def font
+      @font ||= Font.new(@element.defRPr)
+    end
 
     # Every series in the chart: plot by plot, and within a plot in the order
     # it draws them.
@@ -65,7 +71,9 @@ module Pptx
     end
 
     # Whether a legend is drawn.
-    def legend? = !chart_element.legend.nil?
+    def legend?
+      !chart_element.legend.nil?
+    end
 
     def legend=(value)
       value ? chart_element.get_or_add_legend : chart_element.remove_legend
@@ -78,7 +86,9 @@ module Pptx
       element.nil? ? nil : (@legend ||= ChartLegend.new(element))
     end
 
-    def title? = !chart_element.title.nil?
+    def title?
+      !chart_element.title.nil?
+    end
 
     # @return [ChartTitle, nil]
     def title
@@ -105,7 +115,9 @@ module Pptx
     #
     # Nearly every chart has exactly one; a combo chart has several, which is
     # why this is a collection rather than a property of the chart.
-    def plots = plot_area.plot_elements.map { |element| ChartPlot.new(element, self) }
+    def plots
+      plot_area.plot_elements.map { |element| ChartPlot.new(element, self) }
+    end
 
     # The horizontal axis: a category or date axis, or, on an XY or bubble
     # chart, the first value axis. nil for a chart with no axes, such as a pie.
@@ -129,7 +141,9 @@ module Pptx
       ValueAxis.new(axes[axes.size > 1 ? 1 : 0])
     end
 
-    def value_axes = plot_area.value_axes.map { |element| ValueAxis.new(element) }
+    def value_axes
+      plot_area.value_axes.map { |element| ValueAxis.new(element) }
+    end
 
     # The category labels cached in the chart XML.
     def categories
@@ -139,13 +153,19 @@ module Pptx
       first.xpath("./c:cat//c:pt/c:v").map(&:text)
     end
 
-    def inspect = "#<Pptx::Chart #{chart_type.name} series=#{series.size}>"
+    def inspect
+      "#<Pptx::Chart #{chart_type.name} series=#{series.size}>"
+    end
 
     private
 
-    def chart_element = @element.chart
+    def chart_element
+      @element.chart
+    end
 
-    def plot_area = chart_element.plotArea
+    def plot_area
+      chart_element.plotArea
+    end
   end
 
   # Works out the full chart type from a plot element, after python-pptx's
@@ -200,11 +220,17 @@ module Pptx
       rule.call(plot)
     end
 
-    def line_markers?(plot) = plot.xpath('c:ser/c:marker/c:symbol[@val="none"]').empty?
+    def line_markers?(plot)
+      plot.xpath('c:ser/c:marker/c:symbol[@val="none"]').empty?
+    end
 
-    def exploded?(plot) = !plot.xpath("./c:ser/c:explosion").empty?
+    def exploded?(plot)
+      !plot.xpath("./c:ser/c:explosion").empty?
+    end
 
-    def first_symbol(plot) = plot.xpath("c:ser/c:marker/c:symbol").first&.get("val")
+    def first_symbol(plot)
+      plot.xpath("c:ser/c:marker/c:symbol").first&.get("val")
+    end
 
     def bubble(plot)
       bubble3d = plot.xpath("c:ser/c:bubble3D").first
@@ -260,17 +286,27 @@ module Pptx
     end
 
     # The fill and outline of this series.
-    def format = @format ||= ChartFormat.new(@element)
+    def format
+      @format ||= ChartFormat.new(@element)
+    end
 
     # The series' chart-wide index.
-    def index = @element.idx.val
+    def index
+      @element.idx.val
+    end
 
-    def name = @element.xpath("./c:tx//c:pt/c:v").first&.text.to_s
+    def name
+      @element.xpath("./c:tx//c:pt/c:v").first&.text.to_s
+    end
 
     # Cached values, with nil where the chart records a gap.
-    def values = cached(@element.val)
+    def values
+      cached(@element.val)
+    end
 
-    def inspect = "#<#{self.class.name} #{name.inspect}>"
+    def inspect
+      "#<#{self.class.name} #{name.inspect}>"
+    end
 
     private
 
@@ -286,15 +322,21 @@ module Pptx
   # Data labels and per-point formatting, for series plotted by category.
   module CategorySeriesFeatures
     # This series' own data labels, created on first use.
-    def data_labels = @data_labels ||= ChartDataLabels.new(@element.get_or_add_dLbls)
+    def data_labels
+      @data_labels ||= ChartDataLabels.new(@element.get_or_add_dLbls)
+    end
 
     # The points of this series, one per category.
-    def points = ChartPoints.new(@element, @element.cat_ptCount_val)
+    def points
+      ChartPoints.new(@element, @element.cat_ptCount_val)
+    end
   end
 
   # Markers, for the kinds of series that draw them.
   module MarkerFeatures
-    def marker = @marker ||= Marker.new(@element)
+    def marker
+      @marker ||= Marker.new(@element)
+    end
   end
 
   class AreaSeriesView < ChartSeriesView
@@ -310,7 +352,9 @@ module Pptx
 
     # Whether a negative bar is drawn in inverted colours. An absent
     # `c:invertIfNegative` reads as true, the schema default.
-    def invert_if_negative? = @element.invertIfNegative.nil? || @element.invertIfNegative.val
+    def invert_if_negative?
+      @element.invertIfNegative.nil? || @element.invertIfNegative.val
+    end
 
     def invert_if_negative=(value)
       @element.get_or_add_invertIfNegative.val = value ? true : false
@@ -323,7 +367,9 @@ module Pptx
 
     # Whether the line is drawn as a smooth curve. An absent `c:smooth` reads
     # as true, the schema default.
-    def smooth? = @element.smooth.nil? || @element.smooth.val
+    def smooth?
+      @element.smooth.nil? || @element.smooth.val
+    end
 
     def smooth=(value)
       @element.get_or_add_smooth.val = value ? true : false
@@ -339,9 +385,13 @@ module Pptx
   class XySeriesView < ChartSeriesView
     include MarkerFeatures
 
-    def values = cached(@element.yVal)
+    def values
+      cached(@element.yVal)
+    end
 
-    def points = ChartPoints.new(@element, [@element.xVal_ptCount_val, @element.yVal_ptCount_val].min)
+    def points
+      ChartPoints.new(@element, [@element.xVal_ptCount_val, @element.yVal_ptCount_val].min)
+    end
   end
 
   class BubbleSeriesView < XySeriesView

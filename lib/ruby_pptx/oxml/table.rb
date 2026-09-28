@@ -19,7 +19,9 @@ module Pptx
       tag "a:tblGrid"
       zero_or_more "a:gridCol", as: :gridCol
 
-      def add_grid_col(width) = add_gridCol(w: width)
+      def add_grid_col(width)
+        add_gridCol(w: width)
+      end
     end
 
     # `a:tblPr`, whole-table properties such as banding and header rows.
@@ -45,7 +47,9 @@ module Pptx
 
       # A new gradient starts from PowerPoint's default rather than empty; an
       # `a:gradFill` with no stops draws nothing.
-      def new_gradFill = CT_GradientFillProperties.new_grad_fill(self)
+      def new_gradFill
+        CT_GradientFillProperties.new_grad_fill(self)
+      end
     end
 
     # `a:tc`, one cell of a table.
@@ -71,17 +75,27 @@ module Pptx
 
       # A cell always has a text body, so a new one is created with it rather
       # than empty.
-      def self.new_cell(context) = context.build_from_xml(CELL_XML)
+      def self.new_cell(context)
+        context.build_from_xml(CELL_XML)
+      end
 
       # The `a:tr` this cell sits in.
-      def tr = parent
+      def tr
+        parent
+      end
 
       # The `a:tbl` this cell belongs to.
-      def tbl = tr.parent
+      def tbl
+        tr.parent
+      end
 
-      def col_idx = tr.tc_list.index(self)
+      def col_idx
+        tr.tc_list.index(self)
+      end
 
-      def row_idx = tbl.tr_list.index(tr)
+      def row_idx
+        tbl.tr_list.index(tr)
+      end
 
       # True when this is the top-left cell of a merged range.
       #
@@ -94,7 +108,9 @@ module Pptx
       end
 
       # True when this cell is covered by a merge rather than being its origin.
-      def spanned? = hMerge || vMerge
+      def spanned?
+        hMerge || vMerge
+      end
 
       # Take the paragraphs from +other+ into this cell's text body.
       #
@@ -119,9 +135,13 @@ module Pptx
       zero_or_more "a:tc", successors: %w[a:extLst], as: :tc
       required_attr "h", type: SimpleTypes::ST_Coordinate
 
-      def new_tc = CT_TableCell.new_cell(self)
+      def new_tc
+        CT_TableCell.new_cell(self)
+      end
 
-      def add_cell = add_tc
+      def add_cell
+        add_tc
+      end
     end
 
     # `a:tbl`, a table.
@@ -172,7 +192,9 @@ module Pptx
       end
 
       # The cell at +row_idx+, +col_idx+.
-      def tc(row_idx, col_idx) = tr_list[row_idx].tc_list[col_idx]
+      def tc(row_idx, col_idx)
+        tr_list[row_idx].tc_list[col_idx]
+      end
 
       # The rectangle of cells spanned by the two opposite corners +a+ and +b+.
       #
@@ -222,9 +244,13 @@ module Pptx
         (@top..@bottom).flat_map { |row| (@left..@right).map { |col| @tbl.tc(row, col) } }
       end
 
-      def top_row_cells = (@left..@right).map { |col| @tbl.tc(@top, col) }
+      def top_row_cells
+        (@left..@right).map { |col| @tbl.tc(@top, col) }
+      end
 
-      def left_column_cells = (@top..@bottom).map { |row| @tbl.tc(row, @left) }
+      def left_column_cells
+        (@top..@bottom).map { |row| @tbl.tc(row, @left) }
+      end
 
       def cells_except_left_column
         (@top..@bottom).flat_map { |row| ((@left + 1)..@right).map { |col| @tbl.tc(row, col) } }

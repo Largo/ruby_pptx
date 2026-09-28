@@ -25,10 +25,14 @@ module Pptx
       one_and_only_one "p:spPr"
 
       # The `a:blip` inside this picture's fill.
-      def blip = xpath("./p:blipFill/a:blip").first
+      def blip
+        xpath("./p:blipFill/a:blip").first
+      end
 
       # The relationship id of the image this picture shows, or nil.
-      def blip_rId = blip&.embed
+      def blip_rId
+        blip&.embed
+      end
 
       # Cropping, as a fraction of the image cropped from each side. Reading
       # gives 0.0 when there is no `a:srcRect`; writing creates one.
@@ -39,9 +43,13 @@ module Pptx
         end
       end
 
-      def ln = spPr.ln
+      def ln
+        spPr.ln
+      end
 
-      def get_or_add_ln = spPr.get_or_add_ln
+      def get_or_add_ln
+        spPr.get_or_add_ln
+      end
 
       # Crop so an image of +image_size+ fills +view_size+ exactly when
       # stretched with its aspect ratio kept: the excess is cut equally from
@@ -80,7 +88,9 @@ module Pptx
       end
 
       # A movie is a `p:pic` whose non-visual properties name a video file.
-      def movie? = !xpath("./p:nvPicPr/p:nvPr/a:videoFile").empty?
+      def movie?
+        !xpath("./p:nvPicPr/p:nvPr/a:videoFile").empty?
+      end
 
       # A `p:pic` displaying the image related by +r_id+.
       def self.new_pic(id, name, desc, r_id, x, y, cx, cy)
@@ -276,28 +286,49 @@ module Pptx
         "http://schemas.openxmlformats.org/presentationml/2006/ole"
 
       # A graphic frame keeps its transform directly, not under `p:spPr`.
-      def xfrm = find("p:xfrm")
+      def xfrm
+        find("p:xfrm")
+      end
 
-      def get_or_add_xfrm = xfrm
+      def get_or_add_xfrm
+        xfrm
+      end
 
-      def graphic_data_uri = xpath("./a:graphic/a:graphicData/@uri").first&.value
+      def graphic_data_uri
+        xpath("./a:graphic/a:graphicData/@uri").first&.value
+      end
 
       # The relationship id of the chart part this frame refers to.
-      def chart_rId = xpath("./a:graphic/a:graphicData/c:chart/@r:id").first&.value
+      def chart_rId
+        xpath("./a:graphic/a:graphicData/c:chart/@r:id").first&.value
+      end
 
-      def table? = graphic_data_uri == URI_TABLE
-      def chart? = graphic_data_uri == URI_CHART
+      def table?
+        graphic_data_uri == URI_TABLE
+      end
+
+      def chart?
+        graphic_data_uri == URI_CHART
+      end
 
       # The `a:tbl` inside this frame, or nil when it holds something else.
-      def tbl = xpath("./a:graphic/a:graphicData/a:tbl").first
+      def tbl
+        xpath("./a:graphic/a:graphicData/a:tbl").first
+      end
 
-      def ole_object? = graphic_data_uri == URI_OLE_OBJECT
+      def ole_object?
+        graphic_data_uri == URI_OLE_OBJECT
+      end
 
       # The `p:oleObj` inside this frame, or nil.
-      def oleObj = xpath("./a:graphic/a:graphicData/p:oleObj").first
+      def oleObj
+        xpath("./a:graphic/a:graphicData/p:oleObj").first
+      end
 
       # An OLE object carries its file (`p:embed`) or points elsewhere for it.
-      def embedded_ole_object? = !xpath("./a:graphic/a:graphicData/p:oleObj/p:embed").empty?
+      def embedded_ole_object?
+        !xpath("./a:graphic/a:graphicData/p:oleObj/p:embed").empty?
+      end
 
       class << self
         # A frame holding an OLE object shown as an icon: the embedded file is

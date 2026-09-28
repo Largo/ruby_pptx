@@ -25,7 +25,9 @@ module Pptx
       required_attr "prst", type: Enum::MSO_AUTO_SHAPE_TYPE
 
       # The adjustment guides, in document order.
-      def gd_list = avLst ? avLst.gd_list : []
+      def gd_list
+        avLst ? avLst.gd_list : []
+      end
 
       # Replace the adjustment values with +name_value_pairs+.
       def rewrite_guides(name_value_pairs)
@@ -80,11 +82,17 @@ module Pptx
       optional_attr "w", type: SimpleTypes::ST_PositiveCoordinate
       optional_attr "h", type: SimpleTypes::ST_PositiveCoordinate
 
-      def move_to(x, y) = add_moveTo.point_at(x, y)
+      def move_to(x, y)
+        add_moveTo.point_at(x, y)
+      end
 
-      def line_to(x, y) = add_lnTo.point_at(x, y)
+      def line_to(x, y)
+        add_lnTo.point_at(x, y)
+      end
 
-      def close_contour = add_close
+      def close_contour
+        add_close
+      end
     end
 
     # `a:pathLst`, the contours of a freeform shape.
@@ -254,7 +262,9 @@ module Pptx
           XML
         end
 
-        def escape(text) = text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub('"', "&quot;")
+        def escape(text)
+          text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub('"', "&quot;")
+        end
 
         DEFAULT_STYLE = <<~XML
           <p:style>
@@ -276,7 +286,9 @@ module Pptx
 
       # A text body added to a shape that has none needs the minimum structure
       # the schema requires, not an empty element.
-      def new_txBody = CT_TextBody.new_element(self)
+      def new_txBody
+        CT_TextBody.new_element(self)
+      end
 
       # Start a new contour on this shape's custom geometry.
       #
@@ -288,23 +300,37 @@ module Pptx
         geometry.get_or_add_pathLst.add_path_of(width, height)
       end
 
-      def prstGeom = spPr.prstGeom
+      def prstGeom
+        spPr.prstGeom
+      end
 
-      def prst = prstGeom&.prst
+      def prst
+        prstGeom&.prst
+      end
 
-      def ln = spPr.ln
+      def ln
+        spPr.ln
+      end
 
-      def get_or_add_ln = spPr.get_or_add_ln
+      def get_or_add_ln
+        spPr.get_or_add_ln
+      end
 
       # A shape has custom geometry -- is a freeform -- when it carries
       # `a:custGeom` in place of `a:prstGeom`.
-      def custom_geometry? = !spPr.custGeom.nil?
+      def custom_geometry?
+        !spPr.custGeom.nil?
+      end
 
       # A text box is an `p:sp` whose `p:cNvSpPr` says `txBox="1"`.
-      def textbox? = nvSpPr.cNvSpPr.txBox == true
+      def textbox?
+        nvSpPr.cNvSpPr.txBox == true
+      end
 
       # An auto shape has preset geometry and is not a text box.
-      def autoshape? = !prstGeom.nil? && nvSpPr.cNvSpPr.txBox != true
+      def autoshape?
+        !prstGeom.nil? && nvSpPr.cNvSpPr.txBox != true
+      end
     end
   end
 end

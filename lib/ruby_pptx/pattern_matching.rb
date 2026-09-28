@@ -20,7 +20,9 @@ module Pptx
   # Only the keys a pattern actually asks for are computed, so matching on a
   # shape's name does not walk its text.
   module PatternMatching
-    def self.included(base) = base.extend(ClassMethods)
+    def self.included(base)
+      base.extend(ClassMethods)
+    end
 
     # A member reads as its name; anything else is passed through.
     def self.for_pattern(value)
@@ -45,6 +47,8 @@ module Pptx
   # means enumerating all of it, which is the opposite of the lazy wrapping
   # everything else here does. Use it where the whole list is wanted anyway.
   module DeconstructToArray
-    def deconstruct = to_a
+    def deconstruct
+      to_a
+    end
   end
 end

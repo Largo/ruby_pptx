@@ -12,7 +12,9 @@ module Pptx
     # and the notes master.
     class BaseSlidePart < Opc::XmlPart
       # The internal name of this slide.
-      def name = element.cSld.name
+      def name
+        element.cSld.name
+      end
 
       # Create a chart part for +chart_data+ and relate this slide to it.
       #
@@ -81,7 +83,9 @@ module Pptx
         part
       end
 
-      def slide = @slide ||= Slide.new(element, self)
+      def slide
+        @slide ||= Slide.new(element, self)
+      end
 
       # The layout part this slide inherits from.
       def slide_layout
@@ -89,9 +93,13 @@ module Pptx
       end
 
       # The presentation-wide id of this slide.
-      def slide_id = package.presentation_part.slide_id_for(self)
+      def slide_id
+        package.presentation_part.slide_id_for(self)
+      end
 
-      def notes_slide? = rels.any? { |r| r.reltype == Opc::RELATIONSHIP_TYPE::NOTES_SLIDE }
+      def notes_slide?
+        rels.any? { |r| r.reltype == Opc::RELATIONSHIP_TYPE::NOTES_SLIDE }
+      end
 
       # This slide's notes slide, created on first use.
       def notes_slide
@@ -117,7 +125,9 @@ module Pptx
         part
       end
 
-      def slide_layout = @slide_layout ||= SlideLayout.new(element, self)
+      def slide_layout
+        @slide_layout ||= SlideLayout.new(element, self)
+      end
 
       def slide_master
         part_related_by(Opc::RELATIONSHIP_TYPE::SLIDE_MASTER).slide_master
@@ -143,10 +153,14 @@ module Pptx
         part
       end
 
-      def slide_master = @slide_master ||= SlideMaster.new(element, self)
+      def slide_master
+        @slide_master ||= SlideMaster.new(element, self)
+      end
 
       # The theme this master draws its colours and fonts from.
-      def theme_part = part_related_by(Opc::RELATIONSHIP_TYPE::THEME)
+      def theme_part
+        part_related_by(Opc::RELATIONSHIP_TYPE::THEME)
+      end
 
       # Add +slide_layout_part+ to this master's layout list.
       #
@@ -159,7 +173,9 @@ module Pptx
         r_id
       end
 
-      def related_slide_layout(r_id) = related_part(r_id).slide_layout
+      def related_slide_layout(r_id)
+        related_part(r_id).slide_layout
+      end
 
       private
 
@@ -192,7 +208,9 @@ module Pptx
         part
       end
 
-      def notes_master = @notes_master ||= NotesMaster.new(element, self)
+      def notes_master
+        @notes_master ||= NotesMaster.new(element, self)
+      end
     end
 
     # A notes-slide part, `/ppt/notesSlides/notesSlideN.xml`.
@@ -213,9 +231,13 @@ module Pptx
         part
       end
 
-      def notes_slide = @notes_slide ||= NotesSlide.new(element, self)
+      def notes_slide
+        @notes_slide ||= NotesSlide.new(element, self)
+      end
 
-      def notes_master = part_related_by(Opc::RELATIONSHIP_TYPE::NOTES_MASTER).notes_master
+      def notes_master
+        part_related_by(Opc::RELATIONSHIP_TYPE::NOTES_MASTER).notes_master
+      end
     end
   end
 end

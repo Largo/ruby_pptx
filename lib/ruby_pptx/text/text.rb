@@ -31,19 +31,27 @@ module Pptx
       @parent = parent
     end
 
-    def part = @parent.part
+    def part
+      @parent.part
+    end
 
     # The paragraphs of this text frame; there is always at least one.
     #
     # @return [Array<Paragraph>]
-    def paragraphs = @element.p_list.map { |p| Paragraph.new(p, self) }
+    def paragraphs
+      @element.p_list.map { |p| Paragraph.new(p, self) }
+    end
 
     # Append an empty paragraph and return it.
-    def add_paragraph = Paragraph.new(@element.add_p, self)
+    def add_paragraph
+      Paragraph.new(@element.add_p, self)
+    end
 
     # All the text, with "\n" between paragraphs and "\v" for each soft line
     # break.
-    def text = paragraphs.map(&:text).join("\n")
+    def text
+      paragraphs.map(&:text).join("\n")
+    end
 
     # Replace all text. Each "\n" starts a new paragraph, each "\v" a soft
     # line break within one.
@@ -62,39 +70,51 @@ module Pptx
       self
     end
 
-    def margin_left = body_properties.lIns
+    def margin_left
+      body_properties.lIns
+    end
 
     def margin_left=(value)
       body_properties.lIns = value
     end
 
-    def margin_right = body_properties.rIns
+    def margin_right
+      body_properties.rIns
+    end
 
     def margin_right=(value)
       body_properties.rIns = value
     end
 
-    def margin_top = body_properties.tIns
+    def margin_top
+      body_properties.tIns
+    end
 
     def margin_top=(value)
       body_properties.tIns = value
     end
 
-    def margin_bottom = body_properties.bIns
+    def margin_bottom
+      body_properties.bIns
+    end
 
     def margin_bottom=(value)
       body_properties.bIns = value
     end
 
     # @return [Pptx::Enum::MSO_ANCHOR, nil] nil when inherited
-    def vertical_anchor = body_properties.anchor
+    def vertical_anchor
+      body_properties.anchor
+    end
 
     def vertical_anchor=(value)
       body_properties.anchor = value
     end
 
     # @return [Pptx::Enum::MSO_AUTO_SIZE, nil] nil when inherited
-    def auto_size = body_properties.autofit
+    def auto_size
+      body_properties.autofit
+    end
 
     def auto_size=(value)
       body_properties.autofit = value
@@ -154,7 +174,9 @@ module Pptx
       [@parent.width - margin_left - margin_right, @parent.height - margin_top - margin_bottom]
     end
 
-    def inspect = "#<Pptx::TextFrame #{text.inspect}>"
+    def inspect
+      "#<Pptx::TextFrame #{text.inspect}>"
+    end
 
     private
 
@@ -178,7 +200,9 @@ module Pptx
       end
     end
 
-    def body_properties = @element.bodyPr
+    def body_properties
+      @element.bodyPr
+    end
   end
 
   # One paragraph of a text frame.
@@ -194,12 +218,18 @@ module Pptx
       @parent = parent
     end
 
-    def part = @parent.part
+    def part
+      @parent.part
+    end
 
     # @return [Array<Run>]
-    def runs = @element.r_list.map { |r| Run.new(r, self) }
+    def runs
+      @element.r_list.map { |r| Run.new(r, self) }
+    end
 
-    def add_run(text = nil) = Run.new(@element.add_run(text), self)
+    def add_run(text = nil)
+      Run.new(@element.add_run(text), self)
+    end
 
     def add_line_break
       @element.add_line_break
@@ -207,7 +237,9 @@ module Pptx
     end
 
     # The text of this paragraph, with "\v" for each soft line break.
-    def text = @element.text
+    def text
+      @element.text
+    end
 
     # Replace this paragraph's text, turning "\v" (or "\n") into line breaks
     # rather than new paragraphs -- a paragraph cannot contain another.
@@ -223,46 +255,62 @@ module Pptx
     end
 
     # @return [Pptx::Enum::PP_ALIGN, nil] nil when inherited
-    def alignment = paragraph_properties.algn
+    def alignment
+      paragraph_properties.algn
+    end
 
     def alignment=(value)
       paragraph_properties.algn = value
     end
 
     # Outline level, 0 for the top level.
-    def level = paragraph_properties.lvl
+    def level
+      paragraph_properties.lvl
+    end
 
     def level=(value)
       paragraph_properties.lvl = value
     end
 
     # A Float is a number of lines; a {Pptx::Length} is a fixed distance.
-    def line_spacing = paragraph_properties.line_spacing
+    def line_spacing
+      paragraph_properties.line_spacing
+    end
 
     def line_spacing=(value)
       paragraph_properties.line_spacing = value
     end
 
-    def space_before = paragraph_properties.space_before
+    def space_before
+      paragraph_properties.space_before
+    end
 
     def space_before=(value)
       paragraph_properties.space_before = value
     end
 
-    def space_after = paragraph_properties.space_after
+    def space_after
+      paragraph_properties.space_after
+    end
 
     def space_after=(value)
       paragraph_properties.space_after = value
     end
 
     # The default character formatting for runs in this paragraph.
-    def font = Font.new(paragraph_properties.get_or_add_defRPr)
+    def font
+      Font.new(paragraph_properties.get_or_add_defRPr)
+    end
 
-    def inspect = "#<Pptx::Paragraph #{text.inspect}>"
+    def inspect
+      "#<Pptx::Paragraph #{text.inspect}>"
+    end
 
     private
 
-    def paragraph_properties = @element.get_or_add_pPr
+    def paragraph_properties
+      @element.get_or_add_pPr
+    end
   end
 
   # A run: a span of text sharing one set of character properties.
@@ -278,27 +326,39 @@ module Pptx
       @parent = parent
     end
 
-    def part = @parent.part
+    def part
+      @parent.part
+    end
 
-    def text = @element.text
+    def text
+      @element.text
+    end
 
     def text=(value)
       @element.text = value
     end
 
-    def font = Font.new(@element.get_or_add_rPr)
+    def font
+      Font.new(@element.get_or_add_rPr)
+    end
 
     # What happens when this run of text is clicked.
-    def click_action = @click_action ||= ActionSetting.new(@element.get_or_add_rPr, self)
+    def click_action
+      @click_action ||= ActionSetting.new(@element.get_or_add_rPr, self)
+    end
 
     # The URL this run links to, or nil.
-    def hyperlink = click_action.url
+    def hyperlink
+      click_action.url
+    end
 
     def hyperlink=(url)
       click_action.address = url
     end
 
-    def inspect = "#<Pptx::Run #{text.inspect}>"
+    def inspect
+      "#<Pptx::Run #{text.inspect}>"
+    end
   end
 
   # Character formatting: typeface, size, weight, colour.
@@ -317,20 +377,26 @@ module Pptx
       @element = r_pr
     end
 
-    def bold = @element.b
+    def bold
+      @element.b
+    end
 
     def bold=(value)
       @element.b = value
     end
 
-    def italic = @element.i
+    def italic
+      @element.i
+    end
 
     def italic=(value)
       @element.i = value
     end
 
     # The typeface name, or nil when inherited from the theme.
-    def name = @element.latin&.typeface
+    def name
+      @element.latin&.typeface
+    end
 
     def name=(value)
       if value.nil?
@@ -372,14 +438,18 @@ module Pptx
     end
 
     # @return [Pptx::Enum::MSO_LANGUAGE_ID, nil]
-    def language = @element.lang
+    def language
+      @element.lang
+    end
 
     def language=(value)
       @element.lang = value
     end
 
     # The fill of the text itself.
-    def fill = @fill ||= FillFormat.from_fill_parent(@element)
+    def fill
+      @fill ||= FillFormat.from_fill_parent(@element)
+    end
 
     # The text colour. Accessing it makes the fill solid, since a colour has
     # to live on some fill.
@@ -388,6 +458,8 @@ module Pptx
       fill.fore_color
     end
 
-    def inspect = "#<Pptx::Font name=#{name.inspect} size=#{size&.pt} bold=#{bold.inspect}>"
+    def inspect
+      "#<Pptx::Font name=#{name.inspect} size=#{size&.pt} bold=#{bold.inspect}>"
+    end
   end
 end

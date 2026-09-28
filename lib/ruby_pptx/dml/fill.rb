@@ -18,7 +18,9 @@ module Pptx
   class FillFormat
     # @param fill_parent [Pptx::Oxml::Element] the element carrying the fill
     #   choice group, e.g. `p:spPr` or `a:rPr`
-    def self.from_fill_parent(fill_parent) = new(fill_parent)
+    def self.from_fill_parent(fill_parent)
+      new(fill_parent)
+    end
 
     def initialize(fill_parent)
       @parent = fill_parent
@@ -124,13 +126,19 @@ module Pptx
     # The colour stops the gradient passes through, in order.
     #
     # @return [GradientStops]
-    def gradient_stops = GradientStops.new(require_gradient.get_or_add_gsLst)
+    def gradient_stops
+      GradientStops.new(require_gradient.get_or_add_gsLst)
+    end
 
-    def inspect = "#<Pptx::FillFormat type=#{type&.name.inspect}>"
+    def inspect
+      "#<Pptx::FillFormat type=#{type&.name.inspect}>"
+    end
 
     private
 
-    def fill_element = @parent.eg_fillProperties
+    def fill_element
+      @parent.eg_fillProperties
+    end
 
     def require_gradient
       raise Error, "fill type #{type&.name.inspect} is not a gradient" unless type&.name == :GRADIENT
@@ -160,27 +168,39 @@ module Pptx
       self
     end
 
-    def size = @element.gs_list.size
+    def size
+      @element.gs_list.size
+    end
     alias length size
 
-    def [](index, length = nil) = slice_members(@element.gs_list, index, length) { |gs| GradientStop.new(gs) }
+    def [](index, length = nil)
+      slice_members(@element.gs_list, index, length) { |gs| GradientStop.new(gs) }
+    end
 
-    def inspect = "#<Pptx::GradientStops size=#{size}>"
+    def inspect
+      "#<Pptx::GradientStops size=#{size}>"
+    end
   end
 
   # One colour stop in a gradient.
   class GradientStop < ElementProxy
-    def color = @color ||= ColorFormat.from_color_choice_parent(@element)
+    def color
+      @color ||= ColorFormat.from_color_choice_parent(@element)
+    end
 
     # Where along the gradient this stop sits, from 0.0 at the start to 1.0
     # at the end.
-    def position = @element.pos
+    def position
+      @element.pos
+    end
 
     def position=(value)
       @element.pos = Float(value)
     end
 
-    def inspect = "#<Pptx::GradientStop position=#{position}>"
+    def inspect
+      "#<Pptx::GradientStop position=#{position}>"
+    end
   end
 
   class LineFormat
@@ -189,9 +209,13 @@ module Pptx
     end
 
     # The `a:ln` element, added if not present.
-    def element = @element ||= @parent.get_or_add_ln
+    def element
+      @element ||= @parent.get_or_add_ln
+    end
 
-    def fill = @fill ||= FillFormat.from_fill_parent(element)
+    def fill
+      @fill ||= FillFormat.from_fill_parent(element)
+    end
 
     # Shortcut to the line's solid colour, making the fill solid on first use.
     def color
@@ -210,7 +234,9 @@ module Pptx
     # The dash pattern, or nil when it is inherited.
     #
     # @return [Pptx::Enum::Member, nil] a member of MSO_LINE_DASH_STYLE
-    def dash_style = @parent.ln&.prstDash_val
+    def dash_style
+      @parent.ln&.prstDash_val
+    end
 
     # Set the dash pattern, or restore inheritance with nil -- which also
     # drops a custom dash, since either one would override the inherited
@@ -229,6 +255,8 @@ module Pptx
       element.w = value.nil? ? Pptx::Length.emu(0) : value
     end
 
-    def inspect = "#<Pptx::LineFormat width=#{width&.pt}>"
+    def inspect
+      "#<Pptx::LineFormat width=#{width&.pt}>"
+    end
   end
 end

@@ -24,64 +24,90 @@ module Pptx
       @parent = parent
     end
 
-    def ==(other) = other.is_a?(BaseShape) && other.element == @element
+    def ==(other)
+      other.is_a?(BaseShape) && other.element == @element
+    end
     alias eql? ==
 
-    def hash = @element.hash
+    def hash
+      @element.hash
+    end
 
     # The package part containing this shape.
-    def part = @parent.part
+    def part
+      @parent.part
+    end
 
     # The drawing-object id, unique within the slide.
-    def shape_id = @element.shape_id
+    def shape_id
+      @element.shape_id
+    end
 
-    def name = @element.shape_name
+    def name
+      @element.shape_name
+    end
 
     def name=(value)
       @element.nvXxPr.cNvPr.name = value.to_s
     end
 
     # @return [Length, nil] nil when the shape inherits its position
-    def left = @element.x
+    def left
+      @element.x
+    end
 
     def left=(value)
       @element.x = value
     end
 
-    def top = @element.y
+    def top
+      @element.y
+    end
 
     def top=(value)
       @element.y = value
     end
 
-    def width = @element.cx
+    def width
+      @element.cx
+    end
 
     def width=(value)
       @element.cx = value
     end
 
-    def height = @element.cy
+    def height
+      @element.cy
+    end
 
     def height=(value)
       @element.cy = value
     end
 
     # Clockwise rotation in degrees.
-    def rotation = @element.rot
+    def rotation
+      @element.rot
+    end
 
     def rotation=(value)
       @element.rot = value
     end
 
-    def placeholder? = @element.placeholder?
+    def placeholder?
+      @element.placeholder?
+    end
 
     # This shape's shadow. Always returned, even when the shadow is inherited.
     #
     # @return [ShadowFormat]
-    def shadow = @shadow ||= ShadowFormat.new(@element.spPr)
+    def shadow
+      @shadow ||= ShadowFormat.new(@element.spPr)
+    end
 
     # What happens when this shape is clicked during a slide show.
-    def click_action = @click_action ||= ActionSetting.new(@element.nvXxPr.cNvPr, self)
+    def click_action
+      @click_action ||= ActionSetting.new(@element.nvXxPr.cNvPr, self)
+    end
 
     # What happens when the pointer rests on this shape.
     def hover_action
@@ -93,7 +119,9 @@ module Pptx
     # A shortcut for `click_action.url`, which is the common case; reach for
     # {#click_action} when the click does something else. Nil when the click
     # is not a hyperlink -- a slide jump reports nil here, not a partname.
-    def hyperlink = click_action.url
+    def hyperlink
+      click_action.url
+    end
 
     def hyperlink=(url)
       click_action.address = url
@@ -105,14 +133,26 @@ module Pptx
     end
 
     # Overridden by the subclasses that can actually hold these.
-    def text_frame? = false
-    def chart? = false
-    def table? = false
+    def text_frame?
+      false
+    end
+
+    def chart?
+      false
+    end
+
+    def table?
+      false
+    end
 
     # @return [Pptx::Enum::MSO_SHAPE_TYPE]
-    def shape_type = raise(NotImplementedError, "#{self.class} must implement #shape_type")
+    def shape_type
+      raise(NotImplementedError, "#{self.class} must implement #shape_type")
+    end
 
-    def inspect = "#<#{self.class.name} id=#{shape_id} #{name.inspect}>"
+    def inspect
+      "#<#{self.class.name} id=#{shape_id} #{name.inspect}>"
+    end
   end
 
   # The placeholder-specific properties of a shape: which placeholder it is
@@ -124,15 +164,25 @@ module Pptx
 
     # The `idx` that ties a slide placeholder to the layout one it inherits
     # from. The title placeholder is always 0.
-    def idx = @element.idx
+    def idx
+      @element.idx
+    end
 
     # @return [Pptx::Enum::PP_PLACEHOLDER]
-    def type = @element.type
+    def type
+      @element.type
+    end
 
-    def orientation = @element.orient
+    def orientation
+      @element.orient
+    end
 
-    def size = @element.sz
+    def size
+      @element.sz
+    end
 
-    def inspect = "#<Pptx::PlaceholderFormat idx=#{idx} type=#{type}>"
+    def inspect
+      "#<Pptx::PlaceholderFormat idx=#{idx} type=#{type}>"
+    end
   end
 end

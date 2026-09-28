@@ -27,12 +27,18 @@ module Pptx
       # True when this member has no XML representation. Such members are
       # return values only: they describe a state the file format expresses by
       # some other means, so they can be returned but never written.
-      def xml_value? = !(@xml_value.nil? || @xml_value.empty?)
+      def xml_value?
+        !(@xml_value.nil? || @xml_value.empty?)
+      end
 
-      def to_i = @value
+      def to_i
+        @value
+      end
       alias to_int to_i
 
-      def to_sym = @name
+      def to_sym
+        @name
+      end
 
       def <=>(other)
         case other
@@ -41,15 +47,23 @@ module Pptx
         end
       end
 
-      def ==(other) = (self <=> other)&.zero? || false
+      def ==(other)
+        (self <=> other)&.zero? || false
+      end
       alias eql? ==
 
-      def hash = @value.hash
+      def hash
+        @value.hash
+      end
 
       # e.g. "MIDDLE (3)"
-      def to_s = "#{@name} (#{@value})"
+      def to_s
+        "#{@name} (#{@value})"
+      end
 
-      def inspect = "#{@enum.short_name}.#{@name}"
+      def inspect
+        "#{@enum.short_name}.#{@name}"
+      end
     end
 
     # Base for every enumeration. Members are declared with {.member} and
@@ -70,11 +84,17 @@ module Pptx
           member
         end
 
-        def members = @members ||= []
+        def members
+          @members ||= []
+        end
 
-        def each(&) = members.each(&)
+        def each(&)
+          members.each(&)
+        end
 
-        def short_name = name.to_s.split("::").last
+        def short_name
+          name.to_s.split("::").last
+        end
 
         # Look a member up by symbolic name or MS API value.
         #

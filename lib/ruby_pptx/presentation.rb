@@ -42,7 +42,9 @@ module Pptx
       end
 
       # A new presentation based on the built-in default template.
-      def new_default = Presentation.open(nil)
+      def new_default
+        Presentation.open(nil)
+      end
 
       def default_template_path
         File.expand_path("templates/default.pptx", __dir__)
@@ -55,7 +57,9 @@ module Pptx
     ].freeze
 
     # The Dublin Core metadata for this presentation.
-    def core_properties = part.core_properties
+    def core_properties
+      part.core_properties
+    end
 
     # The slides in this presentation.
     def slides
@@ -74,32 +78,44 @@ module Pptx
     # The notes master, created from the default template on first use.
     #
     # @return [NotesMaster]
-    def notes_master = part.notes_master_part.notes_master
+    def notes_master
+      part.notes_master_part.notes_master
+    end
 
     # The first slide master, which is the only one in most presentations.
-    def slide_master = slide_masters[0]
+    def slide_master
+      slide_masters[0]
+    end
 
     # The layouts of the first slide master.
     #
     # A presentation may have several masters, each with its own layouts; this
     # is a convenience for the common case of one.
-    def slide_layouts = slide_master.slide_layouts
+    def slide_layouts
+      slide_master.slide_layouts
+    end
 
     # The sections grouping this presentation's slides.
     #
     # Sections are a PowerPoint 2010 extension; a presentation with none has
     # an empty collection and writes no extension element.
-    def sections = @sections ||= Sections.new(self)
+    def sections
+      @sections ||= Sections.new(self)
+    end
 
     # @return [Length, nil] nil when the presentation defines no slide size
-    def slide_width = @element.sldSz&.cx
+    def slide_width
+      @element.sldSz&.cx
+    end
 
     def slide_width=(width)
       @element.get_or_add_sldSz.cx = width
     end
 
     # @return [Length, nil]
-    def slide_height = @element.sldSz&.cy
+    def slide_height
+      @element.sldSz&.cy
+    end
 
     def slide_height=(height)
       @element.get_or_add_sldSz.cy = height

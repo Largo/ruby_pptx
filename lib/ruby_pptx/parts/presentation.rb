@@ -11,7 +11,9 @@ module Pptx
     # The presentation part, `/ppt/presentation.xml`; the package's main
     # document part.
     class PresentationPart < Opc::XmlPart
-      def presentation = @presentation ||= Presentation.new(element, self)
+      def presentation
+        @presentation ||= Presentation.new(element, self)
+      end
 
       # Create a blank slide part inheriting from +slide_layout+.
       #
@@ -22,7 +24,9 @@ module Pptx
         [r_id, slide_part.slide]
       end
 
-      def core_properties = package.core_properties
+      def core_properties
+        package.core_properties
+      end
 
       # The presentation's notes master, created from the default template on
       # first use.
@@ -38,9 +42,13 @@ module Pptx
         part
       end
 
-      def related_slide(r_id) = related_part(r_id).slide
+      def related_slide(r_id)
+        related_part(r_id).slide
+      end
 
-      def related_slide_master(r_id) = related_part(r_id).slide_master
+      def related_slide_master(r_id)
+        related_part(r_id).slide_master
+      end
 
       # The slide with presentation-wide id +slide_id+.
       #
@@ -73,7 +81,9 @@ module Pptx
         Opc::PackURI.new("/ppt/slides/slide#{count + 1}.xml")
       end
 
-      def save(path_or_stream) = package.save(path_or_stream)
+      def save(path_or_stream)
+        package.save(path_or_stream)
+      end
     end
   end
 end

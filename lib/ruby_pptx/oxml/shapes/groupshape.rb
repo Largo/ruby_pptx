@@ -26,13 +26,21 @@ module Pptx
       SHAPE_TAGS = %w[p:sp p:grpSp p:graphicFrame p:cxnSp p:pic p:contentPart].freeze
 
       # A group's transform hangs off `p:grpSpPr`, not `p:spPr`.
-      def xfrm = grpSpPr.xfrm
+      def xfrm
+        grpSpPr.xfrm
+      end
 
-      def get_or_add_xfrm = grpSpPr.get_or_add_xfrm
+      def get_or_add_xfrm
+        grpSpPr.get_or_add_xfrm
+      end
 
-      def chOff = get_or_add_xfrm.get_or_add_chOff
+      def chOff
+        get_or_add_xfrm.get_or_add_chOff
+      end
 
-      def chExt = get_or_add_xfrm.get_or_add_chExt
+      def chExt
+        get_or_add_xfrm.get_or_add_chExt
+      end
 
       # Each shape child, in document order.
       def shape_elements

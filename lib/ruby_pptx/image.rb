@@ -50,7 +50,9 @@ module Pptx
     attr_reader :blob, :filename
 
     class << self
-      def from_blob(blob, filename = nil) = new(blob, filename)
+      def from_blob(blob, filename = nil)
+        new(blob, filename)
+      end
 
       # Load from a path or an IO stream.
       def from_file(image_file)
@@ -69,18 +71,28 @@ module Pptx
     end
 
     # @return [Symbol] :PNG, :JPEG, :GIF, :BMP, :TIFF or :WMF
-    def format = header.fetch(:format)
+    def format
+      header.fetch(:format)
+    end
 
     # True for a vector image, which has no pixel size of its own and needs a
     # raster fallback to be placed in a slide.
-    def vector? = format == :SVG
+    def vector?
+      format == :SVG
+    end
 
     # @return [Array(Integer, Integer)] width and height in pixels
-    def size = [header.fetch(:width), header.fetch(:height)]
+    def size
+      [header.fetch(:width), header.fetch(:height)]
+    end
 
-    def width_px = header.fetch(:width)
+    def width_px
+      header.fetch(:width)
+    end
 
-    def height_px = header.fetch(:height)
+    def height_px
+      header.fetch(:height)
+    end
 
     # @return [Array(Integer, Integer)] horizontal and vertical dots per inch
     def dpi
@@ -94,9 +106,13 @@ module Pptx
       end
     end
 
-    def content_type = CONTENT_TYPE_FOR_EXT.fetch(ext)
+    def content_type
+      CONTENT_TYPE_FOR_EXT.fetch(ext)
+    end
 
-    def sha1 = @sha1 ||= Digest::SHA1.hexdigest(@blob)
+    def sha1
+      @sha1 ||= Digest::SHA1.hexdigest(@blob)
+    end
 
     # Native size in EMU, derived from the pixel size and resolution.
     #
@@ -109,7 +125,9 @@ module Pptx
        Length.emu((EMU_PER_INCH * height_px / vert_dpi).to_i)]
     end
 
-    def inspect = "#<Pptx::Image #{format} #{width_px}x#{height_px} #{dpi.join("x")}dpi>"
+    def inspect
+      "#<Pptx::Image #{format} #{width_px}x#{height_px} #{dpi.join("x")}dpi>"
+    end
 
     private
 

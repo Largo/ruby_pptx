@@ -20,15 +20,23 @@ module Pptx
         @source_filename = source_filename
       end
 
-      def image = @image ||= Image.from_blob(blob, @source_filename)
+      def image
+        @image ||= Image.from_blob(blob, @source_filename)
+      end
 
-      def ext = partname.ext
+      def ext
+        partname.ext
+      end
 
       # The name PowerPoint shows in the alt-text/description field: the file
       # the image came from, or a generic name when it came from a stream.
-      def desc = @source_filename || "image.#{ext}"
+      def desc
+        @source_filename || "image.#{ext}"
+      end
 
-      def sha1 = image.sha1
+      def sha1
+        image.sha1
+      end
 
       # Resolve a requested size against the image's native size.
       #

@@ -24,7 +24,9 @@ module Pptx
       zero_or_one "a:rPr", successors: %w[a:t]
       one_and_only_one "a:t"
 
-      def text = t.text
+      def text
+        t.text
+      end
 
       def text=(value)
         t.text = CT_RegularTextRun.escape_control_chars(value.to_s)
@@ -46,7 +48,9 @@ module Pptx
       # A break carries no text of its own; it *is* the line feed, which we
       # report as a vertical tab to match how PowerPoint puts it on the
       # clipboard.
-      def text = "\v"
+      def text
+        "\v"
+      end
     end
 
     # `a:fld`, a slide-number or date field.
@@ -55,7 +59,9 @@ module Pptx
       zero_or_one "a:rPr", successors: %w[a:pPr a:t]
       zero_or_one "a:t", successors: []
 
-      def text = t&.text.to_s
+      def text
+        t&.text.to_s
+      end
     end
 
     # `a:latin`, `a:ea`, `a:cs` and `a:sym`: a typeface reference.
@@ -84,7 +90,9 @@ module Pptx
       optional_attr "i", type: SimpleTypes::XsdBoolean
       optional_attr "u", type: Enum::MSO_TEXT_UNDERLINE_TYPE
 
-      def new_gradFill = CT_GradientFillProperties.new_grad_fill(self)
+      def new_gradFill
+        CT_GradientFillProperties.new_grad_fill(self)
+      end
     end
 
     # `a:bodyPr`, the properties of a text body: margins, anchoring, autofit.
@@ -197,14 +205,18 @@ module Pptx
         value.is_a?(Pptx::Length) ? spacing.set_spc_pts(value) : spacing.set_spc_pct(value)
       end
 
-      def space_before = spcBef&.spcPts&.val
+      def space_before
+        spcBef&.spcPts&.val
+      end
 
       def space_before=(value)
         remove_spcBef
         get_or_add_spcBef.set_spc_pts(value) unless value.nil?
       end
 
-      def space_after = spcAft&.spcPts&.val
+      def space_after
+        spcAft&.spcPts&.val
+      end
 
       def space_after=(value)
         remove_spcAft
@@ -223,7 +235,9 @@ module Pptx
       CONTENT_TAGS = %w[a:r a:br a:fld].freeze
 
       # A run is created with its required `a:t` already in place.
-      def new_r = build_from_xml(%(<a:r #{Ns.nsdecls("a")}><a:t/></a:r>))
+      def new_r
+        build_from_xml(%(<a:r #{Ns.nsdecls("a")}><a:t/></a:r>))
+      end
 
       def add_run(text = nil)
         run = add_r
@@ -231,7 +245,9 @@ module Pptx
         run
       end
 
-      def add_line_break = add_br
+      def add_line_break
+        add_br
+      end
 
       # Append +text+ as runs, turning each "\n" or "\v" into a line break.
       #
@@ -253,7 +269,9 @@ module Pptx
              .map { |c| Element.wrap(c) }
       end
 
-      def text = content_children.map(&:text).join
+      def text
+        content_children.map(&:text).join
+      end
     end
 
     # `p:txBody`, `a:txBody` and `c:txPr`: a body of text.
@@ -267,7 +285,9 @@ module Pptx
       # A chart's `c:txPr` holds a paragraph for its formatting alone; the
       # default run properties of that first paragraph are where a chart,
       # axis, legend or data-label font lives.
-      def defRPr = p_list.first.get_or_add_pPr.get_or_add_defRPr
+      def defRPr
+        p_list.first.get_or_add_pPr.get_or_add_defRPr
+      end
 
       # The `c:txPr` a chart element gains when its font is first set.
       TXPR_XML = <<~XML.freeze
@@ -284,10 +304,14 @@ module Pptx
 
       class << self
         # A `p:txBody` with one empty paragraph, built in +context+'s document.
-        def new_element(context) = context.build_from_xml(txbody_xml)
+        def new_element(context)
+          context.build_from_xml(txbody_xml)
+        end
 
         # A standalone `p:txBody`, for callers with no element to build from.
-        def parse_new = Element.parse(txbody_xml)
+        def parse_new
+          Element.parse(txbody_xml)
+        end
 
         def txbody_xml
           <<~XML

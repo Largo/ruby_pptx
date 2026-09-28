@@ -223,6 +223,8 @@ module Pptx
     end
 
     # A colour may be given as an RGBColor or as a hex string.
-    def rgb(value) = value.is_a?(RGBColor) ? value : RGBColor.from_string(value)
+    def rgb(value)
+      value.is_a?(RGBColor) ? value : RGBColor.from_string(value)
+    end
   end
 end

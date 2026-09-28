@@ -10,34 +10,46 @@ module Pptx
   # Behaviour common to slides, layouts, masters and notes slides.
   class BaseSlide < PartElementProxy
     # The internal name of this slide; an empty string when unnamed.
-    def name = @element.cSld.name
+    def name
+      @element.cSld.name
+    end
 
     def name=(value)
       @element.cSld.name = value.to_s
     end
 
-    def shape_tree = @element.spTree
+    def shape_tree
+      @element.spTree
+    end
 
     # The slide background.
     #
     # Note that merely reading this is destructive: a background given by a
     # style reference, or inherited, is replaced with an explicit no-fill so
     # there is something to interrogate. python-pptx behaves the same way.
-    def background = @background ||= Background.new(@element.cSld)
+    def background
+      @background ||= Background.new(@element.cSld)
+    end
   end
 
   # The background of a slide, layout or master.
   class Background < ElementProxy
-    def fill = @fill ||= FillFormat.from_fill_parent(@element.get_or_add_bgPr)
+    def fill
+      @fill ||= FillFormat.from_fill_parent(@element.get_or_add_bgPr)
+    end
   end
 
   # Common to slide masters and the notes master.
   class BaseMaster < BaseSlide
     # The shapes on this master.
-    def shapes = @shapes ||= MasterShapes.new(@element.spTree, self)
+    def shapes
+      @shapes ||= MasterShapes.new(@element.spTree, self)
+    end
 
     # The placeholders on this master, in `idx` order.
-    def placeholders = @placeholders ||= MasterPlaceholders.new(@element.spTree, self)
+    def placeholders
+      @placeholders ||= MasterPlaceholders.new(@element.spTree, self)
+    end
   end
 
   # The master every notes page in a presentation inherits from.
@@ -46,7 +58,9 @@ module Pptx
   # the first time a slide is given speaker notes, or {Presentation#notes_master}
   # is asked for.
   class NotesMaster < BaseMaster
-    def inspect = "#<Pptx::NotesMaster #{part.partname}>"
+    def inspect
+      "#<Pptx::NotesMaster #{part.partname}>"
+    end
   end
 
   # The speaker notes page belonging to one slide.
@@ -58,17 +72,25 @@ module Pptx
     # The header, date and footer stay on the master, as they do in PowerPoint.
     CLONEABLE = %i[SLIDE_IMAGE BODY SLIDE_NUMBER].freeze
 
-    def shapes = @shapes ||= NotesSlideShapes.new(@element.spTree, self)
+    def shapes
+      @shapes ||= NotesSlideShapes.new(@element.spTree, self)
+    end
 
-    def placeholders = @placeholders ||= NotesSlidePlaceholders.new(@element.spTree, self)
+    def placeholders
+      @placeholders ||= NotesSlidePlaceholders.new(@element.spTree, self)
+    end
 
     # The body placeholder that holds the notes text, or nil if it was removed.
-    def notes_placeholder = placeholders.find { |ph| ph.placeholder_format.type.name == :BODY }
+    def notes_placeholder
+      placeholders.find { |ph| ph.placeholder_format.type.name == :BODY }
+    end
 
     # The text frame of the notes placeholder, or nil when there is none.
     #
     # @return [TextFrame, nil]
-    def notes_text_frame = notes_placeholder&.text_frame
+    def notes_text_frame
+      notes_placeholder&.text_frame
+    end
 
     # Copy the cloneable placeholders from +notes_master+, keeping their order.
     # Called once, when the notes slide is created.
@@ -82,7 +104,9 @@ module Pptx
       self
     end
 
-    def inspect = "#<Pptx::NotesSlide #{part.partname}>"
+    def inspect
+      "#<Pptx::NotesSlide #{part.partname}>"
+    end
   end
 
   # One slide in a presentation.
@@ -93,15 +117,23 @@ module Pptx
 
     # The id that identifies this slide within the presentation, stable across
     # reordering.
-    def slide_id = part.slide_id
+    def slide_id
+      part.slide_id
+    end
 
     # The layout this slide takes its appearance from.
-    def layout = part.slide_layout
+    def layout
+      part.slide_layout
+    end
 
     # True when this slide inherits the master's background.
-    def follows_master_background? = @element.bg.nil?
+    def follows_master_background?
+      @element.bg.nil?
+    end
 
-    def notes_slide? = part.notes_slide?
+    def notes_slide?
+      part.notes_slide?
+    end
 
     # This slide's speaker notes page, created on first use.
     #
@@ -109,13 +141,17 @@ module Pptx
     # {#notes} and {#notes=} for the common case of just the text.
     #
     # @return [NotesSlide]
-    def notes_slide = part.notes_slide
+    def notes_slide
+      part.notes_slide
+    end
 
     # The speaker notes as plain text, or nil when the slide has none.
     #
     # Reading never creates a notes slide; that would add parts to a file
     # merely by looking at it.
-    def notes = notes_slide? ? notes_slide.notes_text_frame&.text : nil
+    def notes
+      notes_slide? ? notes_slide.notes_text_frame&.text : nil
+    end
 
     # Replace the speaker notes, creating the notes slide if need be.
     def notes=(text)
@@ -126,12 +162,18 @@ module Pptx
     end
 
     # The shapes on this slide, in z-order.
-    def shapes = @shapes ||= SlideShapes.new(@element.spTree, self)
+    def shapes
+      @shapes ||= SlideShapes.new(@element.spTree, self)
+    end
 
     # The placeholders on this slide, keyed by `idx`.
-    def placeholders = @placeholders ||= SlidePlaceholders.new(@element.spTree, self)
+    def placeholders
+      @placeholders ||= SlidePlaceholders.new(@element.spTree, self)
+    end
 
-    def inspect = "#<Pptx::Slide id=#{slide_id} #{part.partname}>"
+    def inspect
+      "#<Pptx::Slide id=#{slide_id} #{part.partname}>"
+    end
   end
 
   # The slides of a presentation, in order.
@@ -154,10 +196,14 @@ module Pptx
       self
     end
 
-    def size = @sld_id_list.size
+    def size
+      @sld_id_list.size
+    end
     alias length size
 
-    def empty? = size.zero?
+    def empty?
+      size.zero?
+    end
 
     # Indexed access, supporting a negative index as Ruby arrays do.
     #
@@ -172,12 +218,16 @@ module Pptx
     end
 
     # Enumerable gives us #first but not #last.
-    def last = self[-1]
+    def last
+      self[-1]
+    end
 
     # The slide with the given slide id.
     #
     # @return [Slide, nil]
-    def by_id(slide_id) = part.slide_by_id(slide_id)
+    def by_id(slide_id)
+      part.slide_by_id(slide_id)
+    end
 
     # Add a slide inheriting from +slide_layout+, and return it.
     #
@@ -193,9 +243,13 @@ module Pptx
     # The zero-based position of +slide+.
     #
     # @return [Integer, nil] nil when the slide is not in this collection
-    def index(slide) = each_with_index.find { |s, _| s == slide }&.last
+    def index(slide)
+      each_with_index.find { |s, _| s == slide }&.last
+    end
 
-    def inspect = "#<Pptx::Slides size=#{size}>"
+    def inspect
+      "#<Pptx::Slides size=#{size}>"
+    end
   end
 
   # A slide layout: the arrangement a slide inherits from.
@@ -213,10 +267,14 @@ module Pptx
     ].freeze
 
     # The shapes on this layout.
-    def shapes = @shapes ||= LayoutShapes.new(@element.spTree, self)
+    def shapes
+      @shapes ||= LayoutShapes.new(@element.spTree, self)
+    end
 
     # The placeholders on this layout, in `idx` order.
-    def placeholders = @placeholders ||= LayoutPlaceholders.new(@element.spTree, self)
+    def placeholders
+      @placeholders ||= LayoutPlaceholders.new(@element.spTree, self)
+    end
 
     # The placeholders a new slide based on this layout should receive.
     def cloneable_placeholders
@@ -224,11 +282,15 @@ module Pptx
     end
 
     # The master this layout inherits from.
-    def slide_master = part.slide_master
+    def slide_master
+      part.slide_master
+    end
 
     # The kind of layout this is, e.g. "title" or "obj". PowerPoint uses it to
     # decide which layout to offer for a given command.
-    def type = @element.type
+    def type
+      @element.type
+    end
 
     def type=(value)
       @element.type = value&.to_s
@@ -239,7 +301,9 @@ module Pptx
       part.package.presentation_part.presentation.slides.select { |s| s.layout == self }
     end
 
-    def inspect = "#<Pptx::SlideLayout #{name.inspect}>"
+    def inspect
+      "#<Pptx::SlideLayout #{name.inspect}>"
+    end
   end
 
   # The layouts belonging to one slide master.
@@ -262,7 +326,9 @@ module Pptx
       self
     end
 
-    def size = @sld_layout_id_list.size
+    def size
+      @sld_layout_id_list.size
+    end
     alias length size
 
     # Indexed by position, or looked up by layout name.
@@ -282,10 +348,14 @@ module Pptx
     end
 
     # @return [SlideLayout, nil]
-    def by_name(name) = find { |layout| layout.name == name }
+    def by_name(name)
+      find { |layout| layout.name == name }
+    end
 
     # @return [Integer, nil]
-    def index(slide_layout) = each_with_index.find { |l, _| l == slide_layout }&.last
+    def index(slide_layout)
+      each_with_index.find { |l, _| l == slide_layout }&.last
+    end
 
     # Remove +slide_layout+ from this collection and from the package.
     #
@@ -329,7 +399,9 @@ module Pptx
       layout
     end
 
-    def inspect = "#<Pptx::SlideLayouts size=#{size}>"
+    def inspect
+      "#<Pptx::SlideLayouts size=#{size}>"
+    end
   end
 
   # A slide master.
@@ -342,14 +414,20 @@ module Pptx
     # The colours and fonts this master draws from.
     #
     # @return [Pptx::Theme]
-    def theme = part.theme_part.theme
+    def theme
+      part.theme_part.theme
+    end
 
     # The placeholders every layout and slide under this master inherits from.
     #
     # @return [MasterPlaceholders]
-    def placeholders = @placeholders ||= MasterPlaceholders.new(@element.spTree, self)
+    def placeholders
+      @placeholders ||= MasterPlaceholders.new(@element.spTree, self)
+    end
 
-    def inspect = "#<Pptx::SlideMaster #{part.partname}>"
+    def inspect
+      "#<Pptx::SlideMaster #{part.partname}>"
+    end
   end
 
   # The slide masters of a presentation.
@@ -372,7 +450,9 @@ module Pptx
       self
     end
 
-    def size = @sld_master_id_list.size
+    def size
+      @sld_master_id_list.size
+    end
     alias length size
 
     def [](index, length = nil)
@@ -408,7 +488,9 @@ module Pptx
       master
     end
 
-    def inspect = "#<Pptx::SlideMasters size=#{size}>"
+    def inspect
+      "#<Pptx::SlideMasters size=#{size}>"
+    end
 
     private
 

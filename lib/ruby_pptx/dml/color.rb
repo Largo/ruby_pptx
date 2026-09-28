@@ -19,7 +19,9 @@ module Pptx
     attr_reader :r, :g, :b
 
     # Array patterns too: `in [r, g, b]`.
-    def deconstruct = to_a
+    def deconstruct
+      to_a
+    end
 
     # Parse a hex string such as "3C2F80".
     def self.from_string(hex)
@@ -46,17 +48,27 @@ module Pptx
       freeze
     end
 
-    def to_a = [@r, @g, @b]
+    def to_a
+      [@r, @g, @b]
+    end
 
     # The uppercase hex form OOXML uses, e.g. "3C2F80".
-    def to_s = format("%02X%02X%02X", @r, @g, @b)
+    def to_s
+      format("%02X%02X%02X", @r, @g, @b)
+    end
 
-    def ==(other) = other.is_a?(RGBColor) && other.to_a == to_a
+    def ==(other)
+      other.is_a?(RGBColor) && other.to_a == to_a
+    end
     alias eql? ==
 
-    def hash = to_a.hash
+    def hash
+      to_a.hash
+    end
 
-    def inspect = "#<Pptx::RGBColor #{self}>"
+    def inspect
+      "#<Pptx::RGBColor #{self}>"
+    end
   end
 
   # The colour of a font, fill or line.
@@ -66,7 +78,9 @@ module Pptx
   class ColorFormat
     # @param color_choice_parent [Pptx::Oxml::Element] the element holding the
     #   colour choice, e.g. `a:solidFill`
-    def self.from_color_choice_parent(color_choice_parent) = new(color_choice_parent)
+    def self.from_color_choice_parent(color_choice_parent)
+      new(color_choice_parent)
+    end
 
     def initialize(color_choice_parent)
       @parent = color_choice_parent
@@ -146,10 +160,14 @@ module Pptx
       end
     end
 
-    def inspect = "#<Pptx::ColorFormat type=#{type&.name.inspect} rgb=#{rgb&.to_s.inspect}>"
+    def inspect
+      "#<Pptx::ColorFormat type=#{type&.name.inspect} rgb=#{rgb&.to_s.inspect}>"
+    end
 
     private
 
-    def color_element = @parent.eg_colorChoice
+    def color_element
+      @parent.eg_colorChoice
+    end
   end
 end

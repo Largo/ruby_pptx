@@ -42,9 +42,13 @@ module Pptx
       series
     end
 
-    def each(&) = @series.each(&)
+    def each(&)
+      @series.each(&)
+    end
 
-    def size = @series.size
+    def size
+      @series.size
+    end
 
     # The row a series' title sits on, counting the blocks before it.
     #
@@ -55,13 +59,19 @@ module Pptx
     end
 
     # @api private
-    def series_name_ref(series) = "#{WORKSHEET_NAME}!$B$#{title_row(series)}"
+    def series_name_ref(series)
+      "#{WORKSHEET_NAME}!$B$#{title_row(series)}"
+    end
 
     # @api private
-    def x_values_ref(series) = column_ref(series, "A")
+    def x_values_ref(series)
+      column_ref(series, "A")
+    end
 
     # @api private
-    def y_values_ref(series) = column_ref(series, "B")
+    def y_values_ref(series)
+      column_ref(series, "B")
+    end
 
     # @api private
     def column_ref(series, column)
@@ -71,30 +81,44 @@ module Pptx
     end
 
     # @api private
-    def xlsx_blob = XyWorkbookWriter.new(self).blob
+    def xlsx_blob
+      XyWorkbookWriter.new(self).blob
+    end
 
     # @api private
     # Whether the worksheet carries a third column of bubble sizes.
-    def bubble? = false
+    def bubble?
+      false
+    end
 
-    def inspect = "#<#{self.class.name} series=#{size}>"
+    def inspect
+      "#<#{self.class.name} series=#{size}>"
+    end
 
     private
 
-    def series_class = XySeries
+    def series_class
+      XySeries
+    end
   end
 
   # Data for a bubble chart: series of (x, y, size) points.
   class BubbleChartData < XyChartData
     # @api private
-    def bubble_sizes_ref(series) = column_ref(series, "C")
+    def bubble_sizes_ref(series)
+      column_ref(series, "C")
+    end
 
     # @api private
-    def bubble? = true
+    def bubble?
+      true
+    end
 
     private
 
-    def series_class = BubbleSeries
+    def series_class
+      BubbleSeries
+    end
   end
 
   # One series of a scatter chart.
@@ -117,19 +141,37 @@ module Pptx
       self
     end
 
-    def each(&) = @points.each(&)
+    def each(&)
+      @points.each(&)
+    end
 
-    def size = @points.size
+    def size
+      @points.size
+    end
 
-    def x_values = @points.map(&:first)
+    def x_values
+      @points.map(&:first)
+    end
 
-    def y_values = @points.map { |point| point[1] }
+    def y_values
+      @points.map { |point| point[1] }
+    end
 
-    def name_ref = @chart_data.series_name_ref(self)
-    def x_values_ref = @chart_data.x_values_ref(self)
-    def y_values_ref = @chart_data.y_values_ref(self)
+    def name_ref
+      @chart_data.series_name_ref(self)
+    end
 
-    def inspect = "#<#{self.class.name} #{@name.inspect} #{size} points>"
+    def x_values_ref
+      @chart_data.x_values_ref(self)
+    end
+
+    def y_values_ref
+      @chart_data.y_values_ref(self)
+    end
+
+    def inspect
+      "#<#{self.class.name} #{@name.inspect} #{size} points>"
+    end
   end
 
   # One series of a bubble chart, whose points carry a size as well.
@@ -139,9 +181,13 @@ module Pptx
       self
     end
 
-    def bubble_sizes = @points.map { |point| point[2] }
+    def bubble_sizes
+      @points.map { |point| point[2] }
+    end
 
-    def bubble_sizes_ref = @chart_data.bubble_sizes_ref(self)
+    def bubble_sizes_ref
+      @chart_data.bubble_sizes_ref(self)
+    end
   end
 
   # Writes the workbook behind a scatter or bubble chart.

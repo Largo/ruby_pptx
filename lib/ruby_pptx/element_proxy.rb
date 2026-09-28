@@ -17,12 +17,18 @@ module Pptx
       @element = element
     end
 
-    def ==(other) = other.is_a?(ElementProxy) && other.element == @element
+    def ==(other)
+      other.is_a?(ElementProxy) && other.element == @element
+    end
     alias eql? ==
 
-    def hash = @element.hash
+    def hash
+      @element.hash
+    end
 
-    def inspect = "#<#{self.class.name} <#{@element.nsptag}>>"
+    def inspect
+      "#<#{self.class.name} <#{@element.nsptag}>>"
+    end
   end
 
   # A proxy that knows its parent, and through it the part it belongs to.
@@ -38,7 +44,9 @@ module Pptx
     end
 
     # The package part this object lives in.
-    def part = @parent.part
+    def part
+      @parent.part
+    end
   end
 
   # A proxy wrapping a part's root element, such as `p:sld`.

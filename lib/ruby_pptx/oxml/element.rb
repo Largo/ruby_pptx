@@ -29,12 +29,18 @@ module Pptx
         end
 
         # @return [Class] the registered class, or {Element} for an unmodelled tag
-        def class_for(clark_name) = @classes.fetch(clark_name, Element)
+        def class_for(clark_name)
+          @classes.fetch(clark_name, Element)
+        end
 
-        def registered = @classes.dup
+        def registered
+          @classes.dup
+        end
 
         # Test seam: forget registrations made by a spec.
-        def reset!(to) = (@classes = to)
+        def reset!(to)
+          (@classes = to)
+        end
       end
     end
 
@@ -71,7 +77,9 @@ module Pptx
         prefixed_tags.each { |t| Registry.register(Ns.qn(t), self) }
       end
 
-      def self.nsptag = @nsptags&.first
+      def self.nsptag
+        @nsptags&.first
+      end
 
       class << self
         attr_reader :nsptags
@@ -115,17 +123,27 @@ module Pptx
       # -- tree navigation -------------------------------------------------
 
       # @return [String] this element's prefixed tag, e.g. "p:sp"
-      def nsptag = Ns.prefixed_tag(Ns.clark_name_of(@node))
+      def nsptag
+        Ns.prefixed_tag(Ns.clark_name_of(@node))
+      end
 
-      def document = @node.document
+      def document
+        @node.document
+      end
 
-      def parent = Element.wrap(@node.parent.is_a?(Nokogiri::XML::Element) ? @node.parent : nil)
+      def parent
+        Element.wrap(@node.parent.is_a?(Nokogiri::XML::Element) ? @node.parent : nil)
+      end
 
       # @return [Array<Element>] every child element, in document order
-      def element_children = @node.element_children.map { |child| Element.wrap(child) }
+      def element_children
+        @node.element_children.map { |child| Element.wrap(child) }
+      end
 
       # First child element with +nsptag+, or nil.
-      def find(nsptag) = Element.wrap(raw_find(nsptag))
+      def find(nsptag)
+        Element.wrap(raw_find(nsptag))
+      end
 
       # Every child element with +nsptag+, in document order.
       def find_all(nsptag)
@@ -216,7 +234,9 @@ module Pptx
       # -- text content ----------------------------------------------------
 
       # @return [String] the element's text content
-      def text = @node.text
+      def text
+        @node.text
+      end
 
       def text=(value)
         @node.content = value.to_s
@@ -268,22 +288,34 @@ module Pptx
         nil
       end
 
-      def attribute?(attr_name) = !get(attr_name).nil?
+      def attribute?(attr_name)
+        !get(attr_name).nil?
+      end
 
       # -- serialization and equality --------------------------------------
 
       # Pretty-printed XML for this element, without a declaration. For
       # debugging and specs.
-      def xml = @node.to_xml(indent: 2)
+      def xml
+        @node.to_xml(indent: 2)
+      end
 
-      def to_s = xml
+      def to_s
+        xml
+      end
 
-      def ==(other) = other.is_a?(Element) && other.node.equal?(@node)
+      def ==(other)
+        other.is_a?(Element) && other.node.equal?(@node)
+      end
       alias eql? ==
 
-      def hash = @node.object_id.hash
+      def hash
+        @node.object_id.hash
+      end
 
-      def inspect = "#<#{self.class.name} <#{nsptag}> children=#{@node.element_children.size}>"
+      def inspect
+        "#<#{self.class.name} <#{nsptag}> children=#{@node.element_children.size}>"
+      end
 
       private
 

@@ -174,9 +174,13 @@ module Pptx
     # Anything carrying a `c:txPr`, which is where a chart element's font
     # lives. The text body is created on first use.
     module ChartTextProperties
-      def defRPr = get_or_add_txPr.defRPr
+      def defRPr
+        get_or_add_txPr.defRPr
+      end
 
-      def new_txPr = build_from_xml(CT_TextBody::TXPR_XML)
+      def new_txPr
+        build_from_xml(CT_TextBody::TXPR_XML)
+      end
     end
 
     # `c:layout`, holding an optional manual layout.
@@ -186,7 +190,9 @@ module Pptx
 
       # The horizontal offset as a fraction of the chart width; 0.0 when the
       # position is automatic.
-      def horz_offset = manualLayout&.horz_offset || 0.0
+      def horz_offset
+        manualLayout&.horz_offset || 0.0
+      end
 
       # Setting 0.0 hands the position back to PowerPoint.
       def horz_offset=(offset)
@@ -238,7 +244,9 @@ module Pptx
         </c:rich>
       XML
 
-      def new_rich = build_from_xml(RICH_XML)
+      def new_rich
+        build_from_xml(RICH_XML)
+      end
     end
 
     # `c:title`, the chart or axis title.
@@ -261,7 +269,9 @@ module Pptx
       end
 
       # The rich-text body, or nil when the title has none.
-      def rich = xpath("./c:tx/c:rich").first
+      def rich
+        xpath("./c:tx/c:rich").first
+      end
 
       # A title takes rich text or a cell reference, never both.
       def get_or_add_rich
@@ -290,14 +300,18 @@ module Pptx
       zero_or_one "c:min", successors: %w[c:extLst]
 
       # nil means "auto", which is what an absent element says.
-      def maximum = max&.val
+      def maximum
+        max&.val
+      end
 
       def maximum=(value)
         remove_max
         get_or_add_max.val = value unless value.nil?
       end
 
-      def minimum = min&.val
+      def minimum
+        min&.val
+      end
 
       def minimum=(value)
         remove_min
@@ -330,7 +344,9 @@ module Pptx
         end
       end
 
-      def orientation = scaling.orientation&.val || SimpleTypes::ST_Orientation::MIN_MAX
+      def orientation
+        scaling.orientation&.val || SimpleTypes::ST_Orientation::MIN_MAX
+      end
 
       # Only a reversed axis is written; the normal direction is the default.
       def orientation=(value)
@@ -340,7 +356,9 @@ module Pptx
         scaling.get_or_add_orientation.val = value
       end
 
-      def new_title = CT_Title.new_title(self)
+      def new_title
+        CT_Title.new_title(self)
+      end
     end
 
     COMMON_AXIS_SEQ = %w[c:axId c:scaling c:delete c:axPos c:majorGridlines c:minorGridlines
@@ -391,7 +409,9 @@ module Pptx
       zero_or_one "c:overlay", successors: TAG_SEQ[4..]
       zero_or_one "c:txPr", successors: TAG_SEQ[6..]
 
-      def horz_offset = layout&.horz_offset || 0.0
+      def horz_offset
+        layout&.horz_offset || 0.0
+      end
 
       def horz_offset=(offset)
         get_or_add_layout.horz_offset = offset
@@ -437,7 +457,9 @@ module Pptx
         </c:dLbls>
       XML
 
-      def self.new_data_labels(context) = context.build_from_xml(DEFAULT_XML)
+      def self.new_data_labels(context)
+        context.build_from_xml(DEFAULT_XML)
+      end
 
       # A flag added on its own starts off, as PowerPoint writes them.
       %w[showLegendKey showVal showCatName showSerName showPercent].each do |flag|
@@ -445,7 +467,9 @@ module Pptx
       end
 
       # The label for the point at +idx+, or nil if it has none of its own.
-      def dLbl_for_point(idx) = dLbl_list.find { |label| label.idx.val == idx }
+      def dLbl_for_point(idx)
+        dLbl_list.find { |label| label.idx.val == idx }
+      end
 
       # The label for the point at +idx+, created in index order if absent.
       def get_or_add_dLbl_for_point(idx)
@@ -506,7 +530,9 @@ module Pptx
         </c:dLbl>
       XML
 
-      def self.new_dLbl(context) = context.build_from_xml(DEFAULT_XML)
+      def self.new_dLbl(context)
+        context.build_from_xml(DEFAULT_XML)
+      end
 
       # The label's own text replaces the generated one. A `c:spPr` or
       # `c:txPr` alongside `c:tx` makes a bubble chart unsaveable in
@@ -519,7 +545,9 @@ module Pptx
         tx.get_or_add_rich
       end
 
-      def rich = xpath("./c:tx/c:rich").first
+      def rich
+        xpath("./c:tx/c:rich").first
+      end
 
       def remove_tx_rich
         tx = xpath("./c:tx[c:rich]").first
@@ -580,13 +608,21 @@ module Pptx
       zero_or_one "c:smooth", successors: TAG_SEQ[18..]
       zero_or_one "c:bubbleSize", successors: TAG_SEQ[19..]
 
-      def index = idx&.val.to_i
+      def index
+        idx&.val.to_i
+      end
 
-      def name = xpath("./c:tx//c:pt/c:v").first&.text.to_s
+      def name
+        xpath("./c:tx//c:pt/c:v").first&.text.to_s
+      end
 
-      def new_dLbls = CT_DataLabels.new_data_labels(self)
+      def new_dLbls
+        CT_DataLabels.new_data_labels(self)
+      end
 
-      def new_dPt = CT_DPt.new_dPt(self)
+      def new_dPt
+        CT_DPt.new_dPt(self)
+      end
 
       %w[cat xVal yVal bubbleSize].each do |source|
         define_method(:"#{source}_ptCount_val") do
@@ -595,9 +631,13 @@ module Pptx
       end
 
       # The label of the point at +idx+, or nil.
-      def dLbl_for_point(idx) = dLbls&.dLbl_for_point(idx)
+      def dLbl_for_point(idx)
+        dLbls&.dLbl_for_point(idx)
+      end
 
-      def get_or_add_dLbl_for_point(idx) = get_or_add_dLbls.get_or_add_dLbl_for_point(idx)
+      def get_or_add_dLbl_for_point(idx)
+        get_or_add_dLbls.get_or_add_dLbl_for_point(idx)
+      end
 
       # The formatting record for the point at +idx+, created if absent.
       def get_or_add_dPt_for_point(idx)
@@ -612,7 +652,9 @@ module Pptx
       zero_or_one "c:multiLvlStrRef", successors: []
 
       # The levels of a multi-level category source, leaf level first.
-      def lvls = xpath(".//c:lvl")
+      def lvls
+        xpath(".//c:lvl")
+      end
     end
 
     # `c:pt`, one cached value in a series source.
@@ -620,9 +662,13 @@ module Pptx
       tag "c:pt"
       required_attr "idx", type: SimpleTypes::XsdUnsignedInt
 
-      def v = xpath("./c:v").first
+      def v
+        xpath("./c:v").first
+      end
 
-      def value = Float(v.text)
+      def value
+        Float(v.text)
+      end
     end
 
     # -------------------------------------------------------------------------
@@ -651,14 +697,22 @@ module Pptx
                                                   c:extLst]
 
       # Series in document order.
-      def ser_list = find_all("c:ser")
+      def ser_list
+        find_all("c:ser")
+      end
 
       # Series in the order the chart draws them, which is `c:order`.
-      def sers = ser_list.sort_by { |ser| ser.order&.val.to_i }
+      def sers
+        ser_list.sort_by { |ser| ser.order&.val.to_i }
+      end
 
-      def grouping_val = grouping&.val || SimpleTypes::ST_Grouping::STANDARD
+      def grouping_val
+        grouping&.val || SimpleTypes::ST_Grouping::STANDARD
+      end
 
-      def new_dLbls = CT_DataLabels.new_data_labels(self)
+      def new_dLbls
+        CT_DataLabels.new_data_labels(self)
+      end
 
       # The data-label settings, created with PowerPoint's defaults if the
       # plot has none yet.
@@ -671,9 +725,13 @@ module Pptx
       end
 
       # The first series' category source, which the others share.
-      def cat = xpath("./c:ser[1]/c:cat").first
+      def cat
+        xpath("./c:ser[1]/c:cat").first
+      end
 
-      def cat_pt_count = xpath("./c:ser//c:cat//c:ptCount").first&.val.to_i
+      def cat_pt_count
+        xpath("./c:ser//c:cat//c:ptCount").first&.val.to_i
+      end
 
       # One entry per category, nil where the workbook cell is empty -- such
       # a category has no `c:pt` but still counts in `c:ptCount`.
@@ -698,15 +756,23 @@ module Pptx
              .map { |child| Element.wrap(child) }
       end
 
-      def category_axis = find("c:catAx") || find("c:dateAx")
+      def category_axis
+        find("c:catAx") || find("c:dateAx")
+      end
 
-      def value_axes = find_all("c:valAx")
+      def value_axes
+        find_all("c:valAx")
+      end
 
       # Every series in the chart, in plot order then series order -- which is
       # the order their chart-wide indices follow.
-      def series_elements = plot_elements.flat_map(&:ser_list)
+      def series_elements
+        plot_elements.flat_map(&:ser_list)
+      end
 
-      def last_plot_element = plot_elements.last
+      def last_plot_element
+        plot_elements.last
+      end
     end
 
     # `c:chart`, which OOXML uses for two different things under one tag name.
@@ -739,7 +805,9 @@ module Pptx
       one_and_only_one "c:plotArea"
       zero_or_one "c:legend", successors: TAG_SEQ[9..]
 
-      def new_title = CT_Title.new_title(self)
+      def new_title
+        CT_Title.new_title(self)
+      end
     end
 
     # `c:chartSpace`, the root of a chart part.
@@ -759,14 +827,18 @@ module Pptx
 
       # The relationship id of the embedded workbook, or nil when the chart
       # has none.
-      def xlsx_part_rId = externalData&.rId
+      def xlsx_part_rId
+        externalData&.rId
+      end
 
       # The plot element, e.g. `c:barChart`, that this chart draws with.
       def plot_element
         xpath("./c:chart/c:plotArea/*").find { |e| e.nsptag.end_with?("Chart") }
       end
 
-      def series_elements = xpath("./c:chart/c:plotArea/*/c:ser")
+      def series_elements
+        xpath("./c:chart/c:plotArea/*/c:ser")
+      end
     end
 
     # `c:externalData`, the link from a chart to its embedded workbook.

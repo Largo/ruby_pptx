@@ -14,17 +14,42 @@ module Pptx
   # Prefer the refinement. It is scoped to the file that asks for it, so it
   # cannot surprise another library that happens to share the process.
   module NumericLengths
-    def emu         = Pptx::Length.emu(self)
-    def inches      = Pptx::Length.inches(self)
-    def cm          = Pptx::Length.cm(self)
-    def mm          = Pptx::Length.mm(self)
-    def pt          = Pptx::Length.pt(self)
-    def centipoints = Pptx::Length.centipoints(self)
+    def emu
+      Pptx::Length.emu(self)
+    end
+
+    def inches
+      Pptx::Length.inches(self)
+    end
+
+    def cm
+      Pptx::Length.cm(self)
+    end
+
+    def mm
+      Pptx::Length.mm(self)
+    end
+
+    def pt
+      Pptx::Length.pt(self)
+    end
+
+    def centipoints
+      Pptx::Length.centipoints(self)
+    end
 
     # Spelled out rather than aliased: `import_methods`, which the refinement
     # uses to share these, cannot carry an alias across.
-    def inch   = inches
-    def points = pt
-    def point  = pt
+    def inch
+      inches
+    end
+
+    def points
+      pt
+    end
+
+    def point
+      pt
+    end
   end
 end

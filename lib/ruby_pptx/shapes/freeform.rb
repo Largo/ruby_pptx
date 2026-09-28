@@ -36,9 +36,13 @@ module Pptx
       new(shapes, start_x, start_y, x_scale, y_scale)
     end
 
-    def each(&) = @operations.each(&)
+    def each(&)
+      @operations.each(&)
+    end
 
-    def size = @operations.size
+    def size
+      @operations.size
+    end
 
     # Draw a straight line to (x, y).
     #
@@ -89,11 +93,17 @@ module Pptx
     #
     # The bounding box need not start at the local origin, so this is what the
     # points are measured from.
-    def offset_x = drawn.map(&:x).push(@start_x).min
+    def offset_x
+      drawn.map(&:x).push(@start_x).min
+    end
 
-    def offset_y = drawn.map(&:y).push(@start_y).min
+    def offset_y
+      drawn.map(&:y).push(@start_y).min
+    end
 
-    def inspect = "#<Pptx::FreeformBuilder #{size} operations>"
+    def inspect
+      "#<Pptx::FreeformBuilder #{size} operations>"
+    end
 
     private
 
@@ -103,10 +113,14 @@ module Pptx
     # Rounded half-to-even, because Python rounds that way and Ruby rounds
     # half-up: a coordinate of 100.5 would otherwise land a unit away from
     # where the reference implementation puts it.
-    def round(value) = value.round(half: :even)
+    def round(value)
+      value.round(half: :even)
+    end
 
     # Operations that have a position; a close does not.
-    def drawn = @operations.reject { |operation| operation.kind == :close }
+    def drawn
+      @operations.reject { |operation| operation.kind == :close }
+    end
 
     def local_width
       xs = drawn.map(&:x).push(@start_x)
@@ -118,17 +132,27 @@ module Pptx
       ys.max - ys.min
     end
 
-    def width = (local_width * @x_scale).round
+    def width
+      (local_width * @x_scale).round
+    end
 
-    def height = (local_height * @y_scale).round
+    def height
+      (local_height * @y_scale).round
+    end
 
-    def left = (offset_x * @x_scale).round
+    def left
+      (offset_x * @x_scale).round
+    end
 
-    def top = (offset_y * @y_scale).round
+    def top
+      (offset_y * @y_scale).round
+    end
 
     # Points inside a path are relative to the shape's top-left corner, not to
     # the local origin.
-    def to_shape_space(x, y) = [x - offset_x, y - offset_y]
+    def to_shape_space(x, y)
+      [x - offset_x, y - offset_y]
+    end
 
     def apply(operation, path)
       case operation.kind

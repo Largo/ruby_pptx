@@ -12,23 +12,33 @@ module Pptx
   #
   # Reached through the `format` of whatever it belongs to.
   class ChartFormat < ElementProxy
-    def fill = @fill ||= FillFormat.from_fill_parent(@element.get_or_add_spPr)
+    def fill
+      @fill ||= FillFormat.from_fill_parent(@element.get_or_add_spPr)
+    end
 
-    def line = @line ||= LineFormat.new(@element.get_or_add_spPr)
+    def line
+      @line ||= LineFormat.new(@element.get_or_add_spPr)
+    end
 
-    def inspect = "#<Pptx::ChartFormat #{fill.type&.name}>"
+    def inspect
+      "#<Pptx::ChartFormat #{fill.type&.name}>"
+    end
   end
 
   # A chart's legend.
   class ChartLegend < ElementProxy
     # The legend's font, created on first use.
-    def font = @font ||= Font.new(@element.defRPr)
+    def font
+      @font ||= Font.new(@element.defRPr)
+    end
 
     # Where the legend sits. Absent from the file means PowerPoint's default,
     # which is the right-hand side.
     #
     # @return [Pptx::Enum::Member] a member of XL_LEGEND_POSITION
-    def position = @element.legendPos&.val || Enum::XL_LEGEND_POSITION::RIGHT
+    def position
+      @element.legendPos&.val || Enum::XL_LEGEND_POSITION::RIGHT
+    end
 
     def position=(value)
       @element.get_or_add_legendPos.val = Enum::XL_LEGEND_POSITION.fetch(value)
@@ -36,7 +46,9 @@ module Pptx
 
     # How far the legend is shifted sideways, as a fraction of the chart
     # width: -1.0 to 1.0, with 0.0 meaning PowerPoint places it.
-    def horz_offset = @element.horz_offset
+    def horz_offset
+      @element.horz_offset
+    end
 
     def horz_offset=(value)
       @element.horz_offset = value
@@ -44,7 +56,9 @@ module Pptx
 
     # True when the legend sits inside the plot area, overlapping it, rather
     # than having space made for it. An absent `c:overlay` reads as true.
-    def include_in_layout? = @element.overlay.nil? || @element.overlay.val
+    def include_in_layout?
+      @element.overlay.nil? || @element.overlay.val
+    end
 
     # nil removes the setting and returns to the default.
     def include_in_layout=(value)
@@ -55,7 +69,9 @@ module Pptx
       end
     end
 
-    def inspect = "#<Pptx::ChartLegend #{position.name}>"
+    def inspect
+      "#<Pptx::ChartLegend #{position.name}>"
+    end
   end
 
   # A chart or axis title.
@@ -64,37 +80,55 @@ module Pptx
   # same way.
   class ChartTitle < ElementProxy
     # The title box's fill and outline.
-    def format = @format ||= ChartFormat.new(@element)
+    def format
+      @format ||= ChartFormat.new(@element)
+    end
 
     # True when the title has text of its own rather than being generated.
-    def text_frame? = !@element.rich.nil?
+    def text_frame?
+      !@element.rich.nil?
+    end
 
     # The title's text, created on first use.
-    def text_frame = TextFrame.new(@element.get_or_add_rich, self)
+    def text_frame
+      TextFrame.new(@element.get_or_add_rich, self)
+    end
 
     # Titles are formatting, not content; there is no part to reach for.
-    def part = nil
+    def part
+      nil
+    end
 
-    def text = text_frame? ? text_frame.text : ""
+    def text
+      text_frame? ? text_frame.text : ""
+    end
 
     def text=(value)
       text_frame.text = value
     end
 
-    def inspect = "#<Pptx::ChartTitle #{text.inspect}>"
+    def inspect
+      "#<Pptx::ChartTitle #{text.inspect}>"
+    end
   end
 
   # The major gridlines of an axis.
   class Gridlines < ElementProxy
-    def format = @format ||= ChartFormat.new(@element.get_or_add_majorGridlines)
+    def format
+      @format ||= ChartFormat.new(@element.get_or_add_majorGridlines)
+    end
   end
 
   # The labels along an axis: their font, number format and spacing.
   class TickLabels < ElementProxy
-    def font = @font ||= Font.new(@element.defRPr)
+    def font
+      @font ||= Font.new(@element.defRPr)
+    end
 
     # The Excel number format, "General" when none is set.
-    def number_format = @element.numFmt&.formatCode || "General"
+    def number_format
+      @element.numFmt&.formatCode || "General"
+    end
 
     # Setting a format stops it following the source data's format.
     def number_format=(value)
@@ -116,7 +150,9 @@ module Pptx
 
     # Distance of the labels from the axis as a percentage of the default;
     # 100 is the default. Only a category axis has one.
-    def offset = @element.respond_to?(:lblOffset) ? (@element.lblOffset&.val || 100) : 100
+    def offset
+      @element.respond_to?(:lblOffset) ? (@element.lblOffset&.val || 100) : 100
+    end
 
     def offset=(value)
       raise Error, "only a category axis has a label offset" unless @element.nsptag == "c:catAx"
@@ -132,13 +168,17 @@ module Pptx
   # only they have.
   class ChartAxis < ElementProxy
     # The axis line and its fill.
-    def format = @format ||= ChartFormat.new(@element)
+    def format
+      @format ||= ChartFormat.new(@element)
+    end
 
     # Whether the axis is drawn. A `c:delete` of true hides it.
     #
     # An axis with no `c:delete` at all is drawn, which is what the schema and
     # PowerPoint say. python-pptx reports it as hidden; see PORTING.md.
-    def visible? = @element.delete.nil? || !@element.delete.val
+    def visible?
+      @element.delete.nil? || !@element.delete.val
+    end
 
     def visible=(value)
       unless [true, false].include?(value)
@@ -148,50 +188,66 @@ module Pptx
       @element.get_or_add_delete.val = !value
     end
 
-    def major_gridlines? = !@element.majorGridlines.nil?
+    def major_gridlines?
+      !@element.majorGridlines.nil?
+    end
 
     def major_gridlines=(value)
       value ? @element.get_or_add_majorGridlines : @element.remove_majorGridlines
     end
 
     # The major gridlines, for formatting. Asking for them switches them on.
-    def major_gridlines = @major_gridlines ||= Gridlines.new(@element)
+    def major_gridlines
+      @major_gridlines ||= Gridlines.new(@element)
+    end
 
-    def minor_gridlines? = !@element.minorGridlines.nil?
+    def minor_gridlines?
+      !@element.minorGridlines.nil?
+    end
 
     def minor_gridlines=(value)
       value ? @element.get_or_add_minorGridlines : @element.remove_minorGridlines
     end
 
     # @return [Pptx::Enum::Member] a member of XL_TICK_MARK
-    def major_tick_mark = @element.majorTickMark&.val || Enum::XL_TICK_MARK::CROSS
+    def major_tick_mark
+      @element.majorTickMark&.val || Enum::XL_TICK_MARK::CROSS
+    end
 
     # The default, cross, is written by leaving the element out.
     def major_tick_mark=(value)
       set_tick_mark(:majorTickMark, value)
     end
 
-    def minor_tick_mark = @element.minorTickMark&.val || Enum::XL_TICK_MARK::CROSS
+    def minor_tick_mark
+      @element.minorTickMark&.val || Enum::XL_TICK_MARK::CROSS
+    end
 
     def minor_tick_mark=(value)
       set_tick_mark(:minorTickMark, value)
     end
 
     # The fixed end of the scale, or nil when PowerPoint scales automatically.
-    def maximum_scale = @element.scaling.maximum
+    def maximum_scale
+      @element.scaling.maximum
+    end
 
     def maximum_scale=(value)
       @element.scaling.maximum = value
     end
 
-    def minimum_scale = @element.scaling.minimum
+    def minimum_scale
+      @element.scaling.minimum
+    end
 
     def minimum_scale=(value)
       @element.scaling.minimum = value
     end
 
     # True when the axis runs from its maximum to its minimum.
-    def reverse_order? = @element.orientation == Oxml::SimpleTypes::ST_Orientation::MAX_MIN
+    def reverse_order?
+      @element.orientation == Oxml::SimpleTypes::ST_Orientation::MAX_MIN
+    end
 
     def reverse_order=(value)
       @element.orientation = if value
@@ -211,17 +267,23 @@ module Pptx
     end
 
     # The labels along the axis.
-    def tick_labels = @tick_labels ||= TickLabels.new(@element)
+    def tick_labels
+      @tick_labels ||= TickLabels.new(@element)
+    end
 
     # Shortcuts for the tick-label number format, the setting most often
     # wanted from an axis.
-    def number_format = tick_labels.number_format
+    def number_format
+      tick_labels.number_format
+    end
 
     def number_format=(value)
       tick_labels.number_format = value
     end
 
-    def title? = !@element.title.nil?
+    def title?
+      !@element.title.nil?
+    end
 
     # @return [ChartTitle, nil] nil when the axis has no title
     def title
@@ -239,7 +301,9 @@ module Pptx
       end
     end
 
-    def inspect = "#<#{self.class.name} visible=#{visible?}>"
+    def inspect
+      "#<#{self.class.name} visible=#{visible?}>"
+    end
 
     private
 
@@ -254,12 +318,16 @@ module Pptx
 
   # The horizontal axis of most charts: one label per category.
   class CategoryAxis < ChartAxis
-    def category_type = Enum::XL_CATEGORY_TYPE::CATEGORY_SCALE
+    def category_type
+      Enum::XL_CATEGORY_TYPE::CATEGORY_SCALE
+    end
   end
 
   # A category axis whose categories are dates.
   class DateAxis < ChartAxis
-    def category_type = Enum::XL_CATEGORY_TYPE::TIME_SCALE
+    def category_type
+      Enum::XL_CATEGORY_TYPE::TIME_SCALE
+    end
   end
 
   # An axis measuring values. An XY or bubble chart has two.
@@ -270,7 +338,9 @@ module Pptx
     #
     # @return [Pptx::Enum::Member] a member of XL_AXIS_CROSSES; CUSTOM when a
     #   specific value is set through {#crosses_at}
-    def crosses = cross_axis.crosses&.val || Enum::XL_AXIS_CROSSES::CUSTOM
+    def crosses
+      cross_axis.crosses&.val || Enum::XL_AXIS_CROSSES::CUSTOM
+    end
 
     def crosses=(value)
       member = Enum::XL_AXIS_CROSSES.fetch(value)
@@ -287,7 +357,9 @@ module Pptx
     end
 
     # The value on this axis at which the other crosses, or nil.
-    def crosses_at = cross_axis.crossesAt&.val
+    def crosses_at
+      cross_axis.crossesAt&.val
+    end
 
     def crosses_at=(value)
       axis = cross_axis
@@ -297,14 +369,18 @@ module Pptx
     end
 
     # The distance between major tick marks, or nil when automatic.
-    def major_unit = @element.majorUnit&.val
+    def major_unit
+      @element.majorUnit&.val
+    end
 
     def major_unit=(value)
       @element.remove_majorUnit
       @element.get_or_add_majorUnit.val = value unless value.nil?
     end
 
-    def minor_unit = @element.minorUnit&.val
+    def minor_unit
+      @element.minorUnit&.val
+    end
 
     def minor_unit=(value)
       @element.remove_minorUnit
@@ -344,10 +420,14 @@ module Pptx
       end
     end
 
-    def font = @font ||= Font.new(@element.defRPr)
+    def font
+      @font ||= Font.new(@element.defRPr)
+    end
 
     # The Excel number format, "General" when none is set.
-    def number_format = @element.numFmt&.formatCode || "General"
+    def number_format
+      @element.numFmt&.formatCode || "General"
+    end
 
     def number_format=(value)
       @element.get_or_add_numFmt.formatCode = value
@@ -366,7 +446,9 @@ module Pptx
     end
 
     # @return [Pptx::Enum::Member, nil] a member of XL_DATA_LABEL_POSITION
-    def position = @element.dLblPos&.val
+    def position
+      @element.dLblPos&.val
+    end
 
     def position=(value)
       if value.nil?
@@ -376,7 +458,9 @@ module Pptx
       end
     end
 
-    def inspect = "#<Pptx::ChartDataLabels value=#{show_value?}>"
+    def inspect
+      "#<Pptx::ChartDataLabels value=#{show_value?}>"
+    end
   end
 
   # The label of a single data point, overriding the series' labels for it.
@@ -386,19 +470,29 @@ module Pptx
       @idx = idx
     end
 
-    def font = @font ||= TextFrame.new(label_element.get_or_add_txPr, self).paragraphs[0].font
+    def font
+      @font ||= TextFrame.new(label_element.get_or_add_txPr, self).paragraphs[0].font
+    end
 
     # True when the label has text of its own rather than a generated value.
-    def text_frame? = !@ser.dLbl_for_point(@idx)&.rich.nil?
+    def text_frame?
+      !@ser.dLbl_for_point(@idx)&.rich.nil?
+    end
 
     # The label's own text, replacing the generated value. Created on use.
-    def text_frame = TextFrame.new(label_element.get_or_add_rich, self)
+    def text_frame
+      TextFrame.new(label_element.get_or_add_rich, self)
+    end
 
     # Labels are formatting, not content; there is no part to reach for.
-    def part = nil
+    def part
+      nil
+    end
 
     # @return [Pptx::Enum::Member, nil] a member of XL_DATA_LABEL_POSITION
-    def position = @ser.dLbl_for_point(@idx)&.dLblPos&.val
+    def position
+      @ser.dLbl_for_point(@idx)&.dLblPos&.val
+    end
 
     def position=(value)
       if value.nil?
@@ -408,21 +502,29 @@ module Pptx
       end
     end
 
-    def inspect = "#<Pptx::DataLabel point=#{@idx}>"
+    def inspect
+      "#<Pptx::DataLabel point=#{@idx}>"
+    end
 
     private
 
     # This point's `c:dLbl`, created on first use.
-    def label_element = @ser.get_or_add_dLbl_for_point(@idx)
+    def label_element
+      @ser.get_or_add_dLbl_for_point(@idx)
+    end
   end
 
   # The symbol drawn at each point of a line, radar or XY series, or at one
   # point.
   class Marker < ElementProxy
-    def format = @format ||= ChartFormat.new(@element.get_or_add_marker)
+    def format
+      @format ||= ChartFormat.new(@element.get_or_add_marker)
+    end
 
     # Size in points, 2 to 72, or nil when inherited.
-    def size = @element.marker&.size&.val
+    def size
+      @element.marker&.size&.val
+    end
 
     def size=(value)
       marker = @element.get_or_add_marker
@@ -431,7 +533,9 @@ module Pptx
     end
 
     # @return [Pptx::Enum::Member, nil] a member of XL_MARKER_STYLE
-    def style = @element.marker&.symbol&.val
+    def style
+      @element.marker&.symbol&.val
+    end
 
     def style=(value)
       marker = @element.get_or_add_marker
@@ -447,13 +551,21 @@ module Pptx
       @idx = idx
     end
 
-    def data_label = @data_label ||= DataLabel.new(@ser, @idx)
+    def data_label
+      @data_label ||= DataLabel.new(@ser, @idx)
+    end
 
-    def format = @format ||= ChartFormat.new(@ser.get_or_add_dPt_for_point(@idx))
+    def format
+      @format ||= ChartFormat.new(@ser.get_or_add_dPt_for_point(@idx))
+    end
 
-    def marker = @marker ||= Marker.new(@ser.get_or_add_dPt_for_point(@idx))
+    def marker
+      @marker ||= Marker.new(@ser.get_or_add_dPt_for_point(@idx))
+    end
 
-    def inspect = "#<Pptx::ChartPoint #{@idx}>"
+    def inspect
+      "#<Pptx::ChartPoint #{@idx}>"
+    end
   end
 
   # The points of a series, indexed from 0.
@@ -466,7 +578,9 @@ module Pptx
       @count = count
     end
 
-    def size = @count
+    def size
+      @count
+    end
     alias length size
 
     def [](index, length = nil)
@@ -480,7 +594,9 @@ module Pptx
       self
     end
 
-    def inspect = "#<Pptx::ChartPoints size=#{size}>"
+    def inspect
+      "#<Pptx::ChartPoints size=#{size}>"
+    end
   end
 
   # One plot -- a "chart group" in the MS API -- within a chart.
@@ -496,13 +612,19 @@ module Pptx
     end
 
     # The categories this plot's series are plotted against.
-    def categories = ChartCategories.new(@element)
+    def categories
+      ChartCategories.new(@element)
+    end
 
     # This plot's series, in the order the chart draws them.
-    def series = @element.sers.map { |ser| ChartSeriesView.for(ser, @chart) }
+    def series
+      @element.sers.map { |ser| ChartSeriesView.for(ser, @chart) }
+    end
 
     # The space between bars, as a percentage of bar width.
-    def gap_width = @element.gapWidth&.val || 150
+    def gap_width
+      @element.gapWidth&.val || 150
+    end
 
     def gap_width=(value)
       @element.get_or_add_gapWidth.val = value
@@ -510,7 +632,9 @@ module Pptx
 
     # How far bars in a group overlap, -100 to 100. Zero is written by
     # leaving the element out.
-    def overlap = @element.overlap&.val || 0
+    def overlap
+      @element.overlap&.val || 0
+    end
 
     def overlap=(value)
       if value.zero?
@@ -521,7 +645,9 @@ module Pptx
     end
 
     # The bubble size as a percentage of the default, 0 to 300.
-    def bubble_scale = @element.bubbleScale&.val || 100
+    def bubble_scale
+      @element.bubbleScale&.val || 100
+    end
 
     # nil returns to the default.
     def bubble_scale=(value)
@@ -531,14 +657,18 @@ module Pptx
 
     # Whether each data point gets its own colour, as a pie does. An absent
     # `c:varyColors` reads as true, the schema default.
-    def vary_by_categories? = @element.varyColors.nil? || @element.varyColors.val
+    def vary_by_categories?
+      @element.varyColors.nil? || @element.varyColors.val
+    end
 
     def vary_by_categories=(value)
       @element.get_or_add_varyColors.val = value ? true : false
     end
 
     # Whether this plot shows data labels at all.
-    def data_labels? = !@element.dLbls.nil?
+    def data_labels?
+      !@element.dLbls.nil?
+    end
 
     # Switching labels on shows values, as PowerPoint's default does.
     def data_labels=(value)
@@ -553,9 +683,13 @@ module Pptx
     # The data-label settings, switched on with PowerPoint's defaults if the
     # plot has none yet. python-pptx makes you set `has_data_labels` first;
     # asking for them is enough here.
-    def data_labels = @data_labels ||= ChartDataLabels.new(@element.get_or_add_default_dLbls)
+    def data_labels
+      @data_labels ||= ChartDataLabels.new(@element.get_or_add_default_dLbls)
+    end
 
-    def inspect = "#<Pptx::ChartPlot #{@element.nsptag}>"
+    def inspect
+      "#<Pptx::ChartPlot #{@element.nsptag}>"
+    end
   end
 
   # The categories of a plot, read back from the chart's cached values.
@@ -577,9 +711,13 @@ module Pptx
       self
     end
 
-    def [](index) = to_a[index]
+    def [](index)
+      to_a[index]
+    end
 
-    def size = @plot.cat_pt_count
+    def size
+      @plot.cat_pt_count
+    end
     alias length size
 
     # How many levels of labels there are: 0 with no categories, 1 for a
@@ -610,7 +748,9 @@ module Pptx
       leaf.map { |category| lineage(category, parents).reverse.map(&:label) }
     end
 
-    def inspect = "#<Pptx::ChartCategories #{map(&:label).inspect}>"
+    def inspect
+      "#<Pptx::ChartCategories #{map(&:label).inspect}>"
+    end
 
     private
 
@@ -633,15 +773,25 @@ module Pptx
     end
 
     # The label, "" for an empty category.
-    def label = @point.nil? ? "" : @point.v.text
+    def label
+      @point.nil? ? "" : @point.v.text
+    end
 
-    def idx = @point.nil? ? @idx : @point.idx
+    def idx
+      @point.nil? ? @idx : @point.idx
+    end
 
-    def to_s = label
+    def to_s
+      label
+    end
     alias to_str to_s
 
-    def ==(other) = other.is_a?(ChartCategory) ? label == other.label && idx == other.idx : label == other
+    def ==(other)
+      other.is_a?(ChartCategory) ? label == other.label && idx == other.idx : label == other
+    end
 
-    def inspect = "#<Pptx::ChartCategory #{idx}:#{label.inspect}>"
+    def inspect
+      "#<Pptx::ChartCategory #{idx}:#{label.inspect}>"
+    end
   end
 end

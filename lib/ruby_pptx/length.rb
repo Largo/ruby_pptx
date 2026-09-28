@@ -30,16 +30,31 @@ module Pptx
 
     class << self
       # @param emu [Integer] distance in English Metric Units
-      def emu(emu) = new(emu)
+      def emu(emu)
+        new(emu)
+      end
 
-      def inches(inches) = new((inches * EMUS_PER_INCH).to_i)
-      def cm(cm)         = new((cm * EMUS_PER_CM).to_i)
-      def mm(mm)         = new((mm * EMUS_PER_MM).to_i)
-      def pt(points)     = new((points * EMUS_PER_PT).to_i)
+      def inches(inches)
+        new((inches * EMUS_PER_INCH).to_i)
+      end
+
+      def cm(cm)
+        new((cm * EMUS_PER_CM).to_i)
+      end
+
+      def mm(mm)
+        new((mm * EMUS_PER_MM).to_i)
+      end
+
+      def pt(points)
+        new((points * EMUS_PER_PT).to_i)
+      end
 
       # Hundredths of a point (1/7200 inch); the unit PowerPoint stores font
       # sizes in.
-      def centipoints(centipoints) = new((centipoints * EMUS_PER_CENTIPOINT).to_i)
+      def centipoints(centipoints)
+        new((centipoints * EMUS_PER_CENTIPOINT).to_i)
+      end
 
       # Coerce +value+ to a Length, treating a bare Integer as EMU.
       #
@@ -63,23 +78,48 @@ module Pptx
       freeze
     end
 
-    def inches = @emu / EMUS_PER_INCH.to_f
-    def cm     = @emu / EMUS_PER_CM.to_f
-    def mm     = @emu / EMUS_PER_MM.to_f
-    def pt     = @emu / EMUS_PER_PT.to_f
+    def inches
+      @emu / EMUS_PER_INCH.to_f
+    end
+
+    def cm
+      @emu / EMUS_PER_CM.to_f
+    end
+
+    def mm
+      @emu / EMUS_PER_MM.to_f
+    end
+
+    def pt
+      @emu / EMUS_PER_PT.to_f
+    end
 
     # @return [Integer] whole hundredths of a point, rounded toward negative infinity
-    def centipoints = @emu / EMUS_PER_CENTIPOINT
+    def centipoints
+      @emu / EMUS_PER_CENTIPOINT
+    end
 
-    def to_i = @emu
+    def to_i
+      @emu
+    end
     alias to_int to_i
 
-    def +(other) = Length.new(@emu + Length.coerce(other).emu)
-    def -(other) = Length.new(@emu - Length.coerce(other).emu)
-    def -@ = Length.new(-@emu)
+    def +(other)
+      Length.new(@emu + Length.coerce(other).emu)
+    end
+
+    def -(other)
+      Length.new(@emu - Length.coerce(other).emu)
+    end
+
+    def -@
+      Length.new(-@emu)
+    end
 
     # Scaling by a plain number; `length * 2` is twice as long.
-    def *(factor) = Length.new((@emu * factor).to_i)
+    def *(factor)
+      Length.new((@emu * factor).to_i)
+    end
 
     # Deliberately no #coerce, so `2 * length` raises rather than working.
     #
@@ -96,25 +136,52 @@ module Pptx
       @emu <=> other.emu
     end
 
-    def ==(other) = (self <=> other)&.zero? || false
+    def ==(other)
+      (self <=> other)&.zero? || false
+    end
     alias eql? ==
 
-    def hash = @emu.hash
+    def hash
+      @emu.hash
+    end
 
-    def zero? = @emu.zero?
+    def zero?
+      @emu.zero?
+    end
 
-    def to_s = "#{@emu}emu"
+    def to_s
+      "#{@emu}emu"
+    end
 
-    def inspect = "#<Pptx::Length #{@emu}emu (#{format("%g", inches)}in)>"
+    def inspect
+      "#<Pptx::Length #{@emu}emu (#{format("%g", inches)}in)>"
+    end
   end
 
   class << self
     # Convenience constructors, e.g. `Pptx.inches(1.5)`.
-    def emu(v)         = Length.emu(v)
-    def inches(v)      = Length.inches(v)
-    def cm(v)          = Length.cm(v)
-    def mm(v)          = Length.mm(v)
-    def pt(v)          = Length.pt(v)
-    def centipoints(v) = Length.centipoints(v)
+    def emu(v)
+      Length.emu(v)
+    end
+
+    def inches(v)
+      Length.inches(v)
+    end
+
+    def cm(v)
+      Length.cm(v)
+    end
+
+    def mm(v)
+      Length.mm(v)
+    end
+
+    def pt(v)
+      Length.pt(v)
+    end
+
+    def centipoints(v)
+      Length.centipoints(v)
+    end
   end
 end

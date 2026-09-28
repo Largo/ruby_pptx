@@ -31,11 +31,15 @@ module Pptx
     module ContentModel
       # A member of an `EG_*` element group, for {#zero_or_one_choice}.
       Choice = Data.define(:nsptag) do
-        def prop_name = Ns.split_tag(nsptag).last
+        def prop_name
+          Ns.split_tag(nsptag).last
+        end
       end
 
       # Declare one member of a choice group.
-      def choice(nsptag) = Choice.new(nsptag)
+      def choice(nsptag)
+        Choice.new(nsptag)
+      end
 
       # An attribute that may be absent. Reading returns +default+ when it is;
       # assigning +default+ removes it, so a document never carries an

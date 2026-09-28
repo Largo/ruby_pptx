@@ -14,44 +14,58 @@ module Pptx
     # Position and size live in an `a:xfrm` grandchild that may be absent, so
     # the accessors here read through to it and create it only on write.
     module BaseShapeElement
-      def x = xfrm_attr(:x)
+      def x
+        xfrm_attr(:x)
+      end
 
       def x=(value)
         set_xfrm_attr(:x, value)
       end
 
-      def y = xfrm_attr(:y)
+      def y
+        xfrm_attr(:y)
+      end
 
       def y=(value)
         set_xfrm_attr(:y, value)
       end
 
-      def cx = xfrm_attr(:cx)
+      def cx
+        xfrm_attr(:cx)
+      end
 
       def cx=(value)
         set_xfrm_attr(:cx, value)
       end
 
-      def cy = xfrm_attr(:cy)
+      def cy
+        xfrm_attr(:cy)
+      end
 
       def cy=(value)
         set_xfrm_attr(:cy, value)
       end
 
-      def flipH = !xfrm_attr(:flipH).nil? && xfrm_attr(:flipH)
+      def flipH
+        !xfrm_attr(:flipH).nil? && xfrm_attr(:flipH)
+      end
 
       def flipH=(value)
         set_xfrm_attr(:flipH, value)
       end
 
-      def flipV = !xfrm_attr(:flipV).nil? && xfrm_attr(:flipV)
+      def flipV
+        !xfrm_attr(:flipV).nil? && xfrm_attr(:flipV)
+      end
 
       def flipV=(value)
         set_xfrm_attr(:flipV, value)
       end
 
       # Clockwise rotation in degrees; 0.0 when not set.
-      def rot = xfrm&.rot || 0.0
+      def rot
+        xfrm&.rot || 0.0
+      end
 
       def rot=(value)
         get_or_add_xfrm.rot = value
@@ -59,29 +73,56 @@ module Pptx
 
       # The `a:xfrm` grandchild, or nil. `p:grpSp` overrides this, since its
       # transform hangs off `p:grpSpPr` rather than `p:spPr`.
-      def xfrm = spPr.xfrm
+      def xfrm
+        spPr.xfrm
+      end
 
-      def get_or_add_xfrm = spPr.get_or_add_xfrm
+      def get_or_add_xfrm
+        spPr.get_or_add_xfrm
+      end
 
-      def shape_id = nvXxPr.cNvPr.id
+      def shape_id
+        nvXxPr.cNvPr.id
+      end
 
-      def shape_name = nvXxPr.cNvPr.name
+      def shape_name
+        nvXxPr.cNvPr.name
+      end
 
-      def txBody = find("p:txBody")
+      def txBody
+        find("p:txBody")
+      end
 
-      def placeholder? = !ph.nil?
+      def placeholder?
+        !ph.nil?
+      end
 
       # The `p:ph` descendant marking this as a placeholder, or nil.
-      def ph = xpath("./*[1]/p:nvPr/p:ph").first
+      def ph
+        xpath("./*[1]/p:nvPr/p:ph").first
+      end
 
-      def ph_idx = require_ph.idx
-      def ph_orient = require_ph.orient
-      def ph_sz = require_ph.sz
-      def ph_type = require_ph.type
+      def ph_idx
+        require_ph.idx
+      end
+
+      def ph_orient
+        require_ph.orient
+      end
+
+      def ph_sz
+        require_ph.sz
+      end
+
+      def ph_type
+        require_ph.type
+      end
 
       # The non-visual properties element, whose tag varies by shape type
       # (`p:nvSpPr`, `p:nvPicPr`, ...). It is always the first child.
-      def nvXxPr = xpath("./*[1]").first
+      def nvXxPr
+        xpath("./*[1]").first
+      end
 
       private
 
@@ -135,25 +176,33 @@ module Pptx
       optional_attr "flipH", type: SimpleTypes::XsdBoolean, default: false
       optional_attr "flipV", type: SimpleTypes::XsdBoolean, default: false
 
-      def x = off&.x
+      def x
+        off&.x
+      end
 
       def x=(value)
         get_or_add_off.x = value
       end
 
-      def y = off&.y
+      def y
+        off&.y
+      end
 
       def y=(value)
         get_or_add_off.y = value
       end
 
-      def cx = ext&.cx
+      def cx
+        ext&.cx
+      end
 
       def cx=(value)
         get_or_add_ext.cx = value
       end
 
-      def cy = ext&.cy
+      def cy
+        ext&.cy
+      end
 
       def cy=(value)
         get_or_add_ext.cy = value
@@ -239,9 +288,13 @@ module Pptx
       optional_attr "w", type: SimpleTypes::ST_LineWidth, default: Pptx::Length.emu(0)
 
       # The fill layer names this differently; both point at the same group.
-      def eg_fillProperties = eg_lineFillProperties
+      def eg_fillProperties
+        eg_lineFillProperties
+      end
 
-      def prstDash_val = prstDash&.val
+      def prstDash_val
+        prstDash&.val
+      end
 
       def prstDash_val=(value)
         remove_custDash
@@ -269,14 +322,27 @@ module Pptx
       zero_or_one "a:ln", successors: TAG_SEQ[10..]
       zero_or_one "a:effectLst", successors: TAG_SEQ[11..]
 
-      def x = xfrm&.x
-      def y = xfrm&.y
-      def cx = xfrm&.cx
-      def cy = xfrm&.cy
+      def x
+        xfrm&.x
+      end
+
+      def y
+        xfrm&.y
+      end
+
+      def cx
+        xfrm&.cx
+      end
+
+      def cy
+        xfrm&.cy
+      end
 
       # A new gradient starts from PowerPoint's default rather than empty; an
       # `a:gradFill` with no stops draws nothing.
-      def new_gradFill = CT_GradientFillProperties.new_grad_fill(self)
+      def new_gradFill
+        CT_GradientFillProperties.new_grad_fill(self)
+      end
     end
 
     # `p:grpSpPr`, the properties of a group shape or shape tree.

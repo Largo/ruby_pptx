@@ -170,3 +170,17 @@ Style/WordArray:
 # identical hex fields.
 Style/FormatStringToken:
   EnforcedStyle: unannotated
+
+# --------------------------------------------------------------------------
+# No endless methods in lib
+#
+# RDoc 7 and earlier -- the versions Ruby 3.3 to 4.0 ship, and which
+# `gem install` runs to build ri docs -- cannot parse `def x = ...`. Each one
+# swallows its class's `end`, every later class nests inside the one before,
+# and on Windows the resulting paths grow too long and the install fails.
+# RDoc 8 is fixed, but users get whatever their Ruby bundles.
+# --------------------------------------------------------------------------
+Style/EndlessMethod:
+  EnforcedStyle: disallow
+  Include:
+    - lib/**/*

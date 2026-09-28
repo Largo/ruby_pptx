@@ -16,7 +16,9 @@ module Pptx
     # Behaviour common to the six slide-like root elements.
     module BaseSlideElement
       # The `p:cSld/p:spTree` grandchild every slide type has.
-      def spTree = cSld.spTree
+      def spTree
+        cSld.spTree
+      end
     end
 
     # `p:cSld`, the common slide data holding the shape tree.
@@ -74,7 +76,9 @@ module Pptx
 
       # A new gradient starts from PowerPoint's default rather than empty; an
       # `a:gradFill` with no stops draws nothing.
-      def new_gradFill = CT_GradientFillProperties.new_grad_fill(self)
+      def new_gradFill
+        CT_GradientFillProperties.new_grad_fill(self)
+      end
     end
 
     # `p:sld`, the root of a slide part.
@@ -87,9 +91,13 @@ module Pptx
       zero_or_one "p:timing", successors: %w[p:extLst]
 
       # A new, empty `p:sld` with the minimum structure PowerPoint requires.
-      def self.new_element = Element.parse(SLD_XML)
+      def self.new_element
+        Element.parse(SLD_XML)
+      end
 
-      def bg = cSld.bg
+      def bg
+        cSld.bg
+      end
 
       # The node list a `p:video` entry hangs off, which is what makes
       # PowerPoint show play controls under a movie.
@@ -191,7 +199,9 @@ module Pptx
 
       # A new `p:sldMaster` carrying the colour map and text styles a master
       # cannot do without, an empty shape tree and no layouts.
-      def self.new_element = Oxml.parse_from_template("slideMaster")
+      def self.new_element
+        Oxml.parse_from_template("slideMaster")
+      end
     end
 
     # `p:clrMap`, which binds each of a slide's colour roles to a theme colour.
@@ -215,7 +225,9 @@ module Pptx
       tag "p:sldLayoutIdLst"
       zero_or_more "p:sldLayoutId", as: :sldLayoutId
 
-      def size = sldLayoutId_list.size
+      def size
+        sldLayoutId_list.size
+      end
     end
 
     # `p:sldLayoutId`, a reference to one slide layout.
@@ -232,7 +244,9 @@ module Pptx
       tag "p:notesMaster"
       one_and_only_one "p:cSld"
 
-      def self.new_default = Oxml.parse_from_template("notesMaster")
+      def self.new_default
+        Oxml.parse_from_template("notesMaster")
+      end
     end
 
     # `p:notes`, the root of a notes-slide part.
@@ -245,7 +259,9 @@ module Pptx
       tag "p:notes"
       one_and_only_one "p:cSld"
 
-      def self.new_element = Oxml.parse_from_template("notes")
+      def self.new_element
+        Oxml.parse_from_template("notes")
+      end
     end
 
     # `p:timing`, animation and timing information.

@@ -54,14 +54,22 @@ module Pptx
       ChartDataCategory.new(label, self).tap { |category| @categories << category }
     end
 
-    def each(&) = @categories.each(&)
+    def each(&)
+      @categories.each(&)
+    end
 
-    def [](index) = @categories[index]
+    def [](index)
+      @categories[index]
+    end
 
-    def size = @categories.size
+    def size
+      @categories.size
+    end
     alias length size
 
-    def empty? = @categories.empty?
+    def empty?
+      @categories.empty?
+    end
 
     # Levels of labels: 0 with no categories, 1 for a plain list.
     #
@@ -76,7 +84,9 @@ module Pptx
     end
 
     # The number of categories actually plotted.
-    def leaf_count = @categories.sum(&:leaf_count)
+    def leaf_count
+      @categories.sum(&:leaf_count)
+    end
 
     # Each level as [index, label] pairs, leaf level first. The index is the
     # leaf position where that label's run begins.
@@ -85,11 +95,17 @@ module Pptx
     end
 
     # The leaf labels in plotting order.
-    def leaf_labels = levels.first.to_a.map(&:last)
+    def leaf_labels
+      levels.first.to_a.map(&:last)
+    end
 
-    def dates? = depth == 1 && date?(first.label)
+    def dates?
+      depth == 1 && date?(first.label)
+    end
 
-    def numeric? = depth == 1 && (first.label.is_a?(Numeric) || date?(first.label))
+    def numeric?
+      depth == 1 && (first.label.is_a?(Numeric) || date?(first.label))
+    end
 
     # The number format for the categories: as set, or a date format for
     # dates, or "General".
@@ -111,7 +127,9 @@ module Pptx
       raise Error, "category not in these categories"
     end
 
-    def inspect = "#<Pptx::ChartDataCategories depth=#{depth} #{leaf_labels.inspect}>"
+    def inspect
+      "#<Pptx::ChartDataCategories depth=#{depth} #{leaf_labels.inspect}>"
+    end
 
     private
 
@@ -121,7 +139,9 @@ module Pptx
       lower + [categories.map { |category| [category.idx, category.label] }]
     end
 
-    def date?(value) = value.is_a?(Date) || value.is_a?(Time)
+    def date?(value)
+      value.is_a?(Date) || value.is_a?(Time)
+    end
   end
 
   # One category, or a group of them when it has sub-categories.
@@ -135,7 +155,9 @@ module Pptx
     end
 
     # The label; "" for a category given as nil.
-    def label = @label.nil? ? "" : @label
+    def label
+      @label.nil? ? "" : @label
+    end
 
     # @return [ChartDataCategory] the new sub-category
     def add_sub_category(label)
@@ -161,10 +183,14 @@ module Pptx
       depths.first + 1
     end
 
-    def leaf_count = @sub_categories.empty? ? 1 : @sub_categories.sum(&:leaf_count)
+    def leaf_count
+      @sub_categories.empty? ? 1 : @sub_categories.sum(&:leaf_count)
+    end
 
     # The leaf position at which this category's run begins.
-    def idx = @parent.index_of(self)
+    def idx
+      @parent.index_of(self)
+    end
 
     # @api private
     def index_of(sub_category)
@@ -190,9 +216,13 @@ module Pptx
     end
 
     # The label as it appears in the category cache and worksheet.
-    def to_s = label.to_s
+    def to_s
+      label.to_s
+    end
 
-    def inspect = "#<Pptx::ChartDataCategory #{label.inspect}>"
+    def inspect
+      "#<Pptx::ChartDataCategory #{label.inspect}>"
+    end
 
     private
 

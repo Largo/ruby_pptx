@@ -20,10 +20,17 @@ module Pptx
       one_and_only_one "a:themeElements"
       required_attr "name", type: SimpleTypes::XsdString
 
-      def self.new_default = Oxml.parse_from_template("theme")
+      def self.new_default
+        Oxml.parse_from_template("theme")
+      end
 
-      def clrScheme = themeElements.clrScheme
-      def fontScheme = themeElements.fontScheme
+      def clrScheme
+        themeElements.clrScheme
+      end
+
+      def fontScheme
+        themeElements.fontScheme
+      end
     end
 
     # `a:themeElements`, the four schemes that make up a theme.
@@ -83,7 +90,9 @@ module Pptx
       one_and_only_one "a:ea"
       one_and_only_one "a:cs"
 
-      def typeface = latin.typeface
+      def typeface
+        latin.typeface
+      end
 
       def typeface=(value)
         latin.typeface = value

@@ -330,8 +330,12 @@ module Pptx
       end
     end
 
-    def basename(shape_type) = self.for(shape_type)[:basename]
+    def basename(shape_type)
+      self.for(shape_type)[:basename]
+    end
 
-    def default_adjustments(shape_type) = self.for(shape_type)[:default_adjustments]
+    def default_adjustments(shape_type)
+      self.for(shape_type)[:default_adjustments]
+    end
   end
 end

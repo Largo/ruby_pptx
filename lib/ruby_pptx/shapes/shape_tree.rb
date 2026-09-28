@@ -87,7 +87,9 @@ module Pptx
     end
 
     # A group counts as one shape, whatever it contains.
-    def size = member_elements.size
+    def size
+      member_elements.size
+    end
     alias length size
 
     def [](index, length = nil)
@@ -158,15 +160,23 @@ module Pptx
 
     # Which shape elements belong to this collection; placeholder collections
     # narrow this.
-    def member?(_shape_element) = true
+    def member?(_shape_element)
+      true
+    end
 
-    def member_elements = @sp_tree.shape_elements.select { |e| member?(e) }
+    def member_elements
+      @sp_tree.shape_elements.select { |e| member?(e) }
+    end
 
-    def shape_factory(shape_element) = ShapeFactory.build(shape_element, self)
+    def shape_factory(shape_element)
+      ShapeFactory.build(shape_element, self)
+    end
 
     # One more than the highest id in use. Note the shape tree's own allocator
     # fills gaps instead; both behaviours are inherited from python-pptx.
-    def next_shape_id = @sp_tree.max_shape_id + 1
+    def next_shape_id
+      @sp_tree.max_shape_id + 1
+    end
 
     # Office's icon for an Office document, a generic one for anything else.
     def default_ole_icon(prog_id)
@@ -477,9 +487,13 @@ module Pptx
     private
 
     # A group resizes itself around its contents; a slide does not move.
-    def recalculate_extents = nil
+    def recalculate_extents
+      nil
+    end
 
-    def shape_factory(shape_element) = ShapeFactory.build_for_slide(shape_element, self)
+    def shape_factory(shape_element)
+      ShapeFactory.build_for_slide(shape_element, self)
+    end
   end
 
   # The shapes on a slide.
@@ -502,11 +516,15 @@ module Pptx
       element && shape_factory(element)
     end
 
-    def placeholders = parent.placeholders
+    def placeholders
+      parent.placeholders
+    end
 
     private
 
-    def shape_factory(shape_element) = ShapeFactory.build_for_slide(shape_element, self)
+    def shape_factory(shape_element)
+      ShapeFactory.build_for_slide(shape_element, self)
+    end
   end
 
   # The shapes inside a `p:grpSp`.
@@ -524,14 +542,18 @@ module Pptx
   class LayoutShapes < BaseShapes
     private
 
-    def shape_factory(shape_element) = ShapeFactory.build_for_layout(shape_element, self)
+    def shape_factory(shape_element)
+      ShapeFactory.build_for_layout(shape_element, self)
+    end
   end
 
   # The shapes on a slide master.
   class MasterShapes < BaseShapes
     private
 
-    def shape_factory(shape_element) = ShapeFactory.build_for_master(shape_element, self)
+    def shape_factory(shape_element)
+      ShapeFactory.build_for_master(shape_element, self)
+    end
   end
 
   # The shapes on a notes page.
@@ -554,17 +576,23 @@ module Pptx
 
     private
 
-    def shape_factory(shape_element) = ShapeFactory.build_for_notes_slide(shape_element, self)
+    def shape_factory(shape_element)
+      ShapeFactory.build_for_notes_slide(shape_element, self)
+    end
   end
 
   # The placeholders on a notes page.
   class NotesSlidePlaceholders < NotesSlideShapes
     # @return [NotesSlidePlaceholder, nil]
-    def by_type(ph_type) = find { |ph| ph.element.ph_type == ph_type }
+    def by_type(ph_type)
+      find { |ph| ph.element.ph_type == ph_type }
+    end
 
     private
 
-    def member?(shape_element) = shape_element.placeholder?
+    def member?(shape_element)
+      shape_element.placeholder?
+    end
   end
 
   # The placeholders of a slide layout, in `idx` order.
@@ -572,13 +600,19 @@ module Pptx
     include PlaceholderAuthoring
 
     # @return [LayoutPlaceholder, nil]
-    def by_idx(idx) = find { |ph| ph.element.ph_idx == idx }
+    def by_idx(idx)
+      find { |ph| ph.element.ph_idx == idx }
+    end
 
     private
 
-    def member?(shape_element) = shape_element.placeholder?
+    def member?(shape_element)
+      shape_element.placeholder?
+    end
 
-    def member_elements = super.sort_by(&:ph_idx)
+    def member_elements
+      super.sort_by(&:ph_idx)
+    end
   end
 
   # The placeholders of a slide master, in `idx` order.
@@ -586,13 +620,19 @@ module Pptx
     include PlaceholderAuthoring
 
     # @return [MasterPlaceholder, nil]
-    def by_type(ph_type) = find { |ph| ph.element.ph_type == ph_type }
+    def by_type(ph_type)
+      find { |ph| ph.element.ph_type == ph_type }
+    end
 
     private
 
-    def member?(shape_element) = shape_element.placeholder?
+    def member?(shape_element)
+      shape_element.placeholder?
+    end
 
-    def member_elements = super.sort_by(&:ph_idx)
+    def member_elements
+      super.sort_by(&:ph_idx)
+    end
   end
 
   # The placeholders of a slide.
@@ -614,7 +654,9 @@ module Pptx
       self
     end
 
-    def size = @sp_tree.placeholder_elements.count
+    def size
+      @sp_tree.placeholder_elements.count
+    end
     alias length size
 
     # The placeholder whose `idx` is +idx+, or nil.
@@ -629,6 +671,8 @@ module Pptx
 
     private
 
-    def placeholder_elements = @sp_tree.placeholder_elements.sort_by(&:ph_idx)
+    def placeholder_elements
+      @sp_tree.placeholder_elements.sort_by(&:ph_idx)
+    end
   end
 end

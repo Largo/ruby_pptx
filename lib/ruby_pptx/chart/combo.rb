@@ -62,7 +62,9 @@ module Pptx
       self
     end
 
-    def secondary_axis? = @specs.any?(&:secondary_axis)
+    def secondary_axis?
+      @specs.any?(&:secondary_axis)
+    end
 
     private
 
@@ -122,7 +124,9 @@ module Pptx
 
     private
 
-    def plot_elements = @builder.specs.map { |spec| plot_element(spec) }.join
+    def plot_elements
+      @builder.specs.map { |spec| plot_element(spec) }.join
+    end
 
     def plot_element(spec)
       family = ChartXmlWriter.family_of(spec.chart_type)
@@ -141,7 +145,9 @@ module Pptx
       XML
     end
 
-    def plot_tag(family) = { bar: "c:barChart", line: "c:lineChart", area: "c:areaChart" }[family]
+    def plot_tag(family)
+      { bar: "c:barChart", line: "c:lineChart", area: "c:areaChart" }[family]
+    end
 
     def bar_plot_body(spec)
       direction = ChartXmlWriter::BarChartWriter::BAR_TYPES.include?(spec.chart_type.name) ? "bar" : "col"

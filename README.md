@@ -306,10 +306,11 @@ git tag -a v0.1.0 -m "ruby_pptx 0.1.0" && git push origin v0.1.0
 it into an empty gem home to prove it loads, and creates a GitHub release with
 the gem attached and the changelog entry as its notes.
 
-Publishing to RubyGems is a separate step: in the Actions tab, run **Publish to
-RubyGems**, optionally naming the tag (the latest release by default). It pushes
-the gem attached to that release, authenticating by RubyGems trusted publishing
-rather than a stored API key.
+Publishing to RubyGems is a separate step: in the Actions tab, open **Publish to
+RubyGems**, choose **Run workflow**, and pick the release's tag under "Use
+workflow from". It refuses to run from a branch. RubyGems' `release-gem` action
+builds the tagged commit and pushes it, authenticating by RubyGems trusted
+publishing rather than a stored API key.
 
 ## License
 

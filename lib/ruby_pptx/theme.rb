@@ -17,7 +17,9 @@ module Pptx
   # are inherited from the base theme and not editable here; writing a
   # coherent set by hand is a design exercise, not a configuration one.
   class Theme < PartElementProxy
-    def name = @element.name
+    def name
+      @element.name
+    end
 
     def name=(value)
       # PowerPoint shows the theme name in three places and expects them to
@@ -28,12 +30,18 @@ module Pptx
     end
 
     # @return [ThemeColors]
-    def colors = @colors ||= ThemeColors.new(@element.clrScheme, self)
+    def colors
+      @colors ||= ThemeColors.new(@element.clrScheme, self)
+    end
 
     # @return [ThemeFonts]
-    def fonts = @fonts ||= ThemeFonts.new(@element.fontScheme, self)
+    def fonts
+      @fonts ||= ThemeFonts.new(@element.fontScheme, self)
+    end
 
-    def inspect = "#<Pptx::Theme #{name.inspect}>"
+    def inspect
+      "#<Pptx::Theme #{name.inspect}>"
+    end
   end
 
   # The twelve theme colours, addressed by name.
@@ -50,7 +58,9 @@ module Pptx
     NAMES = Oxml::CT_ColorScheme::SLOTS.map(&:to_sym).freeze
 
     # @return [Pptx::ColorFormat]
-    def [](name) = ColorFormat.from_color_choice_parent(@element.slot(name))
+    def [](name)
+      ColorFormat.from_color_choice_parent(@element.slot(name))
+    end
 
     def each
       return enum_for(:each) { NAMES.size } unless block_given?
@@ -71,9 +81,13 @@ module Pptx
       self
     end
 
-    def names = NAMES
+    def names
+      NAMES
+    end
 
-    def inspect = "#<Pptx::ThemeColors #{NAMES.size} colours>"
+    def inspect
+      "#<Pptx::ThemeColors #{NAMES.size} colours>"
+    end
   end
 
   # The heading and body typefaces of a theme.
@@ -81,18 +95,24 @@ module Pptx
   # PowerPoint calls these "major" and "minor"; they are what `+mj-lt` and
   # `+mn-lt` resolve to in placeholder text.
   class ThemeFonts < ParentedElementProxy
-    def major = @element.majorFont.typeface
+    def major
+      @element.majorFont.typeface
+    end
 
     def major=(value)
       @element.majorFont.typeface = value
     end
 
-    def minor = @element.minorFont.typeface
+    def minor
+      @element.minorFont.typeface
+    end
 
     def minor=(value)
       @element.minorFont.typeface = value
     end
 
-    def inspect = "#<Pptx::ThemeFonts major=#{major.inspect} minor=#{minor.inspect}>"
+    def inspect
+      "#<Pptx::ThemeFonts major=#{major.inspect} minor=#{minor.inspect}>"
+    end
   end
 end

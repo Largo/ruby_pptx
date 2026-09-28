@@ -99,7 +99,9 @@ module Pptx
 
       # The part name without its leading slash -- the form used as the Zip
       # entry name.
-      def member_name = @to_s[1..]
+      def member_name
+        @to_s[1..]
+      end
 
       # A reference to this part relative to +base_uri+, as written into a
       # .rels part.
@@ -130,14 +132,22 @@ module Pptx
         @to_s <=> other.to_s
       end
 
-      def ==(other) = (self <=> other)&.zero? || false
+      def ==(other)
+        (self <=> other)&.zero? || false
+      end
       alias eql? ==
 
-      def hash = @to_s.hash
+      def hash
+        @to_s.hash
+      end
 
-      def to_str = @to_s
+      def to_str
+        @to_s
+      end
 
-      def inspect = "#<Pptx::Opc::PackURI #{@to_s.inspect}>"
+      def inspect
+        "#<Pptx::Opc::PackURI #{@to_s.inspect}>"
+      end
 
       PACKAGE       = new("/")
       CONTENT_TYPES = new("/[Content_Types].xml")

@@ -23,11 +23,15 @@ module Pptx
         cache[real] ||= new(real)
       end
 
-      def clear_cache = cache.clear
+      def clear_cache
+        cache.clear
+      end
 
       private
 
-      def cache = @cache ||= {}
+      def cache
+        @cache ||= {}
+      end
     end
 
     # @param path [String] a .ttf or .otf file
@@ -64,7 +68,9 @@ module Pptx
       [to_emu(box[2] - left, point_size), to_emu(box[3] - box[1], point_size)]
     end
 
-    def inspect = "#<Pptx::FontMetrics #{File.basename(@path)} upem=#{@units_per_em}>"
+    def inspect
+      "#<Pptx::FontMetrics #{File.basename(@path)} upem=#{@units_per_em}>"
+    end
 
     private
 
@@ -87,8 +93,13 @@ module Pptx
       left && [left, bottom, right, top]
     end
 
-    def min(a, b) = a.nil? || b < a ? b : a
-    def max(a, b) = a.nil? || b > a ? b : a
+    def min(a, b)
+      a.nil? || b < a ? b : a
+    end
+
+    def max(a, b)
+      a.nil? || b > a ? b : a
+    end
 
     # Font units are relative to the em square, so scaling by the point size
     # gives points, which are 1/72 inch by definition.
@@ -96,7 +107,9 @@ module Pptx
       (units * point_size / @units_per_em.to_f / POINTS_PER_INCH * EMU_PER_INCH).to_i
     end
 
-    def glyph_id(codepoint) = @cmap[codepoint] || 0
+    def glyph_id(codepoint)
+      @cmap[codepoint] || 0
+    end
 
     # A font may store one advance for a run of trailing glyphs, in which case
     # hmtx is truncated and the last entry stands for all of them.
@@ -142,9 +155,17 @@ module Pptx
       @index_to_loc_format.zero? ? u16(base + (index * 2)) * 2 : u32(base + (index * 4))
     end
 
-    def u16(at) = @data.byteslice(at, 2).unpack1("n")
-    def s16(at) = @data.byteslice(at, 2).unpack1("s>")
-    def u32(at) = @data.byteslice(at, 4).unpack1("N")
+    def u16(at)
+      @data.byteslice(at, 2).unpack1("n")
+    end
+
+    def s16(at)
+      @data.byteslice(at, 2).unpack1("s>")
+    end
+
+    def u32(at)
+      @data.byteslice(at, 4).unpack1("N")
+    end
 
     def read_table_directory
       raise Error, "#{@path} is not a TrueType or OpenType font" unless sfnt_version?

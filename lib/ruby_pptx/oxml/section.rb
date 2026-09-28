@@ -42,7 +42,9 @@ module Pptx
       one_and_only_one "p14:sldIdLst"
 
       # PowerPoint identifies a section by a brace-wrapped uppercase GUID.
-      def self.new_id = "{#{SecureRandom.uuid.upcase}}"
+      def self.new_id
+        "{#{SecureRandom.uuid.upcase}}"
+      end
     end
 
     # `p14:sectionLst`, the sections of a presentation.

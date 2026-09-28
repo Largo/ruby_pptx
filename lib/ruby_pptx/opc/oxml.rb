@@ -70,7 +70,9 @@ module Pptx
         optional_attr "TargetMode", type: ST::ST_TargetMode,
                                     default: RELATIONSHIP_TARGET_MODE::INTERNAL, as: :targetMode
 
-        def external? = targetMode == RELATIONSHIP_TARGET_MODE::EXTERNAL
+        def external?
+          targetMode == RELATIONSHIP_TARGET_MODE::EXTERNAL
+        end
       end
 
       # `<Relationships>`, the root of a `.rels` item.
@@ -92,7 +94,9 @@ module Pptx
         end
 
         # Bytes for a `.rels` item, with the XML declaration.
-        def xml_file_bytes = Oxml.serialize_part_xml(self)
+        def xml_file_bytes
+          Oxml.serialize_part_xml(self)
+        end
       end
     end
   end

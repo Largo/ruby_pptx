@@ -61,9 +61,13 @@ module Pptx
       MIN_SLIDE_ID = 256
       MAX_SLIDE_ID = 2_147_483_647
 
-      def add_slide_id(r_id) = add_sldId(id: next_id, rId: r_id)
+      def add_slide_id(r_id)
+        add_sldId(id: next_id, rId: r_id)
+      end
 
-      def size = sldId_list.size
+      def size
+        sldId_list.size
+      end
 
       private
 
@@ -90,7 +94,9 @@ module Pptx
       tag "p:sldMasterIdLst"
       zero_or_more "p:sldMasterId", as: :sldMasterId
 
-      def size = sldMasterId_list.size
+      def size
+        sldMasterId_list.size
+      end
     end
 
     # `p:sldMasterId`, a reference to one slide master.

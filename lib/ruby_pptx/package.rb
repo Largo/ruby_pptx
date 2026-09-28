@@ -22,7 +22,9 @@ module Pptx
       end
     end
 
-    def presentation_part = main_document_part
+    def presentation_part
+      main_document_part
+    end
 
     # The media part holding +video+, created if the package has no part with
     # the same content. Matched by SHA-1, as images are.
@@ -41,10 +43,14 @@ module Pptx
     end
 
     # The next free `/ppt/media/imageN.<ext>` partname, reusing gaps.
-    def next_image_partname(ext) = next_media_like_partname("image", ext)
+    def next_image_partname(ext)
+      next_media_like_partname("image", ext)
+    end
 
     # The next free `/ppt/media/mediaN.<ext>` partname, reusing gaps.
-    def next_media_partname(ext) = next_media_like_partname("media", ext)
+    def next_media_partname(ext)
+      next_media_like_partname("media", ext)
+    end
 
     private
 

@@ -33,7 +33,9 @@ module Pptx
       @hover = hover
     end
 
-    def part = @parent.part
+    def part
+      @parent.part
+    end
 
     # @return [Pptx::Enum::PP_ACTION] NONE when nothing happens on click
     def action
@@ -78,7 +80,9 @@ module Pptx
     #
     # Unlike {#address} this does not report a slide partname for a jump: a
     # thing called a URL should be a URL.
-    def url = action == Enum::PP_ACTION::HYPERLINK ? address : nil
+    def url
+      action == Enum::PP_ACTION::HYPERLINK ? address : nil
+    end
 
     # The slide this click jumps to, or nil.
     def target_slide
@@ -107,11 +111,15 @@ module Pptx
       self
     end
 
-    def inspect = "#<Pptx::ActionSetting #{action.name} #{address.inspect}>"
+    def inspect
+      "#<Pptx::ActionSetting #{action.name} #{address.inspect}>"
+    end
 
     private
 
-    def hlink = @element.find(@hover ? "a:hlinkHover" : "a:hlinkClick")
+    def hlink
+      @element.find(@hover ? "a:hlinkHover" : "a:hlinkClick")
+    end
 
     def get_or_add_hlink
       @hover ? @element.get_or_add_hlinkHover : @element.get_or_add_hlinkClick

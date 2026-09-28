@@ -12,7 +12,9 @@ module Pptx
     module PROG_ID
       # One embeddable Office file type.
       Member = Data.define(:name, :prog_id, :icon_filename, :width, :height) do
-        def to_s = "PROG_ID.#{name}"
+        def to_s
+          "PROG_ID.#{name}"
+        end
         alias_method :inspect, :to_s
       end
 

@@ -57,6 +57,23 @@ jobs:
         if: matrix.ruby == '3.3'
         run: bundle exec rubocop --format github
 
+      # `gem install` builds ri docs with the RDoc that Ruby bundles, and an
+      # RDoc that misparses the source files one class inside another; on
+      # Windows the install then fails on the too-long path. Build the docs
+      # as gem install would and check each class sits where it really is.
+      - name: Check RDoc reads the library correctly
+        run: |
+          rdoc --version
+          rdoc --quiet --ri --output "$RUNNER_TEMP/ri" lib > /dev/null
+          ruby -Ilib -rruby_pptx -rruby_pptx/refinements -e '
+            dir = ARGV[0]
+            paths = Dir.glob("**/cdesc-*.ri", base: dir)
+            wrong = paths.map { |p| File.dirname(p).split("/").join("::") }
+                         .reject { |name| Object.const_defined?(name) }
+            abort "RDoc misplaced #{wrong.size} classes, e.g. #{wrong.first(3).join(", ")}" if wrong.any?
+            puts "#{paths.size} classes documented where they are defined"
+          ' "$RUNNER_TEMP/ri"
+
       - name: Run the specs
         env:
           REQUIRE_ORACLE: "1"
