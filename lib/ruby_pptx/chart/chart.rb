@@ -8,33 +8,48 @@ require "ruby_pptx/chart/format"
 
 module Pptx
   # A chart, reached through the graphic frame that holds it.
-  #
-  # Creating a chart is the well-covered path; reading one back is currently
-  # limited to its type, series and cached values.
   class Chart < PartElementProxy
     include PatternMatching
 
-    pattern_keys :plot_type, :categories, :series
+    pattern_keys :chart_type, :plot_type, :categories, :series
 
     PLOT_TAG_TO_TYPE = {
       "c:barChart" => :BAR, "c:lineChart" => :LINE, "c:pieChart" => :PIE,
-      "c:doughnutChart" => :DOUGHNUT, "c:areaChart" => :AREA,
+      "c:doughnutChart" => :DOUGHNUT, "c:areaChart" => :AREA, "c:area3DChart" => :AREA,
       "c:radarChart" => :RADAR, "c:scatterChart" => :XY, "c:bubbleChart" => :BUBBLE
     }.freeze
 
-    # The family of plot this chart draws with, e.g. :BAR.
-    #
-    # This is the plot element rather than the full XL_CHART_TYPE, which cannot
-    # always be recovered from the XML: a clustered and a stacked bar chart
-    # differ only by their grouping.
+    # The family of plot this chart draws with, e.g. :BAR. {#chart_type} is
+    # the precise type.
     def plot_type
       element = @element.plot_element
       element && PLOT_TAG_TO_TYPE[element.nsptag]
     end
 
-    # @return [Array<ChartSeriesView>] the series, in plot order
+    # The chart type of the first plot, e.g. COLUMN_STACKED. Recovered from
+    # the plot's direction, grouping, markers and other settings, as
+    # python-pptx's PlotTypeInspector does.
+    #
+    # @return [Pptx::Enum::Member] a member of XL_CHART_TYPE
+    def chart_type = ChartTypeInspector.chart_type(plot_area.plot_elements.first)
+
+    # The chart style number, 1 to 48, or nil when none is set.
+    def chart_style = @element.style&.val
+
+    def chart_style=(value)
+      @element.remove_style
+      @element.get_or_add_style.val = value unless value.nil?
+    end
+
+    # The default font for all text in the chart, created on first use.
+    def font = @font ||= Font.new(@element.defRPr)
+
+    # Every series in the chart: plot by plot, and within a plot in the order
+    # it draws them.
+    #
+    # @return [Array<ChartSeriesView>]
     def series
-      @element.series_elements.map { |ser| ChartSeriesView.new(ser, self) }
+      plot_area.plot_elements.flat_map { |plot| plot.sers.map { |ser| ChartSeriesView.for(ser, self) } }
     end
 
     # Replace this chart's categories and series with those in +chart_data+.
@@ -71,14 +86,19 @@ module Pptx
       element.nil? ? nil : ChartTitle.new(element)
     end
 
-    # Give the chart a title, or remove it with nil.
-    def title=(text)
-      if text.nil?
+    # A String sets the title's text; true shows a title with no text of its
+    # own, which PowerPoint fills in from the series; nil or false removes it.
+    #
+    # Removing it also records that it was deleted. Without that flag a
+    # single-series chart grows its generated title back when opened.
+    def title=(value)
+      case value
+      when nil, false
         chart_element.remove_title
-        return
+        chart_element.get_or_add_autoTitleDeleted.val = true
+      when true then chart_element.get_or_add_title
+      else ChartTitle.new(chart_element.get_or_add_title).text = value
       end
-
-      ChartTitle.new(ensure_title).text = text
     end
 
     # The plots -- "chart groups" in the MS API -- this chart draws.
@@ -87,22 +107,29 @@ module Pptx
     # why this is a collection rather than a property of the chart.
     def plots = plot_area.plot_elements.map { |element| ChartPlot.new(element, self) }
 
-    # The category axis, or nil for a chart type that has none, such as a pie.
-    def category_axis
-      element = plot_area.category_axis
-      element.nil? ? nil : ChartAxis.new(element)
-    end
-
-    # The value axis, or nil for a chart type that has none.
+    # The horizontal axis: a category or date axis, or, on an XY or bubble
+    # chart, the first value axis. nil for a chart with no axes, such as a pie.
     #
-    # A scatter or bubble chart has two value axes; this returns the first,
-    # which is the horizontal one. {#value_axes} gives both.
-    def value_axis
-      element = plot_area.value_axis
-      element.nil? ? nil : ChartAxis.new(element)
+    # @return [CategoryAxis, DateAxis, ValueAxis, nil]
+    def category_axis
+      if (element = plot_area.find("c:catAx")) then CategoryAxis.new(element)
+      elsif (element = plot_area.find("c:dateAx")) then DateAxis.new(element)
+      elsif (element = plot_area.value_axes.first) then ValueAxis.new(element)
+      end
     end
 
-    def value_axes = plot_area.value_axes.map { |element| ChartAxis.new(element) }
+    # The vertical value axis, or nil for a chart with none.
+    #
+    # An XY or bubble chart has two value axes, and this is the second -- the
+    # vertical one -- as in python-pptx. {#category_axis} is the horizontal.
+    def value_axis
+      axes = plot_area.value_axes
+      return nil if axes.empty?
+
+      ValueAxis.new(axes[axes.size > 1 ? 1 : 0])
+    end
+
+    def value_axes = plot_area.value_axes.map { |element| ValueAxis.new(element) }
 
     # The category labels cached in the chart XML.
     def categories
@@ -112,28 +139,120 @@ module Pptx
       first.xpath("./c:cat//c:pt/c:v").map(&:text)
     end
 
-    def inspect = "#<Pptx::Chart #{plot_type} series=#{series.size}>"
+    def inspect = "#<Pptx::Chart #{chart_type.name} series=#{series.size}>"
 
     private
 
     def chart_element = @element.chart
 
     def plot_area = chart_element.plotArea
+  end
 
-    def ensure_title
-      chart_element.title || begin
-        created = Oxml::CT_Title.new_title(chart_element)
-        chart_element.insert_title(created)
-        created
+  # Works out the full chart type from a plot element, after python-pptx's
+  # PlotTypeInspector. A bar and a column chart, or a clustered and a stacked
+  # one, share an element and differ only in its settings.
+  module ChartTypeInspector
+    XL = Enum::XL_CHART_TYPE
+
+    GROUPED = {
+      "c:areaChart" => { "standard" => :AREA, "stacked" => :AREA_STACKED,
+                         "percentStacked" => :AREA_STACKED_100 },
+      "c:area3DChart" => { "standard" => :THREE_D_AREA, "stacked" => :THREE_D_AREA_STACKED,
+                           "percentStacked" => :THREE_D_AREA_STACKED_100 }
+    }.freeze
+
+    BAR = {
+      "bar" => { "clustered" => :BAR_CLUSTERED, "stacked" => :BAR_STACKED,
+                 "percentStacked" => :BAR_STACKED_100 },
+      "col" => { "clustered" => :COLUMN_CLUSTERED, "stacked" => :COLUMN_STACKED,
+                 "percentStacked" => :COLUMN_STACKED_100 }
+    }.freeze
+
+    LINE = {
+      true => { "standard" => :LINE_MARKERS, "stacked" => :LINE_MARKERS_STACKED,
+                "percentStacked" => :LINE_MARKERS_STACKED_100 },
+      false => { "standard" => :LINE, "stacked" => :LINE_STACKED,
+                 "percentStacked" => :LINE_STACKED_100 }
+    }.freeze
+
+    module_function
+
+    # @return [Pptx::Enum::Member]
+    def chart_type(plot)
+      XL.fetch(name_for(plot))
+    end
+
+    # How to tell the types apart, per plot element.
+    RULES = {
+      "c:areaChart" => ->(plot) { GROUPED.fetch("c:areaChart").fetch(plot.grouping_val) },
+      "c:area3DChart" => ->(plot) { GROUPED.fetch("c:area3DChart").fetch(plot.grouping_val) },
+      "c:barChart" => ->(plot) { BAR.fetch(plot.barDir.val).fetch(plot.grouping_val) },
+      "c:lineChart" => ->(plot) { LINE.fetch(line_markers?(plot)).fetch(plot.grouping_val) },
+      "c:bubbleChart" => ->(plot) { bubble(plot) },
+      "c:doughnutChart" => ->(plot) { exploded?(plot) ? :DOUGHNUT_EXPLODED : :DOUGHNUT },
+      "c:pieChart" => ->(plot) { exploded?(plot) ? :PIE_EXPLODED : :PIE },
+      "c:radarChart" => ->(plot) { radar(plot) },
+      "c:scatterChart" => ->(plot) { scatter(plot) }
+    }.freeze
+
+    def name_for(plot)
+      rule = RULES.fetch(plot.nsptag) { raise Error, "no chart type for #{plot.nsptag}" }
+      rule.call(plot)
+    end
+
+    def line_markers?(plot) = plot.xpath('c:ser/c:marker/c:symbol[@val="none"]').empty?
+
+    def exploded?(plot) = !plot.xpath("./c:ser/c:explosion").empty?
+
+    def first_symbol(plot) = plot.xpath("c:ser/c:marker/c:symbol").first&.get("val")
+
+    def bubble(plot)
+      bubble3d = plot.xpath("c:ser/c:bubble3D").first
+      bubble3d&.val ? :BUBBLE_THREE_D_EFFECT : :BUBBLE
+    end
+
+    def radar(plot)
+      style = plot.xpath("c:radarStyle").first&.get("val")
+      return :RADAR if style.nil?
+      return :RADAR_FILLED if style == "filled"
+
+      first_symbol(plot) == "none" ? :RADAR : :RADAR_MARKERS
+    end
+
+    def scatter(plot)
+      no_markers = first_symbol(plot) == "none"
+      case plot.xpath("c:scatterStyle").first&.get("val")
+      when "lineMarker"
+        return :XY_SCATTER unless plot.xpath("c:ser/c:spPr/a:ln/a:noFill").empty?
+
+        no_markers ? :XY_SCATTER_LINES_NO_MARKERS : :XY_SCATTER_LINES
+      when "smoothMarker"
+        no_markers ? :XY_SCATTER_SMOOTH_NO_MARKERS : :XY_SCATTER_SMOOTH
+      else :XY_SCATTER
       end
     end
   end
 
   # One series as read back from a chart's cached XML.
+  #
+  # {.for} returns the subclass matching the plot the series belongs to, so a
+  # series offers only what its kind of chart supports: {LineSeriesView#smooth},
+  # {BarSeriesView#invert_if_negative}, markers on the kinds that draw them.
   class ChartSeriesView < ElementProxy
     include PatternMatching
 
     pattern_keys :name, :values
+
+    # @return [ChartSeriesView] the subclass for the series' plot
+    def self.for(ser, chart)
+      klass = {
+        "c:areaChart" => AreaSeriesView, "c:area3DChart" => AreaSeriesView, "c:barChart" => BarSeriesView,
+        "c:bubbleChart" => BubbleSeriesView, "c:doughnutChart" => PieSeriesView,
+        "c:lineChart" => LineSeriesView, "c:pieChart" => PieSeriesView, "c:radarChart" => RadarSeriesView,
+        "c:scatterChart" => XySeriesView
+      }.fetch(ser.parent.nsptag, ChartSeriesView)
+      klass.new(ser, chart)
+    end
 
     def initialize(ser, chart)
       super(ser)
@@ -143,19 +262,93 @@ module Pptx
     # The fill and outline of this series.
     def format = @format ||= ChartFormat.new(@element)
 
+    # The series' chart-wide index.
+    def index = @element.idx.val
+
     def name = @element.xpath("./c:tx//c:pt/c:v").first&.text.to_s
 
     # Cached values, with nil where the chart records a gap.
-    def values
-      points = @element.xpath("./c:val//c:pt")
-      count = @element.xpath("./c:val//c:ptCount/@val").first&.value.to_i
-      by_index = points.to_h do |pt|
-        [pt.get("idx").to_i, Float(pt.xpath("./c:v").first.text)]
-      end
+    def values = cached(@element.val)
+
+    def inspect = "#<#{self.class.name} #{name.inspect}>"
+
+    private
+
+    def cached(source)
+      return [] if source.nil?
+
+      count = source.xpath(".//c:ptCount/@val").first&.value.to_i
+      by_index = source.xpath(".//c:pt").to_h { |pt| [pt.idx, pt.value] }
       Array.new(count) { |i| by_index[i] }
     end
+  end
 
-    def inspect = "#<Pptx::ChartSeriesView #{name.inspect}>"
+  # Data labels and per-point formatting, for series plotted by category.
+  module CategorySeriesFeatures
+    # This series' own data labels, created on first use.
+    def data_labels = @data_labels ||= ChartDataLabels.new(@element.get_or_add_dLbls)
+
+    # The points of this series, one per category.
+    def points = ChartPoints.new(@element, @element.cat_ptCount_val)
+  end
+
+  # Markers, for the kinds of series that draw them.
+  module MarkerFeatures
+    def marker = @marker ||= Marker.new(@element)
+  end
+
+  class AreaSeriesView < ChartSeriesView
+    include CategorySeriesFeatures
+  end
+
+  class PieSeriesView < ChartSeriesView
+    include CategorySeriesFeatures
+  end
+
+  class BarSeriesView < ChartSeriesView
+    include CategorySeriesFeatures
+
+    # Whether a negative bar is drawn in inverted colours. An absent
+    # `c:invertIfNegative` reads as true, the schema default.
+    def invert_if_negative? = @element.invertIfNegative.nil? || @element.invertIfNegative.val
+
+    def invert_if_negative=(value)
+      @element.get_or_add_invertIfNegative.val = value ? true : false
+    end
+  end
+
+  class LineSeriesView < ChartSeriesView
+    include CategorySeriesFeatures
+    include MarkerFeatures
+
+    # Whether the line is drawn as a smooth curve. An absent `c:smooth` reads
+    # as true, the schema default.
+    def smooth? = @element.smooth.nil? || @element.smooth.val
+
+    def smooth=(value)
+      @element.get_or_add_smooth.val = value ? true : false
+    end
+  end
+
+  class RadarSeriesView < ChartSeriesView
+    include CategorySeriesFeatures
+    include MarkerFeatures
+  end
+
+  # A scatter series, whose values are its y values.
+  class XySeriesView < ChartSeriesView
+    include MarkerFeatures
+
+    def values = cached(@element.yVal)
+
+    def points = ChartPoints.new(@element, [@element.xVal_ptCount_val, @element.yVal_ptCount_val].min)
+  end
+
+  class BubbleSeriesView < XySeriesView
+    def points
+      counts = [@element.xVal_ptCount_val, @element.yVal_ptCount_val, @element.bubbleSize_ptCount_val]
+      ChartPoints.new(@element, counts.min)
+    end
   end
 
   # Rewrites a chart's series data in place, leaving formatting alone.

@@ -161,7 +161,9 @@ RSpec.describe "chart formatting" do
         expect(axis.visible?).to be(true)
         axis.visible = false
         expect(axis.visible?).to be(false)
-        expect(axis.element.xml).to include('<c:delete val="1"/>')
+        # The schema default for c:delete is true, so python-pptx writes a
+        # hidden axis as a bare `<c:delete/>`; this matches it.
+        expect(axis.element.xml).to include("<c:delete/>")
       end
     end
 
@@ -208,10 +210,15 @@ RSpec.describe "chart formatting" do
       end
     end
 
-    it "reports vary-by-categories, which a pie sets and a bar does not" do
+    # A column chart has no c:varyColors at all, and the schema default is
+    # true -- python-pptx reads it as true, so this does. It was read as
+    # false before, which disagreed with both.
+    it "reads an absent vary-by-categories as the schema default, true" do
       aggregate_failures do
+        expect(chart.plots.first.element.varyColors).to be_nil
+        expect(chart.plots.first.vary_by_categories?).to be(true)
+        chart.plots.first.vary_by_categories = false
         expect(chart.plots.first.vary_by_categories?).to be(false)
-        expect(chart_of(:pie).plots.first.vary_by_categories?).to be(true)
       end
     end
   end

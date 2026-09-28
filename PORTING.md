@@ -505,6 +505,25 @@ answers.
 |---|---|---|
 | `TextFrame#fit_text` | `TypeError` when one word is too wide at the trial size | puts the word on its own line; the height check rejects the size |
 | `FillFormat#gradient_angle` on a fresh gradient | `TypeError: 360.0 - None` -- its own default `a:lin` has no angle | `nil`, meaning inherited, as everywhere else in the API |
+| An empty category label, `<c:v/>` | reads as the string `"None"`: lxml gives the empty text as `None` and the str-subclass `Category` is built from it | `""` |
+| An axis with no `c:delete` at all | reported hidden | reported visible, which is what the schema and PowerPoint mean. python-pptx always writes `c:delete`, so this only shows on files from elsewhere |
+
+And reads that write. These python-pptx getters change the document when
+called, which this gem's never do; the value read is the same, the file is
+not:
+
+| Getter | What python-pptx adds by reading it |
+|---|---|
+| `DataLabels.show_value` and the other `show_*` flags | the flag element, `val="0"` |
+| `ValueAxis.axis_title` / `CategoryAxis.axis_title` | an empty `c:title` (here `title` returns nil when there is none) |
+| `Chart.chart_title` | an empty `c:title` |
+
+Chart reads are held to python-pptx by `spec/ruby_pptx/chart_read_parity_spec.rb`,
+which has python-pptx build seventeen charts and compares fifty-odd
+properties read by both libraries. Its first version caught only 6 of 16
+deliberately wrong reads: python-pptx's templates write nearly every optional
+element, so the default for an *absent* one was never read. Fixtures that
+remove elements, restore defaults and reorder series brought it to 16 of 16.
 
 ## Bugs of our own found by the audit
 
@@ -522,6 +541,23 @@ at the output:
   too. A package differential caught it the first time one looked.
 - **Reading `line.width` added an `a:ln` to the shape**, so a file changed
   merely by being inspected. python-pptx reads without writing.
+- **Chart booleans had no default.** `c:varyColors`, `c:smooth` and
+  `c:delete` default to true in the schema, and python-pptx writes true by
+  leaving the attribute out. Here an element without `val` read as nil,
+  which became false: a column chart reported `vary_by_categories` false
+  where python-pptx says true, and hiding an axis wrote `val="1"` where it
+  writes `<c:delete/>`. Chart booleans are now two classes, exactly as
+  python-pptx registers them -- defaulted, and always explicit.
+- **The same defaults read wrong elsewhere**: a legend with no `c:legendPos`
+  reported no position (python-pptx: right) and no `c:overlay` reported not
+  included in the layout (python-pptx: included). `overlap = 0` wrote the
+  element where python-pptx removes it.
+- **`value_axis` on an XY chart returned the horizontal axis.** python-pptx
+  returns the second value axis, the vertical one; `category_axis` is the
+  horizontal. Code ported from python-pptx would have formatted the wrong
+  axis without error.
+- **Two tags each had two classes** -- `c:tx` and `a:ext` -- and whichever
+  loaded last won. The registry now refuses a second class for a tag.
 
 ## Packaging: the gem owns `lib/ruby_pptx`
 

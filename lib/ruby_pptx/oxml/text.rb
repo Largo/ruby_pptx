@@ -264,6 +264,24 @@ module Pptx
       one_and_only_one "a:bodyPr"
       one_or_more "a:p", successors: [], as: :p
 
+      # A chart's `c:txPr` holds a paragraph for its formatting alone; the
+      # default run properties of that first paragraph are where a chart,
+      # axis, legend or data-label font lives.
+      def defRPr = p_list.first.get_or_add_pPr.get_or_add_defRPr
+
+      # The `c:txPr` a chart element gains when its font is first set.
+      TXPR_XML = <<~XML.freeze
+        <c:txPr #{Ns.nsdecls("c", "a")}>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr>
+              <a:defRPr/>
+            </a:pPr>
+          </a:p>
+        </c:txPr>
+      XML
+
       class << self
         # A `p:txBody` with one empty paragraph, built in +context+'s document.
         def new_element(context) = context.build_from_xml(txbody_xml)
