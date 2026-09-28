@@ -65,7 +65,7 @@ jobs:
         run: |
           rdoc --version
           rdoc --quiet --ri --output "$RUNNER_TEMP/ri" lib > /dev/null
-          ruby -Ilib -rruby_pptx -rruby_pptx/refinements -e '
+          bundle exec ruby -Ilib -rruby_pptx -rruby_pptx/refinements -e '
             dir = ARGV[0]
             paths = Dir.glob("**/cdesc-*.ri", base: dir)
             wrong = paths.map { |p| File.dirname(p).split("/").join("::") }
