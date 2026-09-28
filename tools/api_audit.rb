@@ -171,30 +171,34 @@ module ApiAudit
   # @return [Hash] {missing_classes: [...], missing_members: {pyclass => [..]}}
   def run(dump)
     classes = dump.fetch("classes")
-    missing_classes = []
-    missing_members = {}
-    CLASSES.each do |pyclass, rbname|
-      next if INTERNAL_CLASSES.key?(pyclass)
-
-      members = classes[pyclass] or next
-      klass = ours(rbname)
-      if klass.nil?
-        missing_classes << "#{pyclass} (-> Pptx::#{rbname})"
-        next
-      end
-      # Class methods count too: `RGBColor.from_string` is one on both sides.
-      have = (klass.public_instance_methods + klass.singleton_methods).map(&:to_s)
-      members &= ONLY_MEMBERS[pyclass] if ONLY_MEMBERS.key?(pyclass)
-      gaps = (members - IGNORED - IGNORED_PER_CLASS.fetch(pyclass, [])).reject do |m|
-        candidates(m).any? { |c| have.include?(c) || have.include?("#{c}=") }
-      end
-      missing_members[pyclass] = gaps unless gaps.empty?
+    checked = CLASSES.reject { |pyclass, _| INTERNAL_CLASSES.key?(pyclass) || !classes.key?(pyclass) }
+    missing_classes = checked.filter_map do |pyclass, rbname|
+      "#{pyclass} (-> Pptx::#{rbname})" if ours(rbname).nil?
     end
-    unaccounted = classes.keys.reject do |name|
-      CLASSES.key?(name) || INTERNAL_CLASSES.key?(name) || UNCHECKED.any? { |pattern| pattern.match?(name) }
+    missing_members = checked.each_with_object({}) do |(pyclass, rbname), result|
+      klass = ours(rbname) or next
+      gaps = member_gaps(pyclass, classes[pyclass], klass)
+      result[pyclass] = gaps unless gaps.empty?
     end
     { "version" => dump["version"], "missing_classes" => missing_classes,
-      "missing_members" => missing_members, "unaccounted" => unaccounted.sort }
+      "missing_members" => missing_members, "unaccounted" => unaccounted(classes.keys) }
+  end
+
+  # Members of +pyclass+ with no counterpart on +klass+ under any known name.
+  def member_gaps(pyclass, members, klass)
+    # Class methods count too: `RGBColor.from_string` is one on both sides.
+    have = (klass.public_instance_methods + klass.singleton_methods).map(&:to_s)
+    members &= ONLY_MEMBERS[pyclass] if ONLY_MEMBERS.key?(pyclass)
+    (members - IGNORED - IGNORED_PER_CLASS.fetch(pyclass, [])).reject do |member|
+      candidates(member).any? { |c| have.include?(c) || have.include?("#{c}=") }
+    end
+  end
+
+  # Upstream classes neither checked nor excused.
+  def unaccounted(names)
+    names.reject do |name|
+      CLASSES.key?(name) || INTERNAL_CLASSES.key?(name) || UNCHECKED.any? { |pattern| pattern.match?(name) }
+    end.sort
   end
 end
 
