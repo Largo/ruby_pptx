@@ -158,10 +158,26 @@ module Pptx
       def rich = xpath("./c:tx/c:rich").first
     end
 
-    # `c:tx` on a title, holding either rich text or a cell reference.
-    class CT_TitleText < Element
+    # `c:tx`: a title's or data label's rich text, or a series name's cell
+    # reference. The same element serves all three, so one class does.
+    class CT_Tx < Element
       tag "c:tx"
+      zero_or_one "c:strRef", successors: []
       zero_or_one "c:rich", successors: []
+
+      RICH_XML = <<~XML.freeze
+        <c:rich #{Ns.nsdecls("c", "a")}>
+          <a:bodyPr/>
+          <a:lstStyle/>
+          <a:p>
+            <a:pPr>
+              <a:defRPr/>
+            </a:pPr>
+          </a:p>
+        </c:rich>
+      XML
+
+      def new_rich = build_from_xml(RICH_XML)
     end
 
     # `c:dLbls`, data-label settings for a plot or series.
@@ -264,7 +280,7 @@ module Pptx
     # `c:tx`, `c:cat`, `c:val` and their XY counterparts: a reference into the
     # worksheet plus the cached values.
     class CT_SeriesData < Element
-      tag "c:tx", "c:cat", "c:val", "c:xVal", "c:yVal", "c:bubbleSize"
+      tag "c:cat", "c:val", "c:xVal", "c:yVal", "c:bubbleSize"
     end
 
     # `c:plotArea`.

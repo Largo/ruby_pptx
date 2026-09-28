@@ -109,13 +109,6 @@ module Pptx
       zero_or_more "a:ext", as: :ext
     end
 
-    # `a:ext`, one DrawingML extension.
-    class CT_BlipExtension < Element
-      tag "a:ext"
-      required_attr "uri", type: SimpleTypes::XsdString
-    end
-
-    # `a:blipFill`, a picture fill.
     # `a:srcRect`: how much of an image is cropped from each side, as a
     # fraction of its size. Negative values extend past the image edge.
     class CT_RelativeRect < Element
@@ -126,8 +119,8 @@ module Pptx
       optional_attr "b", type: SimpleTypes::ST_Percentage, default: 0.0
     end
 
+    # `a:blipFill`, a picture fill; `p:blipFill` on a picture is the same type.
     class CT_BlipFillProperties < Element
-      # The same schema type serves a picture (`p:blipFill`) and a fill.
       tag "a:blipFill", "p:blipFill"
       zero_or_one "a:blip", successors: %w[a:srcRect a:tile a:stretch]
       zero_or_one "a:srcRect", successors: %w[a:tile a:stretch]

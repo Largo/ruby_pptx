@@ -16,7 +16,15 @@ module Pptx
       @classes = {}
 
       class << self
+        # A tag belongs to exactly one class. Registering a second one used to
+        # replace the first silently, so whichever file loaded last won --
+        # `c:tx` and `a:ext` each had two classes that way.
         def register(clark_name, element_class)
+          existing = @classes[clark_name]
+          if existing && existing != element_class
+            raise ArgumentError, "#{clark_name} is already registered to #{existing}"
+          end
+
           @classes[clark_name] = element_class
         end
 

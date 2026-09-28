@@ -5,9 +5,12 @@ RSpec.describe Pptx::Oxml::ContentModel do
   # as "a:xfrm". Defining a class registers it immediately, and RSpec loads
   # every spec file before running any example, so simply restoring in
   # after(:all) would still leave the schema installed for whatever runs first.
-  # Instead: snapshot, define, put the real table straight back, and swap the
-  # schema in only for the duration of this file's examples.
+  # Instead: snapshot, define into an empty table, put the real one straight
+  # back, and swap the schema in only for the duration of this file's
+  # examples. The registry refuses a second class for a tag, so the schema
+  # has to be defined in a table of its own rather than over the real one.
   pristine_registry = Pptx::Oxml::Registry.registered
+  Pptx::Oxml::Registry.reset!({})
 
   # A cut-down but faithful slice of the real schema: <a:xfrm> holds an
   # optional <a:off> then an optional <a:ext>, and carries a `rot` attribute.

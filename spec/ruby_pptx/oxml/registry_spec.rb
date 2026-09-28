@@ -62,10 +62,32 @@ RSpec.describe Pptx::Oxml::Registry do
     "p:timing" => Pptx::Oxml::CT_SlideTiming,
     "p:tnLst" => Pptx::Oxml::CT_TimeNodeList,
     "c:ser" => Pptx::Oxml::CT_Series,
-    "c:spPr" => Pptx::Oxml::CT_ShapeProperties
+    "c:spPr" => Pptx::Oxml::CT_ShapeProperties,
+    "c:tx" => Pptx::Oxml::CT_Tx
   }.each do |nsptag, expected_class|
     it "dispatches #{nsptag} to #{expected_class}" do
       expect(described_class.class_for(Pptx::Oxml::Ns.qn(nsptag))).to eq(expected_class)
+    end
+  end
+
+  # A second class for a tag used to replace the first silently, so the
+  # winner depended on load order. c:tx and a:ext both had two classes.
+  describe "registering a tag twice" do
+    around do |example|
+      saved = described_class.registered
+      example.run
+    ensure
+      described_class.reset!(saved)
+    end
+
+    it "refuses a second class for the same tag" do
+      expect { described_class.register(Pptx::Oxml::Ns.qn("c:tx"), Class.new) }
+        .to raise_error(ArgumentError, /already registered to Pptx::Oxml::CT_Tx/)
+    end
+
+    it "lets a class register its own tag again" do
+      expect { described_class.register(Pptx::Oxml::Ns.qn("c:tx"), Pptx::Oxml::CT_Tx) }
+        .not_to raise_error
     end
   end
 end

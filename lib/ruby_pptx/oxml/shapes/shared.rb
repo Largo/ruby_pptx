@@ -108,10 +108,17 @@ module Pptx
     end
 
     # `a:ext` and `a:chExt`: a size, in slide space or in a group's child space.
+    #
+    # `a:ext` names two unrelated things in DrawingML: this extent inside an
+    # `a:xfrm`, and an entry in an `a:extLst` identified by its `uri`. The
+    # registry is keyed by tag, so one class carries both; any element uses
+    # only its own half.
     class CT_PositiveSize2D < Element
       tag "a:ext", "a:chExt"
       required_attr "cx", type: SimpleTypes::ST_PositiveCoordinate
       required_attr "cy", type: SimpleTypes::ST_PositiveCoordinate
+      # -- the extension-list form --
+      optional_attr "uri", type: SimpleTypes::XsdString
     end
 
     # `a:xfrm`, a 2-D transform.
