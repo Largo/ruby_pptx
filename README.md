@@ -248,6 +248,19 @@ Those are not redistributed here; point `OOXML_SCHEMAS` at a directory holding
 OOXML_SCHEMAS=/path/to/schemas bundle exec rspec
 ```
 
+### Releasing
+
+Bump `Pptx::VERSION`, add its `CHANGELOG.md` entry, then push a matching tag:
+
+```bash
+git tag -a v0.1.0 -m "ruby_pptx 0.1.0" && git push origin v0.1.0
+```
+
+`.github/workflows/release.yml` runs the full CI suite, builds the gem, installs
+it into an empty gem home to prove it loads, and creates a GitHub release with
+the gem attached and the changelog entry as its notes. It pushes to RubyGems
+only once a `RUBYGEMS_API_KEY` secret is set.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # So the release workflow can run the full suite before it builds.
+  workflow_call:
 
 jobs:
   spec:

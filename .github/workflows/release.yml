@@ -1,0 +1,111 @@
+name: Release
+
+# Push a tag named after the version (v0.1.0) to release it. The gem is pure
+# Ruby, so one platform-independent gem serves every platform; there is no
+# native code to compile per OS.
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  # The whole CI suite, oracle included, against the tagged commit.
+  spec:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The oldest supported Ruby, so the smoke test below proves the floor.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Check the tag matches the gem version
+        run: |
+          version=$(ruby -e 'require "./lib/ruby_pptx/version"; print Pptx::VERSION')
+          if [ "v$version" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match version $version"
+            exit 1
+          fi
+
+      - name: Build the gem
+        run: gem build --strict ruby_pptx.gemspec
+
+      # Installed into an empty GEM_HOME and loaded outside the checkout, so a
+      # file missing from the gemspec fails here rather than for a user.
+      - name: Install the built gem and use it
+        run: |
+          export GEM_HOME="$RUNNER_TEMP/gems" GEM_PATH="$RUNNER_TEMP/gems"
+          gem install --no-document ./ruby_pptx-*.gem
+          cd "$RUNNER_TEMP"
+          ruby -e '
+            require "ruby_pptx"
+            require "stringio"
+            prs = Pptx::Presentation.new_default
+            slide = prs.slides.add(prs.slide_layouts["Title and Content"])
+            slide.shapes.title.text = "smoke"
+            master = prs.slide_masters.add(name: "Smoke")
+            prs.slides.add(master.slide_layouts.add("Blank", type: "blank"))
+            back = Pptx::Presentation.open(StringIO.new(prs.to_blob))
+            abort "round trip failed" unless back.slides[0].shapes.title.text == "smoke"
+            puts "ruby_pptx #{Pptx::VERSION} loads and round-trips"
+          '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gem
+          path: "*.gem"
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: gem
+
+      # Written to a file and passed via --notes-file: interpolating the notes
+      # into the command breaks as soon as the changelog contains a quote.
+      - name: Extract this version's changelog entry
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            index($0, "## [" v "]") == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found && /^\[[^]]+\]: / { next }
+            found { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if [ ! -s "$RUNNER_TEMP/notes.md" ]; then
+            echo "::error::CHANGELOG.md has no entry for $version"
+            exit 1
+          fi
+
+      - name: Create the GitHub release with the gem attached
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" ./*.gem \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "ruby_pptx ${GITHUB_REF_NAME#v}" \
+            --notes-file "$RUNNER_TEMP/notes.md"
+
+      # Publishing is opt-in: until a RUBYGEMS_API_KEY secret exists, a
+      # release stops at GitHub. The gemspec requires MFA, so the key must be
+      # one RubyGems allows to push without an OTP.
+      - name: Push to RubyGems
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        run: |
+          if [ -z "$GEM_HOST_API_KEY" ]; then
+            echo "::notice::RUBYGEMS_API_KEY is not set; not publishing to RubyGems"
+            exit 0
+          fi
+          gem push ./*.gem
