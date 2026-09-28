@@ -231,12 +231,12 @@ fails if that changes. As of 2026-09-28 it had reported, grouped by area:
 
 ## C. Before a release
 
-- [ ] Decide the public API (section A) — signatures should settle first.
-- [ ] `CHANGELOG.md`.
-- [ ] Decide the version. `0.1.0` is honest for what works; `1.0` would claim
-      completeness the roadmap above contradicts.
-- [ ] Document the supported subset prominently, so nobody discovers by
-      crashing that charts cannot be restyled.
-- [ ] RuboCop, with a config that permits the oxml layer's camelCase.
+- [x] Decide the public API (section A).
+- [x] `CHANGELOG.md`.
+- [x] Decide the version: `0.1.0`. The port is complete, but the API is new
+      and has had no outside users yet; 1.0 should follow real use.
+- [x] Document what is covered, and where it differs from python-pptx --
+      the README status and PORTING.md.
+- [x] RuboCop, with a config that permits the oxml layer's camelCase.
 - [ ] YARD docs; the codebase is already commented for it.
 - [ ] Decide whether to publish. `ruby_pptx` is free on RubyGems.
