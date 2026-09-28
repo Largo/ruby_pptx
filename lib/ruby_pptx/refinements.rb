@@ -10,7 +10,7 @@ module Pptx
   #
   #   slide.shapes.add_shape(:rectangle, at: [1.inch, 2.inch], size: [3.inch, 1.inch])
   #
-  # A refinement is the polite version of `pptx/core_ext`: `Numeric` gains
+  # A refinement is the polite version of `ruby_pptx/core_ext`: `Numeric` gains
   # these methods inside this file and nowhere else, so nothing else sharing
   # the process can see them.
   module Lengths

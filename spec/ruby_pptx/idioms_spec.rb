@@ -309,7 +309,7 @@ RSpec.describe "Ruby idioms" do
     end
   end
 
-  # In a subprocess, because another spec file requires pptx/core_ext, which
+  # In a subprocess, because another spec file requires ruby_pptx/core_ext, which
   # patches Numeric for the whole process -- which is the hazard the
   # refinement exists to avoid, and would make this assertion order-dependent
   # if it were made in here.

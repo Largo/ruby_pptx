@@ -38,9 +38,9 @@ box.text_frame.text = "Next steps"
 slide.shapes.add_picture("logo.png", at: [Pptx.inches(7), Pptx.inches(0.5)],
                          width: Pptx.inches(2))
 
-table = slide.shapes.add_table(2, 3, at: [Pptx.inches(1), Pptx.inches(3)],
-                                     size: [Pptx.inches(8), Pptx.inches(2)]).table
-table[0, 0].text = "Region"
+table_frame = slide.shapes.add_table(2, 3, at: [Pptx.inches(1), Pptx.inches(3)],
+                                     size: [Pptx.inches(8), Pptx.inches(2)])
+table_frame.table[0, 0].text = "Region"
 
 data = Pptx::ChartData.new
 data.categories = ["East", "West", "Midwest"]
@@ -97,6 +97,11 @@ Five things python-pptx does not do: **SVG pictures**, **slide sections**,
 with a secondary axis, and **defining a slide master in code**.
 
 ```ruby
+data = Pptx::ChartData.new
+data.categories = %w[Q1 Q2 Q3]
+data.add_series("Revenue", [120, 135, 150])
+data.add_series("Margin", [0.21, 0.24, 0.22])
+
 slide.shapes.add_combo_chart(data, at: [x, y], size: [w, h]) do |combo|
   combo.plot :column_clustered, series: "Revenue"
   combo.plot :line, series: "Margin", secondary_axis: true
@@ -117,7 +122,7 @@ into the deck.
 box.text_frame.fit_text(font_file: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
                         font_family: "DejaVu Sans",
                         max_size: 28)
-#=> 18   (the point size applied, never above max_size)
+#=> 28   (the point size applied, never above max_size)
 ```
 
 That turns word wrap on, autofit off, and applies the size to every run. Sizes
@@ -171,11 +176,11 @@ scoped to the file that asks for it, so it cannot surprise anything else
 sharing the process.
 
 ```ruby
-require "pptx/refinements"
-using Pptx::Lengths        # this file only
-1.inch == 72.points        #=> true
+require "ruby_pptx/refinements"
+using Pptx::Lengths               # this file only
+1.inch == 72.points               #=> true
 
-require "pptx/core_ext"    # or patch Numeric process-wide
+require "ruby_pptx/core_ext"      # or patch Numeric process-wide
 ```
 
 `at:` and `size:` have always taken a two-element array, and still do. Passing
@@ -230,7 +235,9 @@ pip install -r spec/oracle-requirements.txt
 
 Without it, the oracle-backed specs skip and the rest still run. CI sets
 `REQUIRE_ORACLE=1`, which turns those skips into failures so a broken Python
-environment cannot quietly reduce the suite to its unit tests.
+environment cannot quietly reduce the suite to its unit tests. The same goes
+for the `fit_text` specs, which measure with fonts from Debian's
+`fonts-dejavu-core` and `fonts-urw-base35` packages.
 
 A slide master has no oracle — python-pptx can read one but not create one —
 so it is validated against the published ISO/IEC 29500-4 schemas instead.
@@ -246,6 +253,7 @@ OOXML_SCHEMAS=/path/to/schemas bundle exec rspec
 MIT — see [LICENSE](LICENSE).
 
 This gem is a port of [python-pptx](https://github.com/scanny/python-pptx) by
-Steve Canny, which is also MIT licensed, and it vendors five template files
-from that project verbatim plus one derived from them. See [NOTICE](NOTICE) for the full attribution and
-the upstream licence text.
+Steve Canny, which is also MIT licensed, and it vendors nine template files
+(the default deck, notes and theme templates, the video poster frame and the
+OLE object icons) from that project verbatim, plus one derived from them. See
+[NOTICE](NOTICE) for the full attribution and the upstream licence text.

@@ -54,7 +54,7 @@ against python-pptx itself and fails if a gap appears.
 - Keyword arguments for position and size (`at:`, `size:`), which also accept
   `Pptx::Point` and `Pptx::Size` value objects with arithmetic.
 - Explicit lengths (`Pptx.inches(1)`, `Pptx.pt(18)`), and `1.inch` through
-  either the `Pptx::Lengths` refinement or the opt-in `pptx/core_ext`.
+  either the `Pptx::Lengths` refinement or the opt-in `ruby_pptx/core_ext`.
 - Enumerable collections that index like arrays, ranges included.
 - `case`/`in` pattern matching on shapes, slides, text, charts, lengths and
   colours.

@@ -219,7 +219,7 @@ fails if that changes. As of 2026-09-28 it had reported, grouped by area:
 - **`Pptx::Point` and `Pptx::Size`**, value objects that stand in for the
   `[x, y]` arrays via `to_ary`, with arithmetic and scaling.
 - **`Pptx::Lengths` refinement**, so `1.inch` can be had without patching
-  `Numeric` process-wide. It shares its method bodies with `pptx/core_ext`
+  `Numeric` process-wide. It shares its method bodies with `ruby_pptx/core_ext`
   through `import_methods`, so the two cannot drift.
 - **`Data.define` in place of `Struct.new`** for the three internal value
   types, which were never mutated.

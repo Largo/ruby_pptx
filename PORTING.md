@@ -610,7 +610,7 @@ counterpart:
   exactly as the `[x, y]` arrays every call site already unpacks -- the value
   objects went in without touching a single call site.
 - **`Pptx::Lengths`**, a refinement giving `1.inch` without patching `Numeric`
-  process-wide. It shares its bodies with `pptx/core_ext` via
+  process-wide. It shares its bodies with `ruby_pptx/core_ext` via
   `import_methods`, which is also why those methods are spelled out rather
   than aliased: `import_methods` cannot carry an alias across.
 - **`Data.define`** for the three internal value types, none of which were
