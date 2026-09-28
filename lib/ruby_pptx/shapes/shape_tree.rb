@@ -44,6 +44,12 @@ module Pptx
       build(shape_element, parent)
     end
 
+    def build_for_notes_slide(shape_element, parent)
+      return NotesSlidePlaceholder.new(shape_element, parent) if placeholder_sp?(shape_element)
+
+      build(shape_element, parent)
+    end
+
     def placeholder_sp?(shape_element)
       shape_element.nsptag == "p:sp" && shape_element.placeholder?
     end
@@ -465,6 +471,39 @@ module Pptx
     private
 
     def shape_factory(shape_element) = ShapeFactory.build_for_master(shape_element, self)
+  end
+
+  # The shapes on a notes page.
+  #
+  # A notes slide names its body placeholder "Notes Placeholder" and has a
+  # slide-image placeholder no other kind of slide carries, so it has its own
+  # naming table.
+  class NotesSlideShapes < BaseShapes
+    NOTES_PLACEHOLDER_BASENAMES = {
+      BODY: "Notes Placeholder", DATE: "Date Placeholder", FOOTER: "Footer Placeholder",
+      HEADER: "Header Placeholder", SLIDE_IMAGE: "Slide Image Placeholder",
+      SLIDE_NUMBER: "Slide Number Placeholder"
+    }.freeze
+
+    def placeholder_basename(ph_type)
+      NOTES_PLACEHOLDER_BASENAMES.fetch(ph_type.name) do
+        raise ArgumentError, "no notes placeholder base name for #{ph_type}"
+      end
+    end
+
+    private
+
+    def shape_factory(shape_element) = ShapeFactory.build_for_notes_slide(shape_element, self)
+  end
+
+  # The placeholders on a notes page.
+  class NotesSlidePlaceholders < NotesSlideShapes
+    # @return [NotesSlidePlaceholder, nil]
+    def by_type(ph_type) = find { |ph| ph.element.ph_type == ph_type }
+
+    private
+
+    def member?(shape_element) = shape_element.placeholder?
   end
 
   # The placeholders of a slide layout, in `idx` order.

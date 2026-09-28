@@ -71,6 +71,11 @@ module Pptx
       @slide_masters ||= SlideMasters.new(@element.get_or_add_sldMasterIdLst, self)
     end
 
+    # The notes master, created from the default template on first use.
+    #
+    # @return [NotesMaster]
+    def notes_master = part.notes_master_part.notes_master
+
     # The first slide master, which is the only one in most presentations.
     def slide_master = slide_masters[0]
 

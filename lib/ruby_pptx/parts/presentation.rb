@@ -24,6 +24,20 @@ module Pptx
 
       def core_properties = package.core_properties
 
+      # The presentation's notes master, created from the default template on
+      # first use.
+      #
+      # Like python-pptx, this relates the new part to the presentation but
+      # does not add a `p:notesMasterIdLst` entry for it.
+      def notes_master_part
+        existing = rels.find { |r| r.reltype == Opc::RELATIONSHIP_TYPE::NOTES_MASTER }
+        return existing.target_part if existing
+
+        part = NotesMasterPart.create_default(package)
+        relate_to(part, Opc::RELATIONSHIP_TYPE::NOTES_MASTER)
+        part
+      end
+
       def related_slide(r_id) = related_part(r_id).slide
 
       def related_slide_master(r_id) = related_part(r_id).slide_master

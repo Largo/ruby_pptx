@@ -40,6 +40,51 @@ module Pptx
     def placeholders = @placeholders ||= MasterPlaceholders.new(@element.spTree, self)
   end
 
+  # The master every notes page in a presentation inherits from.
+  #
+  # There is at most one per presentation, and it is created on first use --
+  # the first time a slide is given speaker notes, or {Presentation#notes_master}
+  # is asked for.
+  class NotesMaster < BaseMaster
+    def inspect = "#<Pptx::NotesMaster #{part.partname}>"
+  end
+
+  # The speaker notes page belonging to one slide.
+  #
+  #   slide.notes_slide.notes_text_frame.text = "Mention the Q3 numbers"
+  #   slide.notes = "Mention the Q3 numbers"   # the same, shorter
+  class NotesSlide < BaseSlide
+    # Placeholder types copied from the notes master onto a new notes slide.
+    # The header, date and footer stay on the master, as they do in PowerPoint.
+    CLONEABLE = %i[SLIDE_IMAGE BODY SLIDE_NUMBER].freeze
+
+    def shapes = @shapes ||= NotesSlideShapes.new(@element.spTree, self)
+
+    def placeholders = @placeholders ||= NotesSlidePlaceholders.new(@element.spTree, self)
+
+    # The body placeholder that holds the notes text, or nil if it was removed.
+    def notes_placeholder = placeholders.find { |ph| ph.placeholder_format.type.name == :BODY }
+
+    # The text frame of the notes placeholder, or nil when there is none.
+    #
+    # @return [TextFrame, nil]
+    def notes_text_frame = notes_placeholder&.text_frame
+
+    # Copy the cloneable placeholders from +notes_master+, keeping their order.
+    # Called once, when the notes slide is created.
+    def clone_master_placeholders(notes_master)
+      notes_master.shapes.each do |shape|
+        next unless shape.placeholder?
+        next unless CLONEABLE.include?(shape.element.ph_type.name)
+
+        shapes.clone_placeholder(shape)
+      end
+      self
+    end
+
+    def inspect = "#<Pptx::NotesSlide #{part.partname}>"
+  end
+
   # One slide in a presentation.
   class Slide < BaseSlide
     include PatternMatching
@@ -57,6 +102,28 @@ module Pptx
     def follows_master_background? = @element.bg.nil?
 
     def notes_slide? = part.notes_slide?
+
+    # This slide's speaker notes page, created on first use.
+    #
+    # Use {#notes_slide?} to ask whether there is one without creating it, or
+    # {#notes} and {#notes=} for the common case of just the text.
+    #
+    # @return [NotesSlide]
+    def notes_slide = part.notes_slide
+
+    # The speaker notes as plain text, or nil when the slide has none.
+    #
+    # Reading never creates a notes slide; that would add parts to a file
+    # merely by looking at it.
+    def notes = notes_slide? ? notes_slide.notes_text_frame&.text : nil
+
+    # Replace the speaker notes, creating the notes slide if need be.
+    def notes=(text)
+      frame = notes_slide.notes_text_frame
+      raise Error, "this slide's notes page has no notes placeholder" if frame.nil?
+
+      frame.text = text
+    end
 
     # The shapes on this slide, in z-order.
     def shapes = @shapes ||= SlideShapes.new(@element.spTree, self)

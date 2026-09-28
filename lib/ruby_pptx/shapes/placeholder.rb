@@ -78,6 +78,17 @@ module Pptx
     end
   end
 
+  # A placeholder on a notes page.
+  #
+  # Inherits its geometry from the notes-master placeholder of the same type.
+  class NotesSlidePlaceholder < Shape
+    include InheritsDimensions
+
+    def shape_type = Enum::MSO_SHAPE_TYPE::PLACEHOLDER
+
+    def base_placeholder = part.notes_master.placeholders.by_type(element.ph_type)
+  end
+
   # A placeholder on a slide master.
   #
   # There is nothing above a master to inherit from, so its geometry is

@@ -75,6 +75,16 @@ module Pptx
       def slide_id = package.presentation_part.slide_id_for(self)
 
       def notes_slide? = rels.any? { |r| r.reltype == Opc::RELATIONSHIP_TYPE::NOTES_SLIDE }
+
+      # This slide's notes slide, created on first use.
+      def notes_slide
+        existing = rels.find { |r| r.reltype == Opc::RELATIONSHIP_TYPE::NOTES_SLIDE }
+        return existing.target_part.notes_slide if existing
+
+        notes_part = NotesSlidePart.new_notes_slide(package, self)
+        relate_to(notes_part, Opc::RELATIONSHIP_TYPE::NOTES_SLIDE)
+        notes_part.notes_slide
+      end
     end
 
     # A slide-layout part, `/ppt/slideLayouts/slideLayoutN.xml`.
@@ -147,10 +157,48 @@ module Pptx
 
     # A notes-master part.
     class NotesMasterPart < BaseSlidePart
+      PARTNAME = "/ppt/notesMasters/notesMaster1.xml"
+
+      # A default notes master with the theme it needs, built from the
+      # templates shipped with the gem.
+      #
+      # The theme is the base theme as-is. It is not routed through
+      # ThemePart.new_theme, which renames the colour and font schemes along
+      # with the theme and so would not match what python-pptx writes.
+      def self.create_default(package)
+        part = new(Opc::PackURI.new(PARTNAME), Opc::CONTENT_TYPE::PML_NOTES_MASTER, package,
+                   Oxml::CT_NotesMaster.new_default)
+        theme = ThemePart.new(package.next_partname(SlideMasterPart::THEME_PARTNAME_TEMPLATE),
+                              Opc::CONTENT_TYPE::OFC_THEME, package,
+                              Oxml::CT_OfficeStyleSheet.new_default)
+        part.relate_to(theme, Opc::RELATIONSHIP_TYPE::THEME)
+        part
+      end
+
+      def notes_master = @notes_master ||= NotesMaster.new(element, self)
     end
 
-    # A notes-slide part.
+    # A notes-slide part, `/ppt/notesSlides/notesSlideN.xml`.
     class NotesSlidePart < BaseSlidePart
+      PARTNAME_TEMPLATE = "/ppt/notesSlides/notesSlide%d.xml"
+
+      # A new notes slide for +slide_part+, related to the notes master and
+      # carrying clones of the master's slide-image, body and slide-number
+      # placeholders. The notes master is created first if the presentation
+      # has none.
+      def self.new_notes_slide(package, slide_part)
+        notes_master_part = package.presentation_part.notes_master_part
+        part = new(package.next_partname(PARTNAME_TEMPLATE), Opc::CONTENT_TYPE::PML_NOTES_SLIDE,
+                   package, Oxml::CT_NotesSlide.new_element)
+        part.relate_to(notes_master_part, Opc::RELATIONSHIP_TYPE::NOTES_MASTER)
+        part.relate_to(slide_part, Opc::RELATIONSHIP_TYPE::SLIDE)
+        part.notes_slide.clone_master_placeholders(notes_master_part.notes_master)
+        part
+      end
+
+      def notes_slide = @notes_slide ||= NotesSlide.new(element, self)
+
+      def notes_master = part_related_by(Opc::RELATIONSHIP_TYPE::NOTES_MASTER).notes_master
     end
   end
 end
