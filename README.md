@@ -92,6 +92,52 @@ end
 deck.save("out.pptx")
 ```
 
+Speaker notes are plain text for the common case, with the full text frame
+underneath when you want formatting. Reading `notes` never creates a notes
+page; assigning does.
+
+```ruby
+slide.notes = "Mention the Q3 dip.\nThank the team."
+slide.notes                            #=> "Mention the Q3 dip.\nThank the team."
+slide.notes_slide.notes_text_frame.paragraphs.last.runs.first.font.bold = true
+```
+
+Picture, table and chart placeholders are filled in place, so the content takes
+the layout's position and size. A picture is cropped to fill its placeholder,
+never stretched.
+
+```ruby
+photo = deck.slides.add(deck.slide_layouts["Picture with Caption"])
+photo.placeholders[1].insert_picture("office.jpg")
+photo.placeholders[2].text_frame.text = "Our new office"
+
+# The default template has no table or chart placeholders, so add a layout
+# with both to its master.
+layout = deck.slide_masters[0].slide_layouts.add("Table and Chart", type: "twoObj") do |l|
+  l.placeholders.add(:title)
+  l.placeholders.add(:table, idx: 1, at: [Pptx.inches(0.5), Pptx.inches(1.5)],
+                                     size: [Pptx.inches(4.25), Pptx.inches(4.5)])
+  l.placeholders.add(:chart, idx: 2, at: [Pptx.inches(5.25), Pptx.inches(1.5)],
+                                     size: [Pptx.inches(4.25), Pptx.inches(4.5)])
+end
+
+report = deck.slides.add(layout)
+report.placeholders[1].insert_table(3, 2).table[0, 0].text = "Region"
+report.placeholders[2].insert_chart(:column_clustered, data)
+```
+
+Any file can be embedded as an OLE object, shown as an icon that opens it when
+double-clicked. Word, Excel and PowerPoint files get Office's own icon; for
+anything else, name its ProgID and optionally supply an icon.
+
+```ruby
+sheet = slide.shapes.add_ole_object("budget.xlsx", prog_id: :xlsx, at: [x, y])
+sheet.ole_format.prog_id               #=> "Excel.Sheet.12"
+
+slide.shapes.add_ole_object("report.pdf", prog_id: "AcroExch.Document", at: [x, y],
+                            icon_file: "pdf-icon.png")
+```
+
 Five things python-pptx does not do: **SVG pictures**, **slide sections**,
 **paging a long table across as many slides as it needs**, **combo charts**
 with a secondary axis, and **defining a slide master in code**.
@@ -258,8 +304,12 @@ git tag -a v0.1.0 -m "ruby_pptx 0.1.0" && git push origin v0.1.0
 
 `.github/workflows/release.yml` runs the full CI suite, builds the gem, installs
 it into an empty gem home to prove it loads, and creates a GitHub release with
-the gem attached and the changelog entry as its notes. It pushes to RubyGems
-only once a `RUBYGEMS_API_KEY` secret is set.
+the gem attached and the changelog entry as its notes.
+
+Publishing to RubyGems is a separate step: in the Actions tab, run **Publish to
+RubyGems**, optionally naming the tag (the latest release by default). It pushes
+the gem attached to that release, authenticating by RubyGems trusted publishing
+rather than a stored API key.
 
 ## License
 

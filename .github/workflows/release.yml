@@ -1,8 +1,9 @@
 name: Release
 
-# Push a tag named after the version (v0.1.0) to release it. The gem is pure
-# Ruby, so one platform-independent gem serves every platform; there is no
-# native code to compile per OS.
+# Push a tag named after the version (v0.1.0) to release it on GitHub.
+# Publishing to RubyGems is a separate, manual step (publish.yml). The gem is
+# pure Ruby, so one platform-independent gem serves every platform; there is
+# no native code to compile per OS.
 on:
   push:
     tags:
@@ -96,16 +97,3 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "ruby_pptx ${GITHUB_REF_NAME#v}" \
             --notes-file "$RUNNER_TEMP/notes.md"
-
-      # Publishing is opt-in: until a RUBYGEMS_API_KEY secret exists, a
-      # release stops at GitHub. The gemspec requires MFA, so the key must be
-      # one RubyGems allows to push without an OTP.
-      - name: Push to RubyGems
-        env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
-        run: |
-          if [ -z "$GEM_HOST_API_KEY" ]; then
-            echo "::notice::RUBYGEMS_API_KEY is not set; not publishing to RubyGems"
-            exit 0
-          fi
-          gem push ./*.gem

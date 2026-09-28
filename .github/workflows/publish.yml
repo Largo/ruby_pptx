@@ -1,0 +1,51 @@
+name: Publish to RubyGems
+
+# Run by hand from the Actions tab ("Run workflow"). It publishes the gem
+# attached to an existing GitHub release -- the exact file release.yml built
+# and tested -- rather than building a new one.
+#
+# Authentication is RubyGems trusted publishing: rubygems.org trusts this
+# workflow's GitHub OIDC token, so no API key is stored here and the gem's
+# MFA requirement is satisfied. rubygems.org must list this repository,
+# publish.yml and the "rubygems" environment as a trusted publisher.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish, e.g. v0.1.0 (blank for the latest release)"
+        required: false
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: rubygems
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Download the released gem
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          fi
+          echo "Publishing $TAG"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "ruby_pptx-*.gem"
+          gem="ruby_pptx-${TAG#v}.gem"
+          if [ ! -f "$gem" ]; then
+            echo "::error::release $TAG has no $gem attached"
+            exit 1
+          fi
+          echo "GEM=$gem" >> "$GITHUB_ENV"
+
+      - uses: rubygems/configure-rubygems-credentials@v2.1.0
+
+      - name: Push to RubyGems
+        run: gem push "$GEM"
