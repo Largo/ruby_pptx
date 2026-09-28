@@ -78,7 +78,11 @@ module ApiAudit
     "chart.data.BubbleChartData" => "BubbleChartData",
     "chart.data.CategorySeriesData" => "ChartSeries", "chart.data.XySeriesData" => "XySeries",
     "chart.data.BubbleSeriesData" => "BubbleSeries",
-    "media.Video" => "Video"
+    "media.Video" => "Video",
+    "chart.plot.Area3DPlot" => "ChartPlot", "chart.data.ChartData" => "ChartData",
+    "chart.category.Category" => "ChartCategory",
+    "chart.data.Categories" => "ChartDataCategories", "chart.data.Category" => "ChartDataCategory",
+    "text.layout.TextFitter" => "TextFitter"
   }.freeze
 
   # Members that are plumbing rather than API: the lxml element, the owning
@@ -115,13 +119,42 @@ module ApiAudit
   # out, so there is nothing for a caller to reach.
   INTERNAL_CLASSES = {
     # AdjustmentCollection#__getitem__ returns plain floats, never these.
-    "shapes.autoshape.Adjustment" => "internal to AdjustmentCollection"
+    "shapes.autoshape.Adjustment" => "internal to AdjustmentCollection",
+    # Returned by add_data_point, but nothing reads them back.
+    "chart.data.CategoryDataPoint" => "value holder", "chart.data.XyDataPoint" => "value holder",
+    "chart.data.BubbleDataPoint" => "value holder",
+    # The lookup table behind add_shape; here Pptx::AutoShapeSpec.
+    "shapes.autoshape.AutoShapeType" => "lookup table",
+    # Deprecated upstream in favour of placeholder_format.
+    "shapes.placeholder.BasePlaceholder" => "deprecated",
+    # Abstract bases and typing protocols.
+    "shapes.shapetree.BasePlaceholders" => "abstract", "shared.ElementProxy" => "abstract",
+    "shared.ParentedElementProxy" => "abstract", "shared.PartElementProxy" => "abstract",
+    "types.ProvidesExtents" => "typing protocol", "types.ProvidesPart" => "typing protocol",
+    # Font discovery by family name. It supports only macOS and Windows upstream
+    # and raises on Linux; this gem takes font_file: instead. See PORTING.md.
+    "text.fonts.FontFiles" => "not ported by design"
   }.freeze
+
+  # Whole families that are not API: private helpers (a leading underscore on
+  # the class name), writers and rewriters, and the data-point value
+  # objects python-pptx builds internally from what add_series is given.
+  UNCHECKED = [
+    /\._[A-Z]/, /\.chart\.xmlwriter\./, /\.chart\.xlsx\./, /WorkbookWriter\z/,
+    /\Apackage\./, /\Ashapes\.Subshape\z/, /\Achart\.plot\.PlotTypeInspector\z/,
+    /\Amedia\.Video\z/
+  ].freeze
 
   # Members that exist on a python-pptx class only by inheritance and mean
   # nothing for it -- a category series has no x values.
   IGNORED_PER_CLASS = {
     "chart.data.CategorySeriesData" => %w[x_values y_values]
+  }.freeze
+
+  # Classes where only some members are API. A category label upstream is a
+  # str subclass, so it also "has" every string method.
+  ONLY_MEMBERS = {
+    "chart.category.Category" => %w[idx label]
   }.freeze
 
   module_function
@@ -151,13 +184,17 @@ module ApiAudit
       end
       # Class methods count too: `RGBColor.from_string` is one on both sides.
       have = (klass.public_instance_methods + klass.singleton_methods).map(&:to_s)
+      members &= ONLY_MEMBERS[pyclass] if ONLY_MEMBERS.key?(pyclass)
       gaps = (members - IGNORED - IGNORED_PER_CLASS.fetch(pyclass, [])).reject do |m|
         candidates(m).any? { |c| have.include?(c) || have.include?("#{c}=") }
       end
       missing_members[pyclass] = gaps unless gaps.empty?
     end
+    unaccounted = classes.keys.reject do |name|
+      CLASSES.key?(name) || INTERNAL_CLASSES.key?(name) || UNCHECKED.any? { |pattern| pattern.match?(name) }
+    end
     { "version" => dump["version"], "missing_classes" => missing_classes,
-      "missing_members" => missing_members }
+      "missing_members" => missing_members, "unaccounted" => unaccounted.sort }
   end
 end
 
@@ -170,6 +207,10 @@ if $PROGRAM_NAME == __FILE__
     puts
     result["missing_classes"].each { |c| puts "  class  #{c}" }
     result["missing_members"].sort.each { |c, ms| puts format("  %-36s %s", c, ms.join(" ")) }
+    unless result["unaccounted"].empty?
+      puts "\nclasses the audit neither checks nor excuses -- map them or say why not:"
+      result["unaccounted"].each { |c| puts "  #{c}" }
+    end
     total = result["missing_classes"].size + result["missing_members"].values.sum(&:size)
     puts "\n#{total.zero? ? "nothing missing" : "#{total} gaps"}"
   end
