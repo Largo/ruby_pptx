@@ -181,16 +181,16 @@ Remaining upstream code, measured:
   which reads multi-plot charts even though it never writes one, read the
   result back.
 
-**What remains** — corrected 2026-09-28. This section once said "nothing in
-the port", and that was wrong. It tracked *modules*, and a module marked done
-could still be missing members. `tools/api_audit.rb` now checks python-pptx's
-public API member by member; section B3 below is what it found, and it is the
-list the port works through.
+**What remains**: nothing in the port, and this time that is checked. The
+section once said so wrongly: it tracked *modules*, and a module marked done
+could still be missing members. `tools/api_audit.rb` checks python-pptx's
+public API member by member; section B3 is what it found, all since closed.
 
-## B3. Gaps found by the member-level audit
+## B3. Gaps found by the member-level audit -- **closed**
 
 Run `python3 tools/api_dump.py > api.json && ruby -Ilib tools/api_audit.rb api.json`.
-As of 2026-09-28 it reported, grouped by area:
+It now reports nothing missing, and `spec/ruby_pptx/api_completeness_spec.rb`
+fails if that changes. As of 2026-09-28 it had reported, grouped by area:
 
 - **Speaker notes** — `Slide#notes_slide`, `NotesSlide` (`notes_text_frame`,
   `notes_placeholder`), `NotesMaster`, `Presentation#notes_master`. Only the

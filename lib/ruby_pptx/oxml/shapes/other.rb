@@ -253,6 +253,14 @@ module Pptx
       end
     end
 
+    # `p:oleObj`, an OLE object inside a graphic frame.
+    class CT_OleObject < Element
+      tag "p:oleObj"
+      optional_attr "progId", type: SimpleTypes::XsdString
+      optional_attr "r:id", type: SimpleTypes::XsdString, as: :rId
+      optional_attr "showAsIcon", type: SimpleTypes::XsdBoolean, default: false
+    end
+
     # `p:graphicFrame`, the container for a table, chart or embedded object.
     class CT_GraphicalObjectFrame < Element
       include BaseShapeElement
@@ -283,7 +291,65 @@ module Pptx
       # The `a:tbl` inside this frame, or nil when it holds something else.
       def tbl = xpath("./a:graphic/a:graphicData/a:tbl").first
 
+      def ole_object? = graphic_data_uri == URI_OLE_OBJECT
+
+      # The `p:oleObj` inside this frame, or nil.
+      def oleObj = xpath("./a:graphic/a:graphicData/p:oleObj").first
+
+      # An OLE object carries its file (`p:embed`) or points elsewhere for it.
+      def embedded_ole_object? = !xpath("./a:graphic/a:graphicData/p:oleObj/p:embed").empty?
+
       class << self
+        # A frame holding an OLE object shown as an icon: the embedded file is
+        # related by +ole_r_id+, the icon image by +icon_r_id+. Written as
+        # python-pptx writes it.
+        def new_ole_object_graphic_frame(id, name, ole_r_id, prog_id, icon_r_id, x, y, cx, cy, img_w, img_h)
+          Element.parse(<<~XML)
+            <p:graphicFrame #{Ns.nsdecls("a", "p", "r")}>
+              <p:nvGraphicFramePr>
+                <p:cNvPr id="#{id}" name="#{CT_Picture.escape(name)}"/>
+                <p:cNvGraphicFramePr>
+                  <a:graphicFrameLocks noGrp="1"/>
+                </p:cNvGraphicFramePr>
+                <p:nvPr/>
+              </p:nvGraphicFramePr>
+              <p:xfrm>
+                <a:off x="#{x.to_i}" y="#{y.to_i}"/>
+                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+              </p:xfrm>
+              <a:graphic>
+                <a:graphicData uri="#{URI_OLE_OBJECT}">
+                  <p:oleObj showAsIcon="1" r:id="#{ole_r_id}" imgW="#{img_w.to_i}" imgH="#{img_h.to_i}" progId="#{CT_Picture.escape(prog_id)}">
+                    <p:embed/>
+                    <p:pic>
+                      <p:nvPicPr>
+                        <p:cNvPr id="0" name=""/>
+                        <p:cNvPicPr/>
+                        <p:nvPr/>
+                      </p:nvPicPr>
+                      <p:blipFill>
+                        <a:blip r:embed="#{icon_r_id}"/>
+                        <a:stretch>
+                          <a:fillRect/>
+                        </a:stretch>
+                      </p:blipFill>
+                      <p:spPr>
+                        <a:xfrm>
+                          <a:off x="#{x.to_i}" y="#{y.to_i}"/>
+                          <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+                        </a:xfrm>
+                        <a:prstGeom prst="rect">
+                          <a:avLst/>
+                        </a:prstGeom>
+                      </p:spPr>
+                    </p:pic>
+                  </p:oleObj>
+                </a:graphicData>
+              </a:graphic>
+            </p:graphicFrame>
+          XML
+        end
+
         # An empty `p:graphicFrame`. It is not a valid shape until a graphical
         # object such as a table is placed inside it.
         def new_graphic_frame(id, name, x, y, cx, cy)

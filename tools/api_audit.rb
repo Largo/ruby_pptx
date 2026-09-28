@@ -110,7 +110,7 @@ module ApiAudit
     "add_category" => %w[categories=],
     "slide_master" => %w[slide_master slide_masters],
     "number_format_is_linked" => %w[number_format_linked?], "axis_title" => %w[title],
-    "are_dates" => %w[dates?], "are_numeric" => %w[numeric?],
+    "are_dates" => %w[dates?], "are_numeric" => %w[numeric?], "show_as_icon" => %w[show_as_icon?],
     "shape_offset_x" => %w[offset_x], "shape_offset_y" => %w[offset_y],
     "add_data_point" => %w[<< add_point add_series],
     # python-pptx wraps the address in a Hyperlink object; here it is flattened.

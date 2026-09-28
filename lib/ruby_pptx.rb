@@ -73,6 +73,7 @@ require "ruby_pptx/parts/chart"
 require "ruby_pptx/parts/slide"
 require "ruby_pptx/parts/presentation"
 require "ruby_pptx/parts/theme"
+require "ruby_pptx/parts/embedded_package"
 require "ruby_pptx/package"
 
 require "ruby_pptx/enum/base"
@@ -82,6 +83,7 @@ require "ruby_pptx/enum/dml"
 require "ruby_pptx/enum/lang"
 require "ruby_pptx/enum/shapes"
 require "ruby_pptx/enum/text"
+require "ruby_pptx/enum/prog_id"
 
 # A Ruby object model for PowerPoint (.pptx) files, ported from python-pptx.
 module Pptx

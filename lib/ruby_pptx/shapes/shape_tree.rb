@@ -168,6 +168,12 @@ module Pptx
     # fills gaps instead; both behaviours are inherited from python-pptx.
     def next_shape_id = @sp_tree.max_shape_id + 1
 
+    # Office's icon for an Office document, a generic one for anything else.
+    def default_ole_icon(prog_id)
+      name = prog_id.is_a?(Enum::PROG_ID::Member) ? prog_id.icon_filename : "generic-icon.emf"
+      File.expand_path("../templates/#{name}", __dir__)
+    end
+
     # The name PowerPoint would give a new placeholder: the base name for its
     # type followed by id - 1, bumped until it is unique in the tree, and
     # prefixed "Vertical " for a vertical placeholder.
@@ -322,6 +328,46 @@ module Pptx
       id = next_shape_id
       frame = @sp_tree.add_graphic_frame_table(id, "Table #{id - 1}", rows, cols,
                                                left, top, width, height)
+      recalculate_extents
+      shape_factory(frame)
+    end
+
+    # Embed a file as an OLE object, shown on the slide as an icon.
+    #
+    #   shapes.add_ole_object("budget.xlsx", prog_id: :xlsx, at: [x, y])
+    #   shapes.add_ole_object("report.pdf", prog_id: "AcroExch.Document", at: [x, y],
+    #                         icon_file: "pdf-icon.png")
+    #
+    # +prog_id+ is :docx, :pptx or :xlsx for an Office document, which is
+    # stored as the document itself and gets Office's icon; any other type is
+    # named by its ProgID String and stored as an opaque object with a
+    # generic icon. Double-clicking the icon in PowerPoint opens the file in
+    # the program the ProgID names.
+    #
+    # @param size [Array(Length, Length), nil] the shape's size; defaults to
+    #   the icon's
+    # @param icon_file [String, IO, nil] an image to show instead of the
+    #   default icon
+    # @param icon_size [Array(Length, Length), nil] the icon image's own size
+    # @return [GraphicFrame]
+    def add_ole_object(object_file, prog_id:, at:, size: nil, icon_file: nil, icon_size: nil)
+      left, top = at
+      prog_id = Enum::PROG_ID.resolve(prog_id)
+      default_size = [Length.emu(965_200), Length.emu(609_600)]
+      width, height = size || (if prog_id.is_a?(Enum::PROG_ID::Member)
+                                 [prog_id.width,
+                                  prog_id.height]
+                               else
+                                 default_size
+                               end)
+      icon_width, icon_height = icon_size || default_size
+      ole_r_id = part.add_embedded_ole_object_part(prog_id, object_file)
+      _icon_part, icon_r_id = part.get_or_add_image_part(icon_file || default_ole_icon(prog_id))
+      id = next_shape_id
+      prog_id_text = prog_id.is_a?(Enum::PROG_ID::Member) ? prog_id.prog_id : prog_id
+      frame = @sp_tree.add_graphic_frame_ole_object(id, "Object #{id - 1}", ole_r_id, prog_id_text,
+                                                    icon_r_id, left, top, width, height,
+                                                    icon_width, icon_height)
       recalculate_extents
       shape_factory(frame)
     end

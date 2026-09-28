@@ -259,12 +259,53 @@ module Pptx
       @chart ||= part.related_part(@element.chart_rId).chart
     end
 
+    # An OLE object is linked when it points at a file outside the
+    # presentation rather than carrying one. nil for anything else a frame
+    # can hold, such as a diagram, as in python-pptx.
     def shape_type
       return Enum::MSO_SHAPE_TYPE::TABLE if table?
       return Enum::MSO_SHAPE_TYPE::CHART if chart?
+      return nil unless ole_object?
 
-      Enum::MSO_SHAPE_TYPE::EMBEDDED_OLE_OBJECT
+      if @element.embedded_ole_object?
+        Enum::MSO_SHAPE_TYPE::EMBEDDED_OLE_OBJECT
+      else
+        Enum::MSO_SHAPE_TYPE::LINKED_OLE_OBJECT
+      end
     end
+
+    def ole_object? = @element.ole_object?
+
+    # The OLE object this frame holds.
+    #
+    # @raise [Error] when the frame holds something else
+    def ole_format
+      raise Error, "this graphic frame does not contain an OLE object" unless ole_object?
+
+      @ole_format ||= OleFormat.new(@element.oleObj, self)
+    end
+  end
+
+  # An embedded or linked OLE object: the file, and how it is shown.
+  class OleFormat < ElementProxy
+    def initialize(ole_obj, frame)
+      super(ole_obj)
+      @frame = frame
+    end
+
+    # The embedded file's bytes, or nil for a linked object.
+    def blob
+      r_id = @element.rId
+      r_id && @frame.part.related_part(r_id).blob
+    end
+
+    # The ProgID naming the program that opens the object, e.g. "Excel.Sheet.12".
+    def prog_id = @element.progId
+
+    # Whether it appears as an icon rather than as a picture of its content.
+    def show_as_icon? = @element.showAsIcon
+
+    def inspect = "#<Pptx::OleFormat #{prog_id.inspect}>"
   end
 
   # A `p:grpSp` containing other shapes.

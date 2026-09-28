@@ -18,7 +18,7 @@ module Pptx
     # from is ignored: what matters is what the bytes actually are.
     EXT_FOR_FORMAT = {
       BMP: "bmp", GIF: "gif", JPEG: "jpg", PNG: "png", TIFF: "tiff", WMF: "wmf",
-      SVG: "svg"
+      EMF: "emf", SVG: "svg"
     }.freeze
 
     # Not in the OPC spec's table; Office writes this for an SVG part.
@@ -144,9 +144,33 @@ module Pptx
       return parse_bmp(blob) if blob.start_with?("BM".b)
       return parse_tiff(blob) if blob.start_with?("II*\x00".b, "MM\x00*".b)
       return { format: :WMF, width: 0, height: 0 } if blob.start_with?("\xD7\xCD\xC6\x9A".b)
+      return parse_emf(blob) if emf?(blob)
       return { format: :SVG } if svg?(blob)
 
       raise Error, "unrecognized image format"
+    end
+
+    # An EMF begins with its header record, type 1, and carries the signature
+    # " EMF" 40 bytes in.
+    #
+    # python-pptx asks Pillow, which reports EMF and WMF alike as "WMF", and so
+    # stores an EMF as `imageN.wmf` with the WMF content type. This names it
+    # for what it is, as PowerPoint does; see PORTING.md.
+    def emf?(blob)
+      blob.bytesize >= 88 && blob.byteslice(0, 4).unpack1("V") == 1 && blob.byteslice(40, 4) == " EMF".b
+    end
+
+    # Size from the header's bounds in device pixels; resolution from how
+    # those pixels relate to the frame, which is in hundredths of a
+    # millimetre. Pillow reads it the same way.
+    def parse_emf(blob)
+      left, top, right, bottom = blob.byteslice(8, 16).unpack("l<4")
+      frame_left, frame_top, frame_right, frame_bottom = blob.byteslice(24, 16).unpack("l<4")
+      width = right - left
+      height = bottom - top
+      { format: :EMF, width: width, height: height,
+        horz_dpi: (width * 2540.0 / (frame_right - frame_left)).round,
+        vert_dpi: (height * 2540.0 / (frame_bottom - frame_top)).round }
     end
 
     # An SVG is XML, so it is recognized by its root element rather than by a

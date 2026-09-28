@@ -84,6 +84,15 @@ module Pptx
         pic
       end
 
+      def add_graphic_frame_ole_object(id, name, ole_r_id, prog_id, icon_r_id, x, y, cx, cy, img_w, img_h)
+        frame = adopt_xml(
+          CT_GraphicalObjectFrame.new_ole_object_graphic_frame(id, name, ole_r_id, prog_id, icon_r_id,
+                                                               x, y, cx, cy, img_w, img_h)
+        )
+        insert_element_before(frame, "p:extLst")
+        frame
+      end
+
       def add_graphic_frame_table(id, name, rows, cols, x, y, cx, cy)
         frame = adopt_xml(
           CT_GraphicalObjectFrame.new_table_graphic_frame(id, name, rows, cols, x, y, cx, cy)

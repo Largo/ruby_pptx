@@ -507,6 +507,7 @@ answers.
 | `FillFormat#gradient_angle` on a fresh gradient | `TypeError: 360.0 - None` -- its own default `a:lin` has no angle | `nil`, meaning inherited, as everywhere else in the API |
 | An empty category label, `<c:v/>` | reads as the string `"None"`: lxml gives the empty text as `None` and the str-subclass `Category` is built from it | `""` |
 | An axis with no `c:delete` at all | reported hidden | reported visible, which is what the schema and PowerPoint mean. python-pptx always writes `c:delete`, so this only shows on files from elsewhere |
+| An EMF image, including the default OLE icons | stored as `imageN.wmf`, `image/x-wmf`: Pillow reports EMF and WMF alike as "WMF" | stored as `imageN.emf`, `image/x-emf`, as PowerPoint stores it. Size and resolution agree with Pillow's |
 
 And reads that write. These python-pptx getters change the document when
 called, which this gem's never do; the value read is the same, the file is

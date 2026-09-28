@@ -6,9 +6,11 @@ A port of [python-pptx](https://github.com/scanny/python-pptx) — the same
 battle-tested OOXML object model underneath, with a public API redesigned for
 Ruby. See [PORTING.md](PORTING.md) for the architecture and the milestone plan.
 
-> **Status: in progress.** Presentations, slides, shapes, text, pictures,
-> tables and charts work and are verified against python-pptx part-for-part.
-> See [PORTING.md](PORTING.md) for what is and is not covered.
+> **Status:** every public class and member of python-pptx 1.0.2 has a
+> counterpart here, which `spec/ruby_pptx/api_completeness_spec.rb` checks
+> rather than asserts. Output is verified against python-pptx part for part.
+> Where the two deliberately differ -- mostly python-pptx bugs this does not
+> reproduce -- [PORTING.md](PORTING.md) lists each one.
 
 ```ruby
 require "ruby_pptx"

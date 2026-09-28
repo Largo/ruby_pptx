@@ -49,6 +49,23 @@ module Pptx
       # so the same image added twice is stored once.
       #
       # @return [Array(Pptx::Parts::ImagePart, String)] the part and its rId
+      # Embed +object_file+ as an OLE object and relate this slide to it.
+      #
+      # An Office document is related as a package, anything else as an OLE
+      # object -- the two relationship types PowerPoint uses.
+      #
+      # @return [String] the relationship id
+      def add_embedded_ole_object_part(prog_id, object_file)
+        blob = object_file.respond_to?(:read) ? object_file.read : File.binread(object_file)
+        part = EmbeddedPackagePart.new_part(prog_id, blob, package)
+        reltype = if prog_id.is_a?(Enum::PROG_ID::Member)
+                    Opc::RELATIONSHIP_TYPE::PACKAGE
+                  else
+                    Opc::RELATIONSHIP_TYPE::OLE_OBJECT
+                  end
+        relate_to(part, reltype)
+      end
+
       def get_or_add_image_part(image_file)
         image_part = package.get_or_add_image_part(image_file)
         [image_part, relate_to(image_part, Opc::RELATIONSHIP_TYPE::IMAGE)]

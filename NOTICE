@@ -11,6 +11,10 @@ that project. The following files are copied from it verbatim:
     lib/ruby_pptx/templates/notesMaster.xml
     lib/ruby_pptx/templates/theme.xml
     lib/ruby_pptx/templates/media-speaker.png
+    lib/ruby_pptx/templates/docx-icon.emf
+    lib/ruby_pptx/templates/pptx-icon.emf
+    lib/ruby_pptx/templates/xlsx-icon.emf
+    lib/ruby_pptx/templates/generic-icon.emf
 
 The following file is derived from python-pptx's default template: its colour
 map and text styles are taken verbatim from the slide master inside
