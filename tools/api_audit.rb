@@ -103,10 +103,19 @@ module ApiAudit
     "is_placeholder" => %w[placeholder?], "is_merge_origin" => %w[merge_origin?],
     "is_spanned" => %w[spanned?], "has_text_frame" => %w[text_frame?], "has_chart" => %w[chart?],
     "has_table" => %w[table?], "has_notes_slide" => %w[notes_slide?],
-    "add_category" => %w[categories=], "add_data_point" => %w[add_point add_series],
+    "add_category" => %w[categories=],
     "slide_master" => %w[slide_master slide_masters],
+    "shape_offset_x" => %w[offset_x], "shape_offset_y" => %w[offset_y],
+    "add_data_point" => %w[<< add_point add_series],
     # python-pptx wraps the address in a Hyperlink object; here it is flattened.
     "hyperlink" => %w[address url hyperlink]
+  }.freeze
+
+  # Classes that are public by name upstream but that its API never hands
+  # out, so there is nothing for a caller to reach.
+  INTERNAL_CLASSES = {
+    # AdjustmentCollection#__getitem__ returns plain floats, never these.
+    "shapes.autoshape.Adjustment" => "internal to AdjustmentCollection"
   }.freeze
 
   # Members that exist on a python-pptx class only by inheritance and mean
@@ -132,6 +141,8 @@ module ApiAudit
     missing_classes = []
     missing_members = {}
     CLASSES.each do |pyclass, rbname|
+      next if INTERNAL_CLASSES.key?(pyclass)
+
       members = classes[pyclass] or next
       klass = ours(rbname)
       if klass.nil?

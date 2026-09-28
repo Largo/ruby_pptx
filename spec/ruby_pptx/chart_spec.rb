@@ -200,6 +200,30 @@ RSpec.describe Pptx::Chart do
       out
     end
 
+    # Built point by point rather than all at once, the XML must not differ.
+    it "matches python-pptx for a series built up one value at a time" do
+      data = Pptx::ChartData.new
+      data.categories = CATEGORIES
+      series = data.add_series("Q1", [])
+      [1.25, nil, 3.5].each { |value| series << value }
+      ours = Pptx::ChartXmlWriter.write(Pptx::Enum::XL_CHART_TYPE::COLUMN_CLUSTERED, data)
+      script = <<~PY
+        import sys
+        from pptx.chart.data import CategoryChartData
+        from pptx.enum.chart import XL_CHART_TYPE
+        cd = CategoryChartData()
+        cd.categories = #{CATEGORIES.inspect}
+        s = cd.add_series("Q1")
+        for v in (1.25, None, 3.5):
+            s.add_data_point(v)
+        sys.stdout.write(cd.xml_bytes(XL_CHART_TYPE.COLUMN_CLUSTERED).decode())
+      PY
+      theirs, err, status = Open3.capture3("python3", "-c", script)
+      raise "oracle failed: #{err}" unless status.success?
+
+      expect(ours).to eq(theirs)
+    end
+
     # The cached values in this XML are what PowerPoint renders from, so it has
     # to match exactly. Every chart type this library can create is checked.
     Pptx::ChartXmlWriter::FAMILIES.each do |family, type_names|

@@ -116,6 +116,15 @@ module Pptx
 
     def size = @values.size
 
+    # Append one value, for building a series up point by point.
+    #
+    # python-pptx's add_data_point also takes a per-point number format, but
+    # nothing it writes ever reads it; the series' format is the one used.
+    def <<(value)
+      @values << value
+      self
+    end
+
     def categories = @chart_data.categories
 
     def name_ref = @chart_data.series_name_ref(self)
