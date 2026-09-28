@@ -71,6 +71,10 @@ module Pptx
       zero_or_one_choice [choice("a:noFill"), choice("a:solidFill"), choice("a:gradFill"),
                           choice("a:blipFill"), choice("a:pattFill"), choice("a:grpFill")],
                          successors: FILL_SUCCESSORS, as: :eg_fillProperties
+
+      # A new gradient starts from PowerPoint's default rather than empty; an
+      # `a:gradFill` with no stops draws nothing.
+      def new_gradFill = CT_GradientFillProperties.new_grad_fill(self)
     end
 
     # `p:sld`, the root of a slide part.

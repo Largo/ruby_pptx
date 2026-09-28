@@ -213,6 +213,12 @@ module Pptx
     end
 
     # `a:ln`, line (outline) properties.
+    # `a:prstDash`, one of the preset dash patterns.
+    class CT_PresetLineDashProperties < Element
+      tag "a:prstDash"
+      optional_attr "val", type: Enum::MSO_LINE_DASH_STYLE
+    end
+
     class CT_LineProperties < Element
       tag "a:ln"
       FILL_SUCCESSORS = %w[a:prstDash a:custDash a:round a:bevel a:miter
@@ -260,6 +266,10 @@ module Pptx
       def y = xfrm&.y
       def cx = xfrm&.cx
       def cy = xfrm&.cy
+
+      # A new gradient starts from PowerPoint's default rather than empty; an
+      # `a:gradFill` with no stops draws nothing.
+      def new_gradFill = CT_GradientFillProperties.new_grad_fill(self)
     end
 
     # `p:grpSpPr`, the properties of a group shape or shape tree.

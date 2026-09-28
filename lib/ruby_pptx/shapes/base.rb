@@ -75,6 +75,11 @@ module Pptx
 
     def placeholder? = @element.placeholder?
 
+    # This shape's shadow. Always returned, even when the shadow is inherited.
+    #
+    # @return [ShadowFormat]
+    def shadow = @shadow ||= ShadowFormat.new(@element.spPr)
+
     # What happens when this shape is clicked during a slide show.
     def click_action = @click_action ||= ActionSetting.new(@element.nvXxPr.cNvPr, self)
 

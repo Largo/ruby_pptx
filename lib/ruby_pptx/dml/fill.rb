@@ -3,6 +3,8 @@
 require "ruby_pptx/dml/color"
 require "ruby_pptx/oxml/dml/fill"
 require "ruby_pptx/enum/dml"
+require "ruby_pptx/element_proxy"
+require "ruby_pptx/sliceable"
 
 module Pptx
   # The fill of a shape, text run, line or slide background.
@@ -97,14 +99,90 @@ module Pptx
       fill_element.prst = value
     end
 
+    # The angle of a linear gradient in degrees, counter-clockwise from
+    # pointing right -- the way PowerPoint's dialog and trigonometry both
+    # count, although the file stores it clockwise. nil when inherited.
+    #
+    # @raise [Error] unless this is a gradient fill, or if it is not linear
+    def gradient_angle
+      gradient = require_gradient
+      raise Error, "not a linear gradient" unless gradient.path.nil?
+
+      clockwise = gradient.lin&.ang
+      return nil if clockwise.nil?
+
+      clockwise.zero? ? 0.0 : 360.0 - clockwise
+    end
+
+    def gradient_angle=(value)
+      linear = require_gradient.lin
+      raise Error, "not a linear gradient" if linear.nil?
+
+      linear.ang = 360.0 - value
+    end
+
+    # The colour stops the gradient passes through, in order.
+    #
+    # @return [GradientStops]
+    def gradient_stops = GradientStops.new(require_gradient.get_or_add_gsLst)
+
     def inspect = "#<Pptx::FillFormat type=#{type&.name.inspect}>"
 
     private
 
     def fill_element = @parent.eg_fillProperties
+
+    def require_gradient
+      raise Error, "fill type #{type&.name.inspect} is not a gradient" unless type&.name == :GRADIENT
+
+      fill_element
+    end
   end
 
   # The outline of a shape.
+  # The stops of a gradient fill.
+  #
+  #   stops = shape.fill.gradient_stops
+  #   stops[0].color.rgb = Pptx::RGBColor["1F497D"]
+  #   stops[1].position = 0.75
+  class GradientStops
+    include Enumerable
+    include Sliceable
+
+    def initialize(gs_lst)
+      @element = gs_lst
+    end
+
+    def each(&)
+      return enum_for(:each) { size } unless block_given?
+
+      @element.gs_list.each { |gs| yield GradientStop.new(gs) }
+      self
+    end
+
+    def size = @element.gs_list.size
+    alias length size
+
+    def [](index, length = nil) = slice_members(@element.gs_list, index, length) { |gs| GradientStop.new(gs) }
+
+    def inspect = "#<Pptx::GradientStops size=#{size}>"
+  end
+
+  # One colour stop in a gradient.
+  class GradientStop < ElementProxy
+    def color = @color ||= ColorFormat.from_color_choice_parent(@element)
+
+    # Where along the gradient this stop sits, from 0.0 at the start to 1.0
+    # at the end.
+    def position = @element.pos
+
+    def position=(value)
+      @element.pos = Float(value)
+    end
+
+    def inspect = "#<Pptx::GradientStop position=#{position}>"
+  end
+
   class LineFormat
     def initialize(parent)
       @parent = parent
@@ -122,9 +200,29 @@ module Pptx
     end
 
     # @return [Pptx::Length, nil] nil when the width is inherited
+    #
+    # Reading never adds an `a:ln`; only assigning does.
     def width
-      value = element.w
+      value = @parent.ln&.w
       value.nil? || value.zero? ? nil : value
+    end
+
+    # The dash pattern, or nil when it is inherited.
+    #
+    # @return [Pptx::Enum::Member, nil] a member of MSO_LINE_DASH_STYLE
+    def dash_style = @parent.ln&.prstDash_val
+
+    # Set the dash pattern, or restore inheritance with nil -- which also
+    # drops a custom dash, since either one would override the inherited
+    # style.
+    def dash_style=(value)
+      if value.nil?
+        line = @parent.ln or return
+        line.remove_prstDash
+        line.remove_custDash
+      else
+        element.prstDash_val = Enum::MSO_LINE_DASH_STYLE.fetch(value)
+      end
     end
 
     def width=(value)

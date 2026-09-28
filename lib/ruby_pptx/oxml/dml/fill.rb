@@ -49,34 +49,28 @@ module Pptx
       zero_or_one "a:lin", successors: %w[a:path a:tileRect]
       zero_or_one "a:path", successors: %w[a:tileRect]
 
-      # The default gradient PowerPoint writes: two stops of the same theme
-      # colour, one lightened, angled across the shape.
+      # python-pptx's default, verbatim: PowerPoint's "White" template
+      # gradient, two accent-1 stops on a linear path. The `a:lin` carries no
+      # angle, so the direction is inherited until one is set.
       DEFAULT_XML = <<~XML.freeze
         <a:gradFill #{Ns.nsdecls("a")} rotWithShape="1">
           <a:gsLst>
             <a:gs pos="0">
               <a:schemeClr val="accent1">
-                <a:lumMod val="110000"/>
-                <a:satMod val="105000"/>
-                <a:tint val="67000"/>
-              </a:schemeClr>
-            </a:gs>
-            <a:gs pos="50000">
-              <a:schemeClr val="accent1">
-                <a:lumMod val="105000"/>
-                <a:satMod val="103000"/>
-                <a:tint val="73000"/>
+                <a:tint val="100000"/>
+                <a:shade val="100000"/>
+                <a:satMod val="130000"/>
               </a:schemeClr>
             </a:gs>
             <a:gs pos="100000">
               <a:schemeClr val="accent1">
-                <a:lumMod val="105000"/>
-                <a:satMod val="109000"/>
-                <a:tint val="81000"/>
+                <a:tint val="50000"/>
+                <a:shade val="100000"/>
+                <a:satMod val="350000"/>
               </a:schemeClr>
             </a:gs>
           </a:gsLst>
-          <a:lin ang="5400000" scaled="0"/>
+          <a:lin scaled="0"/>
         </a:gradFill>
       XML
 

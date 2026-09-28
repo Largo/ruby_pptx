@@ -28,6 +28,11 @@ module Pptx
     # The shape's outline.
     def line = @line ||= LineFormat.new(@element.spPr)
 
+    # The adjustment handles of this shape's geometry; empty for a freeform.
+    #
+    # @return [Adjustments]
+    def adjustments = @adjustments ||= Adjustments.new(@element.spPr.prstGeom)
+
     # The preset geometry of an auto shape.
     #
     # @return [Pptx::Enum::MSO_SHAPE, nil] nil unless this is an auto shape
@@ -226,6 +231,13 @@ module Pptx
 
   # A `p:graphicFrame`, which holds a table, a chart or an embedded object.
   class GraphicFrame < BaseShape
+    # A graphic frame's shadow belongs to what it holds -- a chart and a
+    # table keep theirs in different places -- so there is no single one to
+    # hand back. python-pptx declines the same way.
+    def shadow
+      raise Error, "a graphic frame has no shadow of its own; format the chart or table instead"
+    end
+
     def table? = @element.table?
     def chart? = @element.chart?
 
@@ -260,6 +272,9 @@ module Pptx
   # A group has no position or size of its own: both follow from what it
   # contains, and are recomputed whenever its contents change.
   class GroupShape < BaseShape
+    # A group keeps its effects in `p:grpSpPr` rather than `p:spPr`.
+    def shadow = @shadow ||= ShadowFormat.new(@element.grpSpPr)
+
     def shape_type = Enum::MSO_SHAPE_TYPE::GROUP
 
     # The shapes inside this group.

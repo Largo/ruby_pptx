@@ -494,6 +494,35 @@ Deliberately *not* taken: HTML-table import and YouTube embeds (separate
 add-on gems if wanted), and Blob/base64/stream export, which in Ruby is just
 writing to an `IO`.
 
+## Upstream bugs this port does not reproduce
+
+The differential harness holds this gem to python-pptx byte for byte, so a
+departure has to be deliberate and written down. Each of these is pinned by
+a spec asserting both halves: that python-pptx fails, and that this gem
+answers.
+
+| Where | python-pptx 1.0.2 | ruby_pptx |
+|---|---|---|
+| `TextFrame#fit_text` | `TypeError` when one word is too wide at the trial size | puts the word on its own line; the height check rejects the size |
+| `FillFormat#gradient_angle` on a fresh gradient | `TypeError: 360.0 - None` -- its own default `a:lin` has no angle | `nil`, meaning inherited, as everywhere else in the API |
+
+## Bugs of our own found by the audit
+
+Filling the gaps `tools/api_audit.rb` listed turned up three defects in code
+that already existed and was believed finished. None had a spec that looked
+at the output:
+
+- **`fill.gradient` wrote an empty `<a:gradFill/>`**, which draws nothing,
+  for shapes, table cells and slide backgrounds. Only text runs got a
+  default. python-pptx gives all four one.
+- **The default gradient itself was wrong.** It had three `lumMod` stops and
+  an angle, written from memory of some PowerPoint default rather than
+  ported; python-pptx's is two tint/shade/satMod stops with no angle. It
+  came in with chart formatting, so chart and text gradients were affected
+  too. A package differential caught it the first time one looked.
+- **Reading `line.width` added an `a:ln` to the shape**, so a file changed
+  merely by being inspected. python-pptx reads without writing.
+
 ## Packaging: the gem owns `lib/ruby_pptx`
 
 The library used to live at `lib/pptx.rb` and `lib/pptx/**`, with a one-line

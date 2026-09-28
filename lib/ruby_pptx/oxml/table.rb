@@ -42,6 +42,10 @@ module Pptx
       optional_attr "marR", type: SimpleTypes::ST_Coordinate32, default: Pptx::Length.emu(91_440)
       optional_attr "marT", type: SimpleTypes::ST_Coordinate32, default: Pptx::Length.emu(45_720)
       optional_attr "marB", type: SimpleTypes::ST_Coordinate32, default: Pptx::Length.emu(45_720)
+
+      # A new gradient starts from PowerPoint's default rather than empty; an
+      # `a:gradFill` with no stops draws nothing.
+      def new_gradFill = CT_GradientFillProperties.new_grad_fill(self)
     end
 
     # `a:tc`, one cell of a table.
