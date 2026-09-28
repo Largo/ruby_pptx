@@ -1,17 +1,21 @@
 # frozen_string_literal: true
 
-require "nokogiri"
 require "ruby_pptx/errors"
+require "ruby_pptx/oxml/backend"
 require "ruby_pptx/oxml/ns"
 require "ruby_pptx/oxml/simple_types"
 
 module Pptx
   module Oxml
+    # The XML library in use, chosen once at load; see {Backend}.
+    BACKEND = Backend.select
+
     # Maps a Clark-notation tag name to the {Element} subclass that models it.
     #
     # python-pptx gets this for free from lxml, whose parser instantiates a
-    # custom class per tag. Nokogiri has no such hook, so element classes
-    # register themselves here and {Element.wrap} does the dispatch.
+    # custom class per tag. Neither Nokogiri nor REXML has such a hook, so
+    # element classes register themselves here and {Element.wrap} does the
+    # dispatch.
     module Registry
       @classes = {}
 
@@ -44,8 +48,8 @@ module Pptx
       end
     end
 
-    # Wraps a `Nokogiri::XML::Node` and gives it the schema-aware behaviour of
-    # one OOXML element type.
+    # Wraps an XML node -- Nokogiri's or REXML's, see {Backend} -- and gives
+    # it the schema-aware behaviour of one OOXML element type.
     #
     # Subclasses declare their content model with class macros, which generate
     # the accessors that the rest of the library uses:
@@ -87,33 +91,24 @@ module Pptx
 
       # Wrap +node+ in the class registered for its tag.
       #
-      # @param node [Nokogiri::XML::Node]
+      # @param node [Object] a node of the active {Backend}
       # @return [Element, nil] nil when +node+ is nil
       def self.wrap(node)
         return nil if node.nil?
         return node if node.is_a?(Element)
 
-        cache = cache_for(node.document)
+        cache = BACKEND.wrapper_cache(node)
         cache[node] ||= Registry.class_for(Ns.clark_name_of(node)).new(node)
       end
 
       # Parse +xml+ into a standalone element tree.
       def self.parse(xml)
-        doc = Nokogiri::XML(xml) { |config| config.noblanks.strict }
-        raise InvalidXmlError, doc.errors.first.to_s if doc.errors.any?
-
-        wrap(doc.root)
+        wrap(BACKEND.parse(xml))
       end
 
-      # Per-document wrapper cache, keyed on node identity. Lives on the
-      # document so it dies with it.
-      def self.cache_for(document)
-        document.instance_variable_get(:@pptx_wrappers) ||
-          document.instance_variable_set(:@pptx_wrappers, {}.compare_by_identity)
-      end
-      private_class_method :cache_for
-
-      # @return [Nokogiri::XML::Node] the wrapped node
+      # @return [Object] the wrapped node, a Nokogiri or REXML element
+      #   depending on the active {Backend}. An escape hatch: code that uses
+      #   it ties itself to one backend.
       attr_reader :node
 
       def initialize(node)
@@ -127,17 +122,24 @@ module Pptx
         Ns.prefixed_tag(Ns.clark_name_of(@node))
       end
 
+      # An opaque token for the document this element belongs to; equal
+      # (+equal?+) for two elements exactly when they share a document.
       def document
-        @node.document
+        BACKEND.document(@node)
       end
 
       def parent
-        Element.wrap(@node.parent.is_a?(Nokogiri::XML::Element) ? @node.parent : nil)
+        Element.wrap(BACKEND.parent_element(@node))
       end
 
       # @return [Array<Element>] every child element, in document order
       def element_children
-        @node.element_children.map { |child| Element.wrap(child) }
+        BACKEND.element_children(@node).map { |child| Element.wrap(child) }
+      end
+
+      # @return [String] this element's tag in Clark notation, "{uri}local"
+      def clark_name
+        Ns.clark_name_of(@node)
       end
 
       # First child element with +nsptag+, or nil.
@@ -148,9 +150,10 @@ module Pptx
       # Every child element with +nsptag+, in document order.
       def find_all(nsptag)
         pfx, local = Ns.split_tag(nsptag)
-        @node.element_children
-             .select { |c| c.name == local && c.namespace&.href == Ns.nsuri(pfx) }
-             .map { |c| Element.wrap(c) }
+        uri = Ns.nsuri(pfx)
+        BACKEND.element_children(@node)
+               .select { |c| BACKEND.local_name(c) == local && BACKEND.namespace_uri(c) == uri }
+               .map { |c| Element.wrap(c) }
       end
 
       # The first child matching any of +nsptags+, in the order given -- not in
@@ -165,8 +168,8 @@ module Pptx
 
       # Run an XPath expression with the full OOXML namespace map bound.
       def xpath(expression)
-        @node.xpath(expression, Ns::NSMAP).map do |result|
-          result.is_a?(Nokogiri::XML::Element) ? Element.wrap(result) : result
+        BACKEND.xpath(@node, expression, Ns::NSMAP).map do |result|
+          BACKEND.element?(result) ? Element.wrap(result) : result
         end
       end
 
@@ -177,69 +180,82 @@ module Pptx
       def insert_element_before(element, *successor_tags)
         successor = first_child_found_in(*successor_tags)
         if successor
-          successor.node.add_previous_sibling(adopt(element))
+          successor.add_previous_sibling(element)
         else
-          @node.add_child(adopt(element))
+          append(element)
         end
         element
       end
 
       def append(element)
-        @node.add_child(adopt(element))
+        BACKEND.append_child(@node, adopt(element))
+        element
+      end
+
+      # Make +element+ this element's first child.
+      def prepend(element)
+        BACKEND.prepend_child(@node, adopt(element))
+        element
+      end
+
+      # Put +element+ immediately before this one.
+      def add_previous_sibling(element)
+        BACKEND.insert_before(@node, adopt(element))
+        element
+      end
+
+      # Put +element+ immediately after this one.
+      def add_next_sibling(element)
+        BACKEND.insert_after(@node, adopt(element))
         element
       end
 
       # Remove every child element whose tag is in +nsptags+.
       def remove_all(*nsptags)
-        nsptags.each { |nsptag| find_all(nsptag).each { |child| child.node.unlink } }
+        nsptags.each { |nsptag| find_all(nsptag).each { |child| BACKEND.unlink(child.node) } }
         nil
       end
 
       def remove(element)
-        element.node.unlink
+        BACKEND.unlink(element.node)
         nil
       end
 
       # Create a new, empty element with +nsptag+, in *this* element's
-      # document.
+      # document, reusing a namespace declaration already in scope here.
       #
-      # Creating it anywhere else would be a bug: Nokogiri re-creates a node
-      # adopted from another document, so the object you built is not the
-      # object that ends up in the tree, and every wrapper held on it goes
-      # stale. Staying in one document keeps node identity intact.
+      # Build new elements this way rather than parsing them separately:
+      # Nokogiri re-creates a node adopted from another document, so the
+      # object built is not the object that ends up in the tree, and every
+      # wrapper held on it goes stale.
       def build(nsptag)
         pfx, local = Ns.split_tag(nsptag)
-        uri = Ns.nsuri(pfx)
-        child = Nokogiri::XML::Node.new(local, @node.document)
-        # Resolve against this element's scope, not the detached child's, so
-        # the new element joins an existing declaration instead of introducing
-        # a second one. Where the parent holds the namespace as its *default*
-        # -- as .rels and [Content_Types].xml do -- the child is created
-        # unprefixed to match, which matters because C14N preserves prefixes.
-        child.namespace = inherited_namespace(pfx, uri) ||
-                          child.add_namespace_definition(pfx, uri)
-        Element.wrap(child)
+        Element.wrap(BACKEND.build(@node, pfx, local, Ns.nsuri(pfx)))
       end
 
-      # Parse an XML literal into this element's document.
+      # Parse an XML literal into this element's document, its prefixes
+      # resolved against the namespaces in scope here.
       def build_from_xml(xml)
-        # noblanks matches Element.parse, so an indented XML literal does not
-        # smuggle whitespace text nodes into the tree.
-        fragment = @node.parse(xml, &:noblanks)
-        raise InvalidXmlError, "fragment produced no element: #{xml.inspect}" if fragment.first.nil?
+        fragment = BACKEND.parse_fragment(@node, xml)
+        raise InvalidXmlError, "fragment produced no element: #{xml.inspect}" if fragment.nil?
 
-        Element.wrap(fragment.first)
+        Element.wrap(fragment)
+      end
+
+      # A copy of +element+, from any document, built into this one.
+      def import(element)
+        build_from_xml(element.to_xml)
       end
 
       # -- text content ----------------------------------------------------
 
       # @return [String] the element's text content
       def text
-        @node.text
+        BACKEND.text(@node)
       end
 
       def text=(value)
-        @node.content = value.to_s
+        BACKEND.set_text(@node, value.to_s)
       end
 
       # Declare +prefix+ on this element even if nothing uses it yet.
@@ -247,7 +263,7 @@ module Pptx
       # Needed where a descendant carries a namespaced attribute but the
       # declaration belongs on the root, which is where PowerPoint puts it.
       def declare_namespace(prefix)
-        namespace_for(@node, prefix)
+        BACKEND.declare_namespace(@node, prefix, Ns.nsuri(prefix))
         self
       end
 
@@ -261,30 +277,28 @@ module Pptx
       # from lxml.
       def get(attr_name)
         pfx, local = prefixed_attr_parts(attr_name)
-        return @node[attr_name.to_s] unless pfx
+        return BACKEND.get_attribute(@node, attr_name.to_s) unless pfx
 
-        @node.attribute_with_ns(local, Ns.nsuri(pfx))&.value
+        BACKEND.get_attribute_ns(@node, local, Ns.nsuri(pfx))
       end
 
       def set(attr_name, value)
         pfx, local = prefixed_attr_parts(attr_name)
-        return @node[attr_name.to_s] = value.to_s unless pfx
-
-        uri = Ns.nsuri(pfx)
-        if (existing = @node.attribute_with_ns(local, uri))
-          existing.value = value.to_s
+        if pfx
+          BACKEND.set_attribute_ns(@node, pfx, local, Ns.nsuri(pfx), value.to_s)
         else
-          namespace_for(@node, pfx)
-          @node["#{pfx}:#{local}"] = value.to_s
+          BACKEND.set_attribute(@node, attr_name.to_s, value.to_s)
         end
         value
       end
 
       def delete_attribute(attr_name)
         pfx, local = prefixed_attr_parts(attr_name)
-        return @node.remove_attribute(attr_name.to_s) unless pfx
-
-        @node.attribute_with_ns(local, Ns.nsuri(pfx))&.unlink
+        if pfx
+          BACKEND.remove_attribute_ns(@node, local, Ns.nsuri(pfx))
+        else
+          BACKEND.remove_attribute(@node, attr_name.to_s)
+        end
         nil
       end
 
@@ -297,7 +311,12 @@ module Pptx
       # Pretty-printed XML for this element, without a declaration. For
       # debugging and specs.
       def xml
-        @node.to_xml(indent: 2)
+        BACKEND.pretty_xml(@node)
+      end
+
+      # Compact XML for this element, without a declaration.
+      def to_xml
+        BACKEND.to_xml(@node)
       end
 
       def to_s
@@ -314,7 +333,7 @@ module Pptx
       end
 
       def inspect
-        "#<#{self.class.name} <#{nsptag}> children=#{@node.element_children.size}>"
+        "#<#{self.class.name} <#{nsptag}> children=#{BACKEND.element_children(@node).size}>"
       end
 
       private
@@ -322,13 +341,15 @@ module Pptx
       def raw_find(nsptag)
         pfx, local = Ns.split_tag(nsptag)
         uri = Ns.nsuri(pfx)
-        @node.element_children.find { |c| c.name == local && c.namespace&.href == uri }
+        BACKEND.element_children(@node).find do |c|
+          BACKEND.local_name(c) == local && BACKEND.namespace_uri(c) == uri
+        end
       end
 
       # Guard against the cross-document trap described on {#build}.
       def adopt(element)
         node = element.is_a?(Element) ? element.node : element
-        return node if node.document.equal?(@node.document)
+        return node if BACKEND.document(node).equal?(document)
 
         raise ArgumentError,
               "cannot insert an element created in a different document; " \
@@ -339,22 +360,6 @@ module Pptx
         return nil unless attr_name.to_s.include?(":")
 
         Ns.split_tag(attr_name.to_s)
-      end
-
-      # An in-scope declaration for +uri+, preferring one bound to +prefix+ but
-      # accepting any -- including a default (unprefixed) declaration.
-      def inherited_namespace(prefix, uri)
-        scopes = @node.namespace_scopes
-        scopes.find { |ns| ns.href == uri && ns.prefix == prefix } ||
-          scopes.find { |ns| ns.href == uri }
-      end
-
-      # Reuse an in-scope namespace declaration when there is one, so the
-      # output does not sprout a redundant xmlns on every new element.
-      def namespace_for(node, prefix)
-        uri = Ns.nsuri(prefix)
-        existing = node.namespace_scopes.find { |ns| ns.href == uri && ns.prefix == prefix }
-        existing || node.add_namespace_definition(prefix, uri)
       end
     end
   end

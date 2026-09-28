@@ -259,6 +259,36 @@ end
 Collections index like arrays — `slides[2]`, `slides[-1]`, `slides[1..3]`,
 `slides[1, 2]` — and deconstruct into array patterns.
 
+## Nokogiri, REXML and ruby.wasm
+
+ruby_pptx reads and writes XML with Nokogiri. Where Nokogiri cannot load --
+ruby.wasm, in a browser or elsewhere -- it falls back to REXML, which is pure
+Ruby, with no configuration:
+
+```ruby
+Pptx.xml_backend   #=> :nokogiri, or :rexml without Nokogiri
+```
+
+The output does not depend on the backend: CI runs every spec under both, and
+the packages they write are identical part for part. REXML is slower -- in a
+60-slide deck with text, tables and charts, about 3.3 s against 0.5 s to build
+and save, and 0.7 s against 0.1 s to open and read it back. Set
+`RUBY_PPTX_XML_BACKEND=rexml` (or `nokogiri`) to choose explicitly.
+
+Nokogiri stays a declared dependency, so a normal `gem install` or `bundle
+install` gets the fast path. Two things to know when loading the gem in
+ruby.wasm yourself:
+
+- Load `ruby_pptx`, `rubyzip` and `rexml`, but not `nokogiri`, which is
+  native. A loader that installs a gem together with its runtime
+  dependencies will stop at Nokogiri.
+- Ship the whole `lib/` directory, not only its `.rb` files: the templates
+  in `lib/ruby_pptx/templates` (the default deck, notes pages, icons) are
+  read as files.
+
+`tools/wasm/run.mjs` runs the gem this way under ruby.wasm's browser
+filesystem, and CI uses it to build, save and reread a deck on every push.
+
 ## Development
 
 ```bash

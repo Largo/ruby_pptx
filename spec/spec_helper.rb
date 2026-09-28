@@ -19,7 +19,14 @@ module FailOnRedefinedConstant
 end
 Warning.extend(FailOnRedefinedConstant)
 
+# CI runs the suite once per XML backend by setting RUBY_PPTX_XML_BACKEND. If
+# the library chose differently, that run would quietly test the other one.
+if (requested = ENV.fetch("RUBY_PPTX_XML_BACKEND", nil)) && Pptx.xml_backend.to_s != requested.downcase
+  abort "RUBY_PPTX_XML_BACKEND=#{requested} but the library loaded #{Pptx.xml_backend}"
+end
+
 RSpec.configure do |config|
+  config.before(:suite) { puts "XML backend: #{Pptx.xml_backend}" }
   config.expect_with(:rspec) { |c| c.syntax = :expect }
   config.disable_monkey_patching!
   config.order = :random

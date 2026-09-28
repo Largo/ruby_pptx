@@ -410,7 +410,7 @@ module Pptx
           graphic_data = frame.xpath("./a:graphic/a:graphicData").first
           graphic_data.set("uri", URI_CHART)
           graphic_data.append(
-            graphic_data.build_from_xml(CT_Chart.new_chart(r_id).node.to_xml)
+            graphic_data.import(CT_Chart.new_chart(r_id))
           )
           frame
         end

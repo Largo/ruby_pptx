@@ -47,8 +47,8 @@ module Pptx
         return enum_for(:shape_elements) unless block_given?
 
         tags = SHAPE_TAGS.map { |t| Ns.qn(t) }
-        @node.element_children.each do |child|
-          yield Element.wrap(child) if tags.include?(Ns.clark_name_of(child))
+        element_children.each do |child|
+          yield child if tags.include?(child.clark_name)
         end
       end
 
@@ -218,7 +218,7 @@ module Pptx
       def adopt_xml(element)
         return element if element.document.equal?(document)
 
-        build_from_xml(element.node.to_xml)
+        import(element)
       end
     end
   end

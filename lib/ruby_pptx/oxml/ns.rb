@@ -8,7 +8,7 @@ module Pptx
     #
     # - prefixed, `"p:cSld"`               -- how the spec and this code talk
     # - Clark, `"{http://...}cSld"`        -- unambiguous, used as registry keys
-    # - Nokogiri, name + namespace object  -- what the parser hands back
+    # - a backend node, name + namespace  -- what the parser hands back
     module Ns
       NSMAP = {
         "a" => "http://schemas.openxmlformats.org/drawingml/2006/main",
@@ -78,7 +78,7 @@ module Pptx
         "#{pfx}:#{local}"
       end
 
-      # The subset of NSMAP for +prefixes+, in the shape Nokogiri's #xpath wants.
+      # The subset of NSMAP for +prefixes+, in the shape an XPath query wants.
       #
       #   namespaces("a", "p") #=> {"a" => "...", "p" => "..."}
       def namespaces(*prefixes)
@@ -93,12 +93,12 @@ module Pptx
         prefixes.map { |pfx| %(xmlns:#{pfx}="#{nsuri(pfx)}") }.join(" ")
       end
 
-      # The Clark name of a Nokogiri node, suitable as an element-registry key.
-      #
-      # @param node [Nokogiri::XML::Node]
+      # The Clark name of a node of the active XML backend, suitable as an
+      # element-registry key.
       def clark_name_of(node)
-        href = node.namespace&.href
-        href ? "{#{href}}#{node.name}" : node.name
+        backend = BACKEND
+        href = backend.namespace_uri(node)
+        href ? "{#{href}}#{backend.local_name(node)}" : backend.local_name(node)
       end
 
       # ["p", "cSld"] for "p:cSld".

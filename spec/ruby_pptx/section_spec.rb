@@ -119,7 +119,7 @@ RSpec.describe Pptx::Sections do
 
     it "places the extension list last in the presentation element" do
       sections.add("Intro")
-      expect(presentation.element.node.element_children.last.name).to eq("extLst")
+      expect(presentation.element.element_children.last.nsptag).to eq("p:extLst")
     end
   end
 

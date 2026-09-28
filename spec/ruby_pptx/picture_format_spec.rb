@@ -67,7 +67,7 @@ RSpec.describe "picture cropping, masking and outline" do
     end
 
     it "refuses an image read-back when the image is linked, not embedded" do
-      picture.element.blip.node.remove_attribute("embed")
+      picture.element.blip.delete_attribute("r:embed")
       expect { picture.image }.to raise_error(Pptx::Error, /no embedded image/)
     end
   end

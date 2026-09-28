@@ -392,7 +392,10 @@ module Pptx
     # The axis whose `c:axId` this one names in its `c:crossAx`.
     def cross_axis
       id = @element.crossAx.val
-      @element.xpath("(../c:catAx | ../c:valAx | ../c:dateAx)/c:axId[@val=\"#{id}\"]").first.parent
+      # A union of whole paths rather than `(a | b)/c`: the same query, but
+      # REXML's XPath does not accept a union as a path step.
+      query = %w[c:catAx c:valAx c:dateAx].map { |axis| "../#{axis}/c:axId[@val=\"#{id}\"]" }.join(" | ")
+      @element.xpath(query).first.parent
     end
   end
 

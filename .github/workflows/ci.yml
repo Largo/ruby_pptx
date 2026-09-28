@@ -10,13 +10,16 @@ on:
 
 jobs:
   spec:
-    name: "specs (ruby ${{ matrix.ruby }})"
+    name: "specs (ruby ${{ matrix.ruby }}, ${{ matrix.xml }})"
     runs-on: ubuntu-latest
 
+    # Every spec runs under both XML backends: Nokogiri, and the pure-Ruby
+    # REXML fallback that ruby.wasm uses. The output must be the same.
     strategy:
       fail-fast: false
       matrix:
         ruby: ["3.3", "3.4", "4.0"]
+        xml: [nokogiri, rexml]
 
     steps:
       - uses: actions/checkout@v7
@@ -49,12 +52,9 @@ jobs:
           python -c "import pptx; assert pptx.__version__ == '1.0.2', pptx.__version__"
           python -c "import openpyxl, PIL, lxml"
 
-      # REQUIRE_ORACLE turns "python-pptx is missing" from a skip into a
-      # failure. Without it a broken Python setup would quietly drop the 47
-      # differential specs and still report green.
       # One version is enough; style does not vary by Ruby.
       - name: Check style
-        if: matrix.ruby == '3.3'
+        if: matrix.ruby == '3.3' && matrix.xml == 'nokogiri'
         run: bundle exec rubocop --format github
 
       # `gem install` builds ri docs with the RDoc that Ruby bundles, and an
@@ -62,6 +62,7 @@ jobs:
       # Windows the install then fails on the too-long path. Build the docs
       # as gem install would and check each class sits where it really is.
       - name: Check RDoc reads the library correctly
+        if: matrix.xml == 'nokogiri'
         run: |
           rdoc --version
           rdoc --quiet --ri --output "$RUNNER_TEMP/ri" lib > /dev/null
@@ -74,7 +75,57 @@ jobs:
             puts "#{paths.size} classes documented where they are defined"
           ' "$RUNNER_TEMP/ri"
 
+      # REQUIRE_ORACLE turns "python-pptx is missing" from a skip into a
+      # failure. Without it a broken Python setup would quietly drop the
+      # differential specs and still report green. spec_helper likewise
+      # aborts if the library loaded a different backend than was asked for.
       - name: Run the specs
         env:
           REQUIRE_ORACLE: "1"
+          RUBY_PPTX_XML_BACKEND: ${{ matrix.xml }}
         run: bundle exec rspec --format progress
+
+  # The gem under ruby.wasm, loaded as a web page would load it: no Nokogiri,
+  # files in an in-memory filesystem. Catches anything that assumes a native
+  # extension -- a stray `require "nokogiri"` passed every other check.
+  wasm:
+    name: "ruby.wasm (ruby 4.0)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0"
+          bundler-cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tools/wasm/package-lock.json
+
+      - name: Install ruby.wasm
+        working-directory: tools/wasm
+        run: npm ci --no-audit --no-fund
+
+      - name: Build, save and reread a deck in ruby.wasm
+        run: |
+          gems=$(bundle exec ruby -e 'print %w[rubyzip rexml].map { |g| "#{g}=#{Gem.loaded_specs[g].full_gem_path}/lib" }.join(" ")')
+          node tools/wasm/run.mjs tools/wasm/smoke.rb "$RUNNER_TEMP/wasm" ruby_pptx=lib $gems
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Check python-pptx reads what ruby.wasm wrote
+        run: |
+          pip install python-pptx==1.0.2
+          python -c "
+          import sys, pptx
+          p = pptx.Presentation(sys.argv[1])
+          assert p.slides[0].shapes.title.text == 'Built in ruby.wasm'
+          assert p.slides[1].shapes[0].chart.chart_title.text_frame.text == 'Sales'
+          print('python-pptx reads it:', len(p.slides), 'slides')
+          " "$RUNNER_TEMP/wasm/out.pptx"

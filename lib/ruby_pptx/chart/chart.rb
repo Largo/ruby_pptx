@@ -437,10 +437,10 @@ module Pptx
 
       next_index = plot_area.series_elements.size
       count.times do |offset|
-        copy = last.parent.build_from_xml(last.node.to_xml)
+        copy = last.parent.import(last)
         copy.get_or_add_idx.val = next_index + offset
         copy.get_or_add_order.val = next_index + offset
-        last.node.add_next_sibling(copy.node)
+        last.add_next_sibling(copy)
         last = copy
       end
     end

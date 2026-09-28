@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-require "nokogiri"
+# Nokogiri is not required here: Pptx::Oxml::Backend loads it when it can
+# and falls back to REXML when it cannot, as under ruby.wasm.
 require "zip"
 
 require "ruby_pptx/version"
@@ -87,4 +88,10 @@ require "ruby_pptx/enum/prog_id"
 
 # A Ruby object model for PowerPoint (.pptx) files, ported from python-pptx.
 module Pptx
+  # The XML library in use: :nokogiri, or :rexml where Nokogiri cannot be
+  # loaded (ruby.wasm) or RUBY_PPTX_XML_BACKEND=rexml asks for it. Output is
+  # the same either way; Nokogiri is several times faster.
+  def self.xml_backend
+    Oxml::BACKEND.name
+  end
 end

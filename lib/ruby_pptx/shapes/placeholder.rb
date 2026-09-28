@@ -78,9 +78,9 @@ module Pptx
     # Put +new_element+ where this placeholder is and move the `p:ph` onto
     # it. The original element leaves the tree; this object is spent.
     def replace_placeholder_with(new_element)
-      adopted = @element.build_from_xml(new_element.node.to_xml)
+      adopted = @element.import(new_element)
       adopted.nvXxPr.nvPr.insert_ph(@element.ph)
-      @element.node.add_previous_sibling(adopted.node)
+      @element.add_previous_sibling(adopted)
       @element.parent.remove(@element)
       ShapeFactory.build_for_slide(adopted, @parent)
     end

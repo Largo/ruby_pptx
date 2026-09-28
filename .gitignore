@@ -4,3 +4,4 @@
 /spec/tmp/
 Gemfile.lock
 *.gem
+/tools/wasm/node_modules/

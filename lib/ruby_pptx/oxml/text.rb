@@ -264,9 +264,7 @@ module Pptx
       # The `a:r`, `a:br` and `a:fld` children, in document order.
       def content_children
         tags = CONTENT_TAGS.map { |t| Ns.qn(t) }
-        @node.element_children
-             .select { |c| tags.include?(Ns.clark_name_of(c)) }
-             .map { |c| Element.wrap(c) }
+        element_children.select { |c| tags.include?(c.clark_name) }
       end
 
       def text

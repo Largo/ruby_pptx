@@ -79,7 +79,7 @@ RSpec.describe "OLE objects" do
     # carrying one, which shows as the absence of p:embed.
     it "reports a linked object as linked" do
       frame = slide.shapes.add_ole_object(object_file("a.xlsx"), prog_id: :xlsx, at: [0, 0])
-      frame.element.xpath(".//p:embed").each { |embed| embed.node.remove }
+      frame.element.xpath(".//p:embed").each { |embed| embed.parent.remove(embed) }
       expect(frame.shape_type.name).to eq(:LINKED_OLE_OBJECT)
     end
 

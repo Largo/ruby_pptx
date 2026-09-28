@@ -1,0 +1,11 @@
+{
+  "name": "ruby-pptx-wasm-smoke",
+  "private": true,
+  "description": "Runs ruby_pptx under ruby.wasm, as a web page would. See run.mjs.",
+  "type": "module",
+  "dependencies": {
+    "@bjorn3/browser_wasi_shim": "0.4.2",
+    "@ruby/4.0-wasm-wasi": "2.10.1",
+    "@ruby/wasm-wasi": "2.10.1"
+  }
+}

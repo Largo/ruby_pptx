@@ -29,7 +29,7 @@ RSpec.describe Pptx::Oxml::Ns do
   end
 
   describe ".namespaces" do
-    it "returns the requested subset in Nokogiri's shape" do
+    it "returns the requested subset as a prefix => URI hash" do
       expect(described_class.namespaces("a", "p")).to eq("a" => a_uri, "p" => p_uri)
     end
   end
@@ -43,12 +43,12 @@ RSpec.describe Pptx::Oxml::Ns do
   describe ".clark_name_of" do
     it "derives the registry key from a parsed node" do
       xml = %(<p:cSld #{described_class.nsdecls("p")}/>)
-      node = Nokogiri::XML(xml).root
+      node = Pptx::Oxml::Element.parse(xml).node
       expect(described_class.clark_name_of(node)).to eq("{#{p_uri}}cSld")
     end
 
     it "falls back to the bare name for a node with no namespace" do
-      expect(described_class.clark_name_of(Nokogiri::XML("<foo/>").root)).to eq("foo")
+      expect(described_class.clark_name_of(Pptx::Oxml::Element.parse("<foo/>").node)).to eq("foo")
     end
   end
 

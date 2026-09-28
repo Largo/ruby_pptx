@@ -24,5 +24,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "nokogiri", "~> 1.18"
+  # The pure-Ruby XML backend, used where Nokogiri cannot load (ruby.wasm).
+  # A bundled rather than default gem from Ruby 3.4, so it must be declared;
+  # 3.3.9 is the first release without the known entity-expansion DoS bugs.
+  spec.add_dependency "rexml", ">= 3.3.9", "< 4"
   spec.add_dependency "rubyzip", "~> 3.0"
 end

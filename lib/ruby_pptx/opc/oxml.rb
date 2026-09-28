@@ -20,9 +20,7 @@ module Pptx
       # to match what python-pptx (and lxml) produce, so packages compare
       # byte-for-byte.
       def self.serialize_part_xml(element)
-        node = element.is_a?(Element) ? element.node : element
-        body = node.to_xml(save_with: Nokogiri::XML::Node::SaveOptions::AS_XML |
-                                      Nokogiri::XML::Node::SaveOptions::NO_DECLARATION)
+        body = Element.wrap(element).to_xml
         %(<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n#{body})
       end
 

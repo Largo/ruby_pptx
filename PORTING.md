@@ -590,6 +590,33 @@ constant level as well as the path level.
 `lib/ruby_pptx`, the templates must stay in the packaged file list, and the
 gem must load from a clean interpreter with only `lib` on the path.
 
+## Two XML backends: Nokogiri and REXML
+
+python-pptx is built on lxml; this port on Nokogiri, which is native and so
+cannot run in ruby.wasm. `Pptx::Oxml::Backend` puts the XML library behind a
+small set of functions, with a Nokogiri and a REXML implementation, and
+`Oxml::Element` is the only caller: nothing above it touches a node. The
+backend is chosen once, at load -- Nokogiri if it loads, REXML otherwise, or
+whichever `RUBY_PPTX_XML_BACKEND` names -- because nodes of the two cannot
+share a document.
+
+Matching Nokogiri's output took three behaviours REXML lacks:
+
+- **Namespaces on detached nodes.** REXML resolves a prefix through the
+  parent chain, so a node outside a tree has no namespace. A node built,
+  parsed or removed therefore carries declarations of the prefixes it uses.
+- **Redundant declarations.** Nokogiri drops, on every insertion, each
+  declaration in the inserted subtree that repeats one in scope where it
+  lands, and libxml2 does the same when parsing a fragment in context. The
+  REXML backend does both, which is what makes the two write the same bytes.
+- **noblanks.** Whitespace between elements is dropped on parse; whitespace
+  that is an element's only content (`<a:t> </a:t>`) is kept.
+
+One query had to change: REXML's XPath rejects a union as a path step,
+`(../c:catAx | ../c:valAx)/c:axId`, so it is written as a union of whole
+paths. CI runs the suite under both backends, and `tools/wasm/run.mjs` runs
+the gem inside ruby.wasm with the browser's in-memory filesystem.
+
 ## Ruby idioms beyond the port
 
 python-pptx is the source of the object model, not of the idiom. Five things

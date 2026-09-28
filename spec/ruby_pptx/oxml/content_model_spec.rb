@@ -122,7 +122,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
       aggregate_failures do
         expect(blip.embed).to eq("rId3")
         expect(blip.xml).to include('r:embed="rId3"')
-        expect(blip.node.attribute_with_ns("embed", Pptx::Oxml::Ns.nsuri("r"))).not_to be_nil
+        expect(blip.get("r:embed")).not_to be_nil
       end
     end
   end
@@ -156,7 +156,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
       e = xfrm
       first = e.get_or_add_off
       expect(e.get_or_add_off).to eq(first)
-      expect(e.node.element_children.size).to eq(1)
+      expect(e.element_children.size).to eq(1)
     end
 
     it "add accepts attributes as keywords" do
@@ -175,7 +175,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
       e = xfrm
       e.get_or_add_ext # the later sibling, added first
       e.get_or_add_off
-      expect(e.node.element_children.map(&:name)).to eq(%w[off ext])
+      expect(e.element_children.map(&:nsptag)).to eq(%w[a:off a:ext])
     end
   end
 
@@ -194,7 +194,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
       p.add_r
       p.add_r
       p.get_or_add_pPr
-      expect(p.node.element_children.map(&:name)).to eq(%w[pPr r r endParaRPr])
+      expect(p.element_children.map(&:nsptag)).to eq(%w[a:pPr a:r a:r a:endParaRPr])
     end
   end
 
@@ -211,7 +211,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
       sp_pr.get_or_change_to_solidFill
       sp_pr.get_or_change_to_gradFill
       aggregate_failures do
-        expect(sp_pr.node.element_children.map(&:name)).to eq(%w[gradFill])
+        expect(sp_pr.element_children.map(&:nsptag)).to eq(%w[a:gradFill])
         expect(sp_pr.solidFill).to be_nil
       end
     end
@@ -230,7 +230,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
     it "inserts the chosen member before the group's successor" do
       sp_pr.get_or_add_ln
       sp_pr.get_or_change_to_solidFill
-      expect(sp_pr.node.element_children.map(&:name)).to eq(%w[solidFill ln])
+      expect(sp_pr.element_children.map(&:nsptag)).to eq(%w[a:solidFill a:ln])
     end
   end
 
@@ -267,7 +267,7 @@ RSpec.describe Pptx::Oxml::ContentModel do
   describe "document safety" do
     it "creates children in the parent's own document" do
       e = xfrm
-      expect(e.build("a:off").node.document).to equal(e.node.document)
+      expect(e.build("a:off").document).to equal(e.document)
     end
 
     it "refuses an element built in a different document" do

@@ -483,11 +483,11 @@ module Pptx
         label.idx.val = idx
         following = dLbl_list.find { |existing| existing.idx.val > idx }
         if following
-          following.node.add_previous_sibling(label.node)
+          following.add_previous_sibling(label)
         elsif (last = dLbl_list.last)
-          last.node.add_next_sibling(label.node)
+          last.add_next_sibling(label)
         else
-          node.prepend_child(label.node)
+          prepend(label)
         end
         label
       end
@@ -751,9 +751,7 @@ module Pptx
       tag "c:plotArea"
 
       def plot_elements
-        @node.element_children
-             .select { |child| child.name.end_with?("Chart") }
-             .map { |child| Element.wrap(child) }
+        element_children.select { |child| child.clark_name.end_with?("Chart") }
       end
 
       def category_axis

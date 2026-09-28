@@ -5,6 +5,22 @@ All notable changes to this gem are recorded here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Before 1.0 a minor
 version may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- A pure-Ruby XML backend built on REXML, used automatically where Nokogiri
+  cannot be loaded -- notably ruby.wasm. It writes the same packages as the
+  Nokogiri backend; CI runs every spec under both, and builds, saves and
+  rereads a deck inside ruby.wasm. `Pptx.xml_backend` reports which is in
+  use, and `RUBY_PPTX_XML_BACKEND` chooses one explicitly.
+- `rexml` is now a runtime dependency. Nokogiri remains one too.
+
+### Changed
+
+- `require "ruby_pptx"` no longer requires Nokogiri directly; the XML
+  backend loads it.
+
 ## [0.1.1] - 2026-09-28
 
 ### Fixed
