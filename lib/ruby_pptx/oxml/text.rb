@@ -6,6 +6,7 @@ require "ruby_pptx/oxml/simple_types"
 require "ruby_pptx/oxml/dml/fill"
 require "ruby_pptx/enum/text"
 require "ruby_pptx/enum/lang"
+require "securerandom"
 
 module Pptx
   module Oxml
@@ -89,6 +90,7 @@ module Pptx
       optional_attr "b", type: SimpleTypes::XsdBoolean
       optional_attr "i", type: SimpleTypes::XsdBoolean
       optional_attr "u", type: Enum::MSO_TEXT_UNDERLINE_TYPE
+      optional_attr "cap", type: SimpleTypes::XsdString
 
       def new_gradFill
         CT_GradientFillProperties.new_grad_fill(self)
@@ -108,6 +110,7 @@ module Pptx
       optional_attr "bIns", type: SimpleTypes::ST_Coordinate32, default: Pptx::Length.emu(45_720)
       optional_attr "anchor", type: Enum::MSO_VERTICAL_ANCHOR
       optional_attr "wrap", type: SimpleTypes::ST_TextWrappingType
+      optional_attr "vert", type: SimpleTypes::XsdString
 
       # @return [Pptx::Enum::MSO_AUTO_SIZE, nil] nil when inherited
       def autofit
@@ -317,6 +320,18 @@ module Pptx
         add_br
       end
 
+      # Append a field PowerPoint fills in when it draws the slide, such as
+      # "slidenum" or "datetime1". +placeholder+ is the text shown by readers
+      # that do not evaluate fields.
+      def add_field(type, placeholder)
+        fld = build_from_xml(
+          %(<a:fld #{Ns.nsdecls("a")} id="{#{SecureRandom.uuid.upcase}}" type="#{type}"><a:t/></a:fld>)
+        )
+        fld.t.text = placeholder
+        insert_element_before(fld, "a:endParaRPr")
+        fld
+      end
+
       # Append +text+ as runs, turning each "\n" or "\v" into a line break.
       #
       # Breaks go *between* items, so leading text never produces one, and an
@@ -346,6 +361,7 @@ module Pptx
       # axis title holds.
       tag "p:txBody", "a:txBody", "c:txPr", "c:rich"
       one_and_only_one "a:bodyPr"
+      zero_or_one "a:lstStyle", successors: %w[a:p]
       one_or_more "a:p", successors: [], as: :p
 
       # A chart's `c:txPr` holds a paragraph for its formatting alone; the

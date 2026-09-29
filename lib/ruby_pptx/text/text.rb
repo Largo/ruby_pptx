@@ -203,6 +203,40 @@ module Pptx
     def body_properties
       @element.bodyPr
     end
+
+    public
+
+    TEXT_DIRECTIONS = {
+      horizontal: "horz", vertical: "vert", vertical_270: "vert270", stacked: "wordArtVert",
+      east_asian_vertical: "eaVert", mongolian_vertical: "mongolianVert",
+      stacked_right_to_left: "wordArtVertRtl"
+    }.freeze
+
+    # Which way the text runs: :horizontal, :vertical (top to bottom, turned
+    # 90 degrees), :vertical_270 (bottom to top), :stacked, or one of the East
+    # Asian directions. nil when inherited.
+    def text_direction
+      TEXT_DIRECTIONS.key(body_properties.vert)
+    end
+
+    def text_direction=(value)
+      body_properties.vert =
+        if value.nil? then nil
+        else
+          TEXT_DIRECTIONS.fetch(value) do
+            raise ArgumentError, "text_direction must be one of #{TEXT_DIRECTIONS.keys.inspect} or nil, " \
+                                 "got #{value.inspect}"
+          end
+        end
+    end
+
+    # The default paragraph formatting per outline level for this text
+    # body. On a layout or master placeholder, this is what slides inherit.
+    #
+    # @return [ListStyle]
+    def list_style
+      ListStyle.new(@element.get_or_add_lstStyle)
+    end
   end
 
   # Paragraph formatting shared by a paragraph and by a style level: both
@@ -311,6 +345,24 @@ module Pptx
 
     def add_line_break
       @element.add_line_break
+      self
+    end
+
+    FIELD_TYPES = { slide_number: ["slidenum", "‹#›"], date_time: ["datetime1", ""] }.freeze
+
+    # Append a field PowerPoint fills in when it draws the slide:
+    # :slide_number, :date_time, or a field type string such as "datetime4".
+    # A slide number only shows in a slide-number placeholder or a text box
+    # on the slide itself.
+    #
+    # @return [self]
+    def add_field(type)
+      field_type, placeholder = FIELD_TYPES.fetch(type) do
+        raise ArgumentError, "unknown field #{type.inspect}" unless type.is_a?(String)
+
+        [type, ""]
+      end
+      @element.add_field(field_type, placeholder)
       self
     end
 
@@ -453,6 +505,25 @@ module Pptx
 
     def size=(value)
       @element.sz = value.nil? ? nil : Pptx::Length.coerce(value).centipoints
+    end
+
+    CAPS = { all: "all", small: "small", none: "none" }.freeze
+
+    # :all for capitals, :small for small capitals, :none to turn an
+    # inherited setting off, nil when inherited. Only the display changes;
+    # the text keeps its case.
+    def caps
+      CAPS.key(@element.cap)
+    end
+
+    def caps=(value)
+      @element.cap =
+        if value.nil? then nil
+        else
+          CAPS.fetch(value) do
+            raise ArgumentError, "caps must be :all, :small, :none or nil, got #{value.inspect}"
+          end
+        end
     end
 
     # true for a single underline, false for none, a

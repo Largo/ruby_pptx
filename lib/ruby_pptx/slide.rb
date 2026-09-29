@@ -232,10 +232,11 @@ module Pptx
     # Add a slide inheriting from +slide_layout+, and return it.
     #
     # The layout's placeholders are copied onto the new slide, preserving
-    # z-order; latent ones are left to the layout.
-    def add(slide_layout)
+    # z-order. Date, footer and slide number come along only with
+    # +footers: true+, which is what PowerPoint needs to show them.
+    def add(slide_layout, footers: false)
       r_id, slide = part.add_slide(slide_layout)
-      slide.shapes.clone_layout_placeholders(slide_layout)
+      slide.shapes.clone_layout_placeholders(slide_layout, footers: footers)
       @sld_id_list.add_slide_id(r_id)
       slide
     end
@@ -258,8 +259,8 @@ module Pptx
 
     pattern_keys :name, :type, :slide_master, :shapes, :placeholders
 
-    # Placeholders PowerPoint renders from the layout rather than copying onto
-    # each slide, so they are not cloned when a slide is created.
+    # Placeholders a new slide leaves out unless asked: PowerPoint shows them
+    # only where the slide carries them, which is its Header & Footer switch.
     LATENT_PLACEHOLDER_TYPES = [
       Enum::PP_PLACEHOLDER::DATE,
       Enum::PP_PLACEHOLDER::FOOTER,

@@ -25,6 +25,23 @@ version may change the public API.
   formatting methods as a paragraph -- alignment, spacing, `bullet`,
   `margin_left`, `indent` and `font`. Missing levels are created in schema
   order.
+- `TextFrame#list_style`: the same `ListStyle` for a text body's
+  `a:lstStyle`, so a layout placeholder can set what its slides inherit.
+- `Paragraph#add_field(:slide_number)`, `(:date_time)` or any field type
+  string such as `"datetime4"`.
+- `TextFrame#text_direction=` with `:vertical_270` (bottom to top),
+  `:vertical`, `:stacked` and the East Asian directions.
+- `Font#caps=` with `:all`, `:small`, `:none` or `nil`.
+- `Slides#add(layout, footers: true)` also copies the date, footer and
+  slide-number placeholders, text included. PowerPoint only draws them where
+  the slide carries them.
+- Shapes drawn on a layout or master get `userDrawn="1"`, as PowerPoint
+  writes it.
+
+### Fixed
+
+- The comment on `SlideLayout::LATENT_PLACEHOLDER_TYPES` said PowerPoint
+  shows those placeholders from the layout; it does not.
 
 ## [0.2.0] - 2026-09-28
 

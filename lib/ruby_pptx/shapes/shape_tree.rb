@@ -223,7 +223,7 @@ module Pptx
       sp = @sp_tree.add_autoshape(id, name, Enum::MSO_SHAPE.to_xml(member),
                                   left, top, width, height)
       recalculate_extents
-      shape_factory(sp)
+      drawn(sp)
     end
 
     # Add a picture showing the image in +image_file+, which may be a path or
@@ -259,7 +259,7 @@ module Pptx
       end
 
       recalculate_extents
-      shape_factory(pic)
+      drawn(pic)
     end
 
     # Add an empty text box.
@@ -271,7 +271,7 @@ module Pptx
       id = next_shape_id
       sp = @sp_tree.add_textbox(id, "TextBox #{id - 1}", left, top, width, height)
       recalculate_extents
-      shape_factory(sp)
+      drawn(sp)
     end
 
     # Add a connector between two points.
@@ -293,7 +293,7 @@ module Pptx
         begin_x > end_x, begin_y > end_y
       )
       recalculate_extents
-      shape_factory(cxn_sp)
+      drawn(cxn_sp)
     end
 
     # Start building a freeform shape.
@@ -332,7 +332,7 @@ module Pptx
     # @api private
     def build_shape(shape_element)
       recalculate_extents
-      shape_factory(shape_element)
+      drawn(shape_element)
     end
 
     # Add a group, optionally moving +shapes+ into it.
@@ -346,10 +346,24 @@ module Pptx
       shapes.each { |shape| grp_sp.insert_element_before(shape.element, "p:extLst") }
       grp_sp.recalculate_extents unless shapes.empty?
       recalculate_extents
-      shape_factory(grp_sp)
+      drawn(grp_sp)
     end
 
     private
+
+    # The proxy for a shape just added. PowerPoint marks shapes drawn on a
+    # layout or master `userDrawn`, so an including class can ask for that.
+    def drawn(element)
+      if user_drawn?
+        nv_pr = element.element_children.first&.find("p:nvPr")
+        nv_pr&.set("userDrawn", "1")
+      end
+      shape_factory(element)
+    end
+
+    def user_drawn?
+      false
+    end
 
     # A group resizes itself around its contents; a slide, layout or master
     # does not move.
@@ -517,11 +531,19 @@ module Pptx
   class SlideShapes < BaseGroupShapes
     # Copy the layout's placeholders onto this slide, preserving z-order.
     #
-    # Latent placeholders -- date, footer and slide number -- are not cloned:
-    # PowerPoint shows them from the layout without materialising them on the
-    # slide.
-    def clone_layout_placeholders(slide_layout)
-      slide_layout.cloneable_placeholders.each { |ph| clone_placeholder(ph) }
+    # Date, footer and slide number are left out unless +footers+ is true:
+    # PowerPoint draws them only where the slide carries the placeholder
+    # itself, which is what switching them on in its Header & Footer dialog
+    # does. With +footers+, their text -- the slide-number field, say -- is
+    # copied from the layout too, since an empty one shows nothing.
+    def clone_layout_placeholders(slide_layout, footers: false)
+      chosen = footers ? slide_layout.placeholders.to_a : slide_layout.cloneable_placeholders
+      chosen.each do |ph|
+        sp = clone_placeholder(ph)
+        if footers && SlideLayout::LATENT_PLACEHOLDER_TYPES.include?(ph.element.ph_type)
+          copy_text_body(ph.element, sp)
+        end
+      end
       self
     end
 
@@ -542,6 +564,17 @@ module Pptx
     def shape_factory(shape_element)
       ShapeFactory.build_for_slide(shape_element, self)
     end
+
+    # Replace +target+'s text body with a copy of +source+'s.
+    def copy_text_body(source, target)
+      body = source.find("p:txBody")
+      return if body.nil?
+
+      copy = target.build_from_xml(body.to_xml)
+      old = target.find("p:txBody")
+      target.remove(old) if old
+      target.insert_element_before(copy, "p:extLst")
+    end
   end
 
   # The shapes inside a `p:grpSp`.
@@ -561,6 +594,10 @@ module Pptx
 
     private
 
+    def user_drawn?
+      true
+    end
+
     def shape_factory(shape_element)
       ShapeFactory.build_for_layout(shape_element, self)
     end
@@ -571,6 +608,10 @@ module Pptx
     include ShapeAuthoring
 
     private
+
+    def user_drawn?
+      true
+    end
 
     def shape_factory(shape_element)
       ShapeFactory.build_for_master(shape_element, self)
