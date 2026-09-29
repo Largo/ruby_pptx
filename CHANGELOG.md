@@ -5,6 +5,21 @@ All notable changes to this gem are recorded here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Before 1.0 a minor
 version may change the public API.
 
+## [Unreleased]
+
+### Added
+
+- `Paragraph#bullet=` sets a character bullet (`"•"`), an autonumber scheme
+  (`:arabicPeriod`), `:none`, or `nil` to inherit; `Paragraph#margin_left=`
+  and `Paragraph#indent=` give it a hanging indent. python-pptx has neither.
+- Layouts and masters take the drawing methods slides have: `add_shape`,
+  `add_picture` (SVG with raster fallback included), `add_textbox`,
+  `add_connector`, `add_freeform`/`build_freeform` and `add_group_shape` on
+  `layout.shapes` and `master.shapes`. Every slide on the layout shows them,
+  which is how a template carries its logo and bands. Charts, tables, movies
+  and OLE objects stay slide-only. The `placeholders` views do not offer
+  these methods, since a shape added there would not be listed.
+
 ## [0.2.0] - 2026-09-28
 
 ### Added

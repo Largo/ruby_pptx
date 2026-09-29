@@ -198,12 +198,12 @@ module Pptx
     end
   end
 
-  # A shape collection you can add shapes to: a slide's tree, or a group
-  # within one.
+  # Adding the shapes a slide, layout or master can all hold: auto shapes,
+  # pictures, text boxes, connectors, freeforms and groups. Charts, tables,
+  # movies and OLE objects need a slide and stay in {BaseGroupShapes}.
   #
-  # Adding to a group changes the group's extents, so every method here ends
-  # by recalculating them. On a slide that is a no-op.
-  class BaseGroupShapes < BaseShapes
+  # Expects +@sp_tree+, +part+ and +shape_factory+ from the including class.
+  module ShapeAuthoring
     # Add an auto shape.
     #
     #   shapes.add_shape(:rounded_rectangle,
@@ -261,6 +261,110 @@ module Pptx
       recalculate_extents
       shape_factory(pic)
     end
+
+    # Add an empty text box.
+    #
+    # @return [Shape]
+    def add_textbox(at:, size:)
+      left, top = at
+      width, height = size
+      id = next_shape_id
+      sp = @sp_tree.add_textbox(id, "TextBox #{id - 1}", left, top, width, height)
+      recalculate_extents
+      shape_factory(sp)
+    end
+
+    # Add a connector between two points.
+    #
+    # A connector is stored as a bounding box with flip flags rather than as
+    # two points, so the end points are converted here.
+    #
+    # @return [Connector]
+    def add_connector(connector_type, begin_at:, end_at:)
+      member = Enum::MSO_CONNECTOR_TYPE.fetch(connector_type)
+      begin_x, begin_y = begin_at.map { |value| Length.coerce(value).emu }
+      end_x, end_y = end_at.map { |value| Length.coerce(value).emu }
+
+      id = next_shape_id
+      cxn_sp = @sp_tree.add_cxnSp(
+        id, "Connector #{id - 1}", Enum::MSO_CONNECTOR_TYPE.to_xml(member),
+        [begin_x, end_x].min, [begin_y, end_y].min,
+        (end_x - begin_x).abs, (end_y - begin_y).abs,
+        begin_x > end_x, begin_y > end_y
+      )
+      recalculate_extents
+      shape_factory(cxn_sp)
+    end
+
+    # Start building a freeform shape.
+    #
+    # +scale+ says how many EMU one local coordinate unit is worth, so a shape
+    # can be described in convenient numbers; pass a pair for different
+    # horizontal and vertical scales.
+    #
+    # @return [FreeformBuilder]
+    def build_freeform(start_x: 0, start_y: 0, scale: 1.0)
+      FreeformBuilder.new_builder(self, start_x, start_y, scale)
+    end
+
+    # Build a freeform shape and add it, in one call.
+    #
+    #   shapes.add_freeform(at: [x, y], scale: Pptx.inches(1).emu / 100.0) do |f|
+    #     f.line_to(100, 0)
+    #     f.line_to(50, 100)
+    #   end
+    #
+    # @return [Shape]
+    def add_freeform(at: [0, 0], start_x: 0, start_y: 0, scale: 1.0, close: true)
+      builder = build_freeform(start_x: start_x, start_y: start_y, scale: scale)
+      yield builder if block_given?
+      builder.close if close
+      builder.convert_to_shape(origin_at: at)
+    end
+
+    # @api private
+    # Used by FreeformBuilder, which needs to add the element and then draw
+    # into it.
+    def add_freeform_element(x, y, width, height)
+      @sp_tree.add_freeform_sp(x, y, width, height)
+    end
+
+    # @api private
+    def build_shape(shape_element)
+      recalculate_extents
+      shape_factory(shape_element)
+    end
+
+    # Add a group, optionally moving +shapes+ into it.
+    #
+    # The group has no position or size of its own: both follow from what it
+    # contains, and are recomputed whenever its contents change.
+    #
+    # @return [GroupShape]
+    def add_group_shape(shapes = [])
+      grp_sp = @sp_tree.add_grpSp
+      shapes.each { |shape| grp_sp.insert_element_before(shape.element, "p:extLst") }
+      grp_sp.recalculate_extents unless shapes.empty?
+      recalculate_extents
+      shape_factory(grp_sp)
+    end
+
+    private
+
+    # A group resizes itself around its contents; a slide, layout or master
+    # does not move.
+    def recalculate_extents
+      nil
+    end
+  end
+
+  # A shape collection you can add shapes to: a slide's tree, or a group
+  # within one.
+  #
+  # Adding to a group changes the group's extents, so every method here ends
+  # by recalculating them. On a slide that is a no-op.
+  class BaseGroupShapes < BaseShapes
+    include ShapeAuthoring
 
     # Add a movie showing the video in +movie_file+.
     #
@@ -382,66 +486,6 @@ module Pptx
       shape_factory(frame)
     end
 
-    # Add an empty text box.
-    #
-    # @return [Shape]
-    def add_textbox(at:, size:)
-      left, top = at
-      width, height = size
-      id = next_shape_id
-      sp = @sp_tree.add_textbox(id, "TextBox #{id - 1}", left, top, width, height)
-      recalculate_extents
-      shape_factory(sp)
-    end
-
-    # Add a connector between two points.
-    #
-    # A connector is stored as a bounding box with flip flags rather than as
-    # two points, so the end points are converted here.
-    #
-    # @return [Connector]
-    def add_connector(connector_type, begin_at:, end_at:)
-      member = Enum::MSO_CONNECTOR_TYPE.fetch(connector_type)
-      begin_x, begin_y = begin_at.map { |value| Length.coerce(value).emu }
-      end_x, end_y = end_at.map { |value| Length.coerce(value).emu }
-
-      id = next_shape_id
-      cxn_sp = @sp_tree.add_cxnSp(
-        id, "Connector #{id - 1}", Enum::MSO_CONNECTOR_TYPE.to_xml(member),
-        [begin_x, end_x].min, [begin_y, end_y].min,
-        (end_x - begin_x).abs, (end_y - begin_y).abs,
-        begin_x > end_x, begin_y > end_y
-      )
-      recalculate_extents
-      shape_factory(cxn_sp)
-    end
-
-    # Start building a freeform shape.
-    #
-    # +scale+ says how many EMU one local coordinate unit is worth, so a shape
-    # can be described in convenient numbers; pass a pair for different
-    # horizontal and vertical scales.
-    #
-    # @return [FreeformBuilder]
-    def build_freeform(start_x: 0, start_y: 0, scale: 1.0)
-      FreeformBuilder.new_builder(self, start_x, start_y, scale)
-    end
-
-    # Build a freeform shape and add it, in one call.
-    #
-    #   shapes.add_freeform(at: [x, y], scale: Pptx.inches(1).emu / 100.0) do |f|
-    #     f.line_to(100, 0)
-    #     f.line_to(50, 100)
-    #   end
-    #
-    # @return [Shape]
-    def add_freeform(at: [0, 0], start_x: 0, start_y: 0, scale: 1.0, close: true)
-      builder = build_freeform(start_x: start_x, start_y: start_y, scale: scale)
-      yield builder if block_given?
-      builder.close if close
-      builder.convert_to_shape(origin_at: at)
-    end
-
     # The loudspeaker still PowerPoint shows for a video with no poster frame.
     def default_poster_frame
       StringIO.new(File.binread(
@@ -455,33 +499,6 @@ module Pptx
       return if slide_element.nil?
 
       slide_element.get_or_add_child_time_node_list.add_video(pic.shape_id)
-    end
-
-    # @api private
-    # Used by FreeformBuilder, which needs to add the element and then draw
-    # into it.
-    def add_freeform_element(x, y, width, height)
-      @sp_tree.add_freeform_sp(x, y, width, height)
-    end
-
-    # @api private
-    def build_shape(shape_element)
-      recalculate_extents
-      shape_factory(shape_element)
-    end
-
-    # Add a group, optionally moving +shapes+ into it.
-    #
-    # The group has no position or size of its own: both follow from what it
-    # contains, and are recomputed whenever its contents change.
-    #
-    # @return [GroupShape]
-    def add_group_shape(shapes = [])
-      grp_sp = @sp_tree.add_grpSp
-      shapes.each { |shape| grp_sp.insert_element_before(shape.element, "p:extLst") }
-      grp_sp.recalculate_extents unless shapes.empty?
-      recalculate_extents
-      shape_factory(grp_sp)
     end
 
     private
@@ -540,6 +557,8 @@ module Pptx
 
   # The shapes on a slide layout.
   class LayoutShapes < BaseShapes
+    include ShapeAuthoring
+
     private
 
     def shape_factory(shape_element)
@@ -549,6 +568,8 @@ module Pptx
 
   # The shapes on a slide master.
   class MasterShapes < BaseShapes
+    include ShapeAuthoring
+
     private
 
     def shape_factory(shape_element)
@@ -599,6 +620,10 @@ module Pptx
   class LayoutPlaceholders < LayoutShapes
     include PlaceholderAuthoring
 
+    # A placeholder view only lists placeholders, so a shape added through it
+    # would vanish from the collection it was added to.
+    private(*ShapeAuthoring.public_instance_methods)
+
     # @return [LayoutPlaceholder, nil]
     def by_idx(idx)
       find { |ph| ph.element.ph_idx == idx }
@@ -618,6 +643,10 @@ module Pptx
   # The placeholders of a slide master, in `idx` order.
   class MasterPlaceholders < MasterShapes
     include PlaceholderAuthoring
+
+    # A placeholder view only lists placeholders, so a shape added through it
+    # would vanish from the collection it was added to.
+    private(*ShapeAuthoring.public_instance_methods)
 
     # @return [MasterPlaceholder, nil]
     def by_type(ph_type)
