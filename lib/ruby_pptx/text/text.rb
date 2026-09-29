@@ -205,55 +205,11 @@ module Pptx
     end
   end
 
-  # One paragraph of a text frame.
-  class Paragraph
-    include PatternMatching
-
-    pattern_keys :text, :runs, :level, :alignment
-
-    attr_reader :element, :parent
-
-    def initialize(p, parent)
-      @element = p
-      @parent = parent
-    end
-
-    def part
-      @parent.part
-    end
-
-    # @return [Array<Run>]
-    def runs
-      @element.r_list.map { |r| Run.new(r, self) }
-    end
-
-    def add_run(text = nil)
-      Run.new(@element.add_run(text), self)
-    end
-
-    def add_line_break
-      @element.add_line_break
-      self
-    end
-
-    # The text of this paragraph, with "\v" for each soft line break.
-    def text
-      @element.text
-    end
-
-    # Replace this paragraph's text, turning "\v" (or "\n") into line breaks
-    # rather than new paragraphs -- a paragraph cannot contain another.
-    def text=(value)
-      clear
-      @element.append_text(value)
-    end
-
-    # Remove the content, keeping the paragraph and its properties.
-    def clear
-      @element.content_children.each { |child| @element.remove(child) }
-      self
-    end
-
+  # Paragraph formatting shared by a paragraph and by a style level: both
+  # are an `a:pPr`-shaped element, so both read and write the same way.
+  #
+  # Expects +paragraph_properties+ to return that element.
+  module ParagraphFormatting
     # @return [Pptx::Enum::PP_ALIGN, nil] nil when inherited
     def alignment
       paragraph_properties.algn
@@ -261,15 +217,6 @@ module Pptx
 
     def alignment=(value)
       paragraph_properties.algn = value
-    end
-
-    # Outline level, 0 for the top level.
-    def level
-      paragraph_properties.lvl
-    end
-
-    def level=(value)
-      paragraph_properties.lvl = value
     end
 
     # A Float is a number of lines; a {Pptx::Length} is a fixed distance.
@@ -332,6 +279,66 @@ module Pptx
     # The default character formatting for runs in this paragraph.
     def font
       Font.new(paragraph_properties.get_or_add_defRPr)
+    end
+  end
+
+  # One paragraph of a text frame.
+  class Paragraph
+    include PatternMatching
+    include ParagraphFormatting
+
+    pattern_keys :text, :runs, :level, :alignment
+
+    attr_reader :element, :parent
+
+    def initialize(p, parent)
+      @element = p
+      @parent = parent
+    end
+
+    def part
+      @parent.part
+    end
+
+    # @return [Array<Run>]
+    def runs
+      @element.r_list.map { |r| Run.new(r, self) }
+    end
+
+    def add_run(text = nil)
+      Run.new(@element.add_run(text), self)
+    end
+
+    def add_line_break
+      @element.add_line_break
+      self
+    end
+
+    # The text of this paragraph, with "\v" for each soft line break.
+    def text
+      @element.text
+    end
+
+    # Replace this paragraph's text, turning "\v" (or "\n") into line breaks
+    # rather than new paragraphs -- a paragraph cannot contain another.
+    def text=(value)
+      clear
+      @element.append_text(value)
+    end
+
+    # Remove the content, keeping the paragraph and its properties.
+    def clear
+      @element.content_children.each { |child| @element.remove(child) }
+      self
+    end
+
+    # Outline level, 0 for the top level.
+    def level
+      paragraph_properties.lvl
+    end
+
+    def level=(value)
+      paragraph_properties.lvl = value
     end
 
     def inspect

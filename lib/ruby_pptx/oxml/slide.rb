@@ -215,6 +215,7 @@ module Pptx
     # `p:txStyles`, the master's default text styling per outline level.
     class CT_SlideMasterTextStyles < Element
       tag "p:txStyles"
+      # Each style is a {CT_TextListStyle}, registered there.
       zero_or_one "p:titleStyle", successors: %w[p:bodyStyle p:otherStyle p:extLst]
       zero_or_one "p:bodyStyle", successors: %w[p:otherStyle p:extLst]
       zero_or_one "p:otherStyle", successors: %w[p:extLst]

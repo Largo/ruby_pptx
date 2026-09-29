@@ -193,7 +193,10 @@ module Pptx
 
     # `a:pPr`, paragraph properties.
     class CT_TextParagraphProperties < Element
-      tag "a:pPr"
+      # A list style's default and per-level paragraph properties share the
+      # content model of a paragraph's own `a:pPr`.
+      LEVEL_TAGS = (1..9).map { |n| "a:lvl#{n}pPr" }.freeze
+      tag "a:pPr", "a:defPPr", *LEVEL_TAGS
       TAG_SEQ = %w[a:lnSpc a:spcBef a:spcAft a:buClrTx a:buClr a:buSzTx a:buSzPct
                    a:buSzPts a:buFontTx a:buFont a:buNone a:buAutoNum a:buChar
                    a:buBlip a:tabLst a:defRPr a:extLst].freeze
@@ -266,6 +269,26 @@ module Pptx
         when Symbol then get_or_add_buAutoNum.type = value.to_s
         else raise ArgumentError, "bullet must be a String, a Symbol or nil, got #{value.inspect}"
         end
+      end
+    end
+
+    # A list style: default paragraph properties per outline level. The same
+    # content model serves a text body's `a:lstStyle` and a master's
+    # `p:titleStyle`, `p:bodyStyle` and `p:otherStyle`.
+    class CT_TextListStyle < Element
+      tag "a:lstStyle", "p:titleStyle", "p:bodyStyle", "p:otherStyle"
+      TAG_SEQ = ["a:defPPr", *CT_TextParagraphProperties::LEVEL_TAGS, "a:extLst"].freeze
+
+      TAG_SEQ[0..-2].each_with_index do |child, i|
+        zero_or_one child, successors: TAG_SEQ[(i + 1)..]
+      end
+
+      # The `a:lvlNpPr` for outline level +level+, counted from 0 like
+      # `a:pPr/@lvl`, created if it is missing.
+      def get_or_add_level(level)
+        raise ArgumentError, "outline level must be 0 to 8, got #{level.inspect}" unless (0..8).cover?(level)
+
+        public_send("get_or_add_lvl#{level + 1}pPr")
       end
     end
 

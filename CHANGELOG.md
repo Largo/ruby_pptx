@@ -19,6 +19,12 @@ version may change the public API.
   which is how a template carries its logo and bands. Charts, tables, movies
   and OLE objects stay slide-only. The `placeholders` views do not offer
   these methods, since a shape added there would not be listed.
+- `SlideMaster#text_styles` reaches the master's `p:txStyles`: `title`,
+  `body` and `other` are `ListStyle`s, and `level(n)` (0 to 8, like
+  `Paragraph#level`) or `default` gives a `ParagraphStyle` with the same
+  formatting methods as a paragraph -- alignment, spacing, `bullet`,
+  `margin_left`, `indent` and `font`. Missing levels are created in schema
+  order.
 
 ## [0.2.0] - 2026-09-28
 

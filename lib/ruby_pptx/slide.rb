@@ -425,6 +425,14 @@ module Pptx
       @placeholders ||= MasterPlaceholders.new(@element.spTree, self)
     end
 
+    # The default text formatting per outline level for titles, body text and
+    # everything else, which every layout and slide under this master inherits.
+    #
+    # @return [TextStyles]
+    def text_styles
+      TextStyles.new(@element.get_or_add_txStyles)
+    end
+
     def inspect
       "#<Pptx::SlideMaster #{part.partname}>"
     end
