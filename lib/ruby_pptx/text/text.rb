@@ -297,6 +297,38 @@ module Pptx
       paragraph_properties.space_after = value
     end
 
+    # The bullet: a String such as "•" for a character bullet, :none to
+    # suppress the one the master would draw, an autonumber scheme such as
+    # :arabicPeriod ("1.") or :alphaLcParenR ("a)"), or nil to inherit.
+    def bullet
+      paragraph_properties.bullet
+    end
+
+    def bullet=(value)
+      paragraph_properties.bullet = value
+    end
+
+    # Distance from the left edge of the text box to the text, as a
+    # {Pptx::Length}; nil when inherited.
+    def margin_left
+      paragraph_properties.marL
+    end
+
+    def margin_left=(value)
+      paragraph_properties.marL = value
+    end
+
+    # Offset of the first line from {#margin_left}. Negative gives a hanging
+    # indent, where the bullet sits in the margin: margin_left 0.25", indent
+    # -0.25". nil when inherited.
+    def indent
+      paragraph_properties.indent
+    end
+
+    def indent=(value)
+      paragraph_properties.indent = value
+    end
+
     # The default character formatting for runs in this paragraph.
     def font
       Font.new(paragraph_properties.get_or_add_defRPr)

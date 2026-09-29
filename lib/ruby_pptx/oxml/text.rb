@@ -174,6 +174,23 @@ module Pptx
       end
     end
 
+    # `a:buNone`, no bullet, even where the master would draw one.
+    class CT_TextNoBullet < Element
+      tag "a:buNone"
+    end
+
+    # `a:buAutoNum`, an automatically numbered bullet ("1.", "a)", ...).
+    class CT_TextAutonumberBullet < Element
+      tag "a:buAutoNum"
+      required_attr "type", type: SimpleTypes::XsdString
+    end
+
+    # `a:buChar`, a character bullet.
+    class CT_TextCharBullet < Element
+      tag "a:buChar"
+      required_attr "char", type: SimpleTypes::XsdString
+    end
+
     # `a:pPr`, paragraph properties.
     class CT_TextParagraphProperties < Element
       tag "a:pPr"
@@ -184,9 +201,15 @@ module Pptx
       zero_or_one "a:lnSpc", successors: TAG_SEQ[1..]
       zero_or_one "a:spcBef", successors: TAG_SEQ[2..]
       zero_or_one "a:spcAft", successors: TAG_SEQ[3..]
+      # The three bullet kinds are one choice; the setter keeps only one.
+      zero_or_one "a:buNone", successors: TAG_SEQ[13..]
+      zero_or_one "a:buAutoNum", successors: TAG_SEQ[13..]
+      zero_or_one "a:buChar", successors: TAG_SEQ[13..]
       zero_or_one "a:defRPr", successors: TAG_SEQ[16..]
       optional_attr "lvl", type: SimpleTypes::ST_TextIndentLevelType, default: 0
       optional_attr "algn", type: Enum::PP_PARAGRAPH_ALIGNMENT
+      optional_attr "marL", type: SimpleTypes::ST_Coordinate32
+      optional_attr "indent", type: SimpleTypes::ST_Coordinate32
 
       # A Float means a number of lines; a {Pptx::Length} means a fixed
       # distance. nil when no spacing is set.
@@ -221,6 +244,28 @@ module Pptx
       def space_after=(value)
         remove_spcAft
         get_or_add_spcAft.set_spc_pts(value) unless value.nil?
+      end
+
+      # A String for a character bullet, :none, a Symbol naming an autonumber
+      # scheme (e.g. :arabicPeriod), or nil when the bullet is inherited.
+      def bullet
+        return buChar.char if buChar
+        return :none if buNone
+
+        buAutoNum&.type&.to_sym
+      end
+
+      def bullet=(value)
+        remove_buNone
+        remove_buAutoNum
+        remove_buChar
+        case value
+        when nil then nil
+        when :none then get_or_add_buNone
+        when String then get_or_add_buChar.char = value
+        when Symbol then get_or_add_buAutoNum.type = value.to_s
+        else raise ArgumentError, "bullet must be a String, a Symbol or nil, got #{value.inspect}"
+        end
       end
     end
 

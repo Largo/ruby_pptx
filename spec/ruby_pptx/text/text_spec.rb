@@ -202,6 +202,39 @@ RSpec.describe Pptx::Paragraph do
     end
   end
 
+  it "sets one bullet kind at a time, in schema order" do
+    paragraph.space_before = Pptx.pt(6)
+    paragraph.font.bold = true
+    paragraph.bullet = :arabicPeriod
+    paragraph.bullet = "–"
+    names = paragraph.element.pPr.to_xml.scan(/<a:(\w+)/).flatten - %w[pPr spcPts]
+    aggregate_failures do
+      expect(paragraph.bullet).to eq("–")
+      expect(names).to eq(%w[spcBef buChar defRPr])
+    end
+  end
+
+  it "suppresses, numbers and inherits bullets" do
+    paragraph.bullet = :none
+    expect(paragraph.bullet).to eq(:none)
+    paragraph.bullet = :arabicPeriod
+    expect(paragraph.bullet).to eq(:arabicPeriod)
+    paragraph.bullet = nil
+    expect(paragraph.bullet).to be_nil
+  end
+
+  it "round-trips a hanging indent" do
+    paragraph.margin_left = Pptx.pt(18)
+    paragraph.indent = -Pptx.pt(18)
+    aggregate_failures do
+      expect(paragraph.margin_left).to eq(Pptx.pt(18))
+      expect(paragraph.indent).to eq(-Pptx.pt(18))
+      expect(paragraph.element.pPr.to_xml).to include(%(marL="228600"), %(indent="-228600"))
+    end
+    paragraph.indent = nil
+    expect(paragraph.indent).to be_nil
+  end
+
   it "clears content but keeps paragraph properties" do
     paragraph.alignment = Pptx::Enum::PP_ALIGN::CENTER
     paragraph.text = "gone"
