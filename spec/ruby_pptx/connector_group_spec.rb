@@ -89,6 +89,50 @@ RSpec.describe Pptx::Connector do
     end
   end
 
+  describe "coordinates" do
+    # [begin, end] in inches => [x, y, cx, cy, flipH, flipV] as PowerPoint stores it.
+    {
+      "down-right" => [[[1, 1], [4, 3]], [1, 1, 3, 2, false, false]],
+      "down-left" => [[[4, 1], [1, 3]], [1, 1, 3, 2, true, false]],
+      "up-right" => [[[1, 3], [4, 1]], [1, 1, 3, 2, false, true]],
+      "up-left" => [[[4, 3], [1, 1]], [1, 1, 3, 2, true, true]],
+      "horizontal" => [[[1, 2], [5, 2]], [1, 2, 4, 0, false, false]],
+      "vertical" => [[[2, 5], [2, 1]], [2, 1, 0, 4, false, true]]
+    }.each do |direction, ((from, to), (x, y, cx, cy, flip_h, flip_v))|
+      it "stores a #{direction} line as the box PowerPoint draws" do
+        line = connector(from, to)
+        xfrm = line.element.spPr.xfrm
+        aggregate_failures do
+          expect([xfrm.off.x, xfrm.off.y]).to eq([Pptx.inches(x), Pptx.inches(y)])
+          expect([xfrm.ext.cx, xfrm.ext.cy]).to eq([Pptx.inches(cx), Pptx.inches(cy)])
+          expect([line.element.flipH, line.element.flipV]).to eq([flip_h, flip_v])
+          expect([line.begin_x, line.begin_y]).to eq(from.map { |v| Pptx.inches(v) })
+          expect([line.end_x, line.end_y]).to eq(to.map { |v| Pptx.inches(v) })
+        end
+      end
+    end
+
+    it "keeps odd EMU values exact" do
+      line = slide.shapes.add_connector(:straight, begin_at: [Pptx.emu(914_401), Pptx.emu(7)],
+                                                   end_at: [Pptx.emu(3), Pptx.emu(1_234_567)])
+      aggregate_failures do
+        expect([line.begin_x, line.begin_y]).to eq([Pptx.emu(914_401), Pptx.emu(7)])
+        expect([line.end_x, line.end_y]).to eq([Pptx.emu(3), Pptx.emu(1_234_567)])
+      end
+    end
+
+    it "reads the same end points back after saving" do
+      points = [[[4, 3], [1, 1]], [[1, 3], [4, 1]], [[2, 5], [2, 1]]]
+      points.each { |from, to| connector(from, to) }
+      io = StringIO.new
+      presentation.save(io)
+      reopened = Pptx::Presentation.open(StringIO.new(io.string))
+      lines = reopened.slides.first.shapes.select { |shape| shape.is_a?(described_class) }
+      read = lines.map { |l| [[l.begin_x, l.begin_y], [l.end_x, l.end_y]] }
+      expect(read).to eq(points.map { |pair| pair.map { |pt| pt.map { |v| Pptx.inches(v) } } })
+    end
+  end
+
   describe "connecting to shapes" do
     subject(:line) { connector([0, 0], [1, 1]) }
 
