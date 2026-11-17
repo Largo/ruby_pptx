@@ -7,6 +7,8 @@ version may change the public API.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-17
+
 ### Added
 
 - `Paragraph#bullet=` sets a character bullet (`"•"`), an autonumber scheme
@@ -37,9 +39,33 @@ version may change the public API.
   the slide carries them.
 - Shapes drawn on a layout or master get `userDrawn="1"`, as PowerPoint
   writes it.
+- `Chart#replace_data` rebinds scatter charts from an `XyChartData` and
+  bubble charts from a `BubbleChartData`: it rewrites each series' `c:tx`,
+  `c:xVal`, `c:yVal` and `c:bubbleSize` and keeps its formatting.
+  ([#1](https://github.com/Largo/ruby_pptx/issues/1))
+
+### Changed
+
+- `Chart#replace_data` on a chart with more than one plot (a combo chart)
+  raises `Pptx::Error` when the series count changes. Series are matched to
+  plots in document order, so fewer series used to remove whole plots --
+  leaving their secondary value axis behind -- and more series were all
+  cloned into the last plot. Rebinding with the same number of series works
+  as before. ([#2](https://github.com/Largo/ruby_pptx/issues/2))
+- `Chart#replace_data` raises `Pptx::Error` when the data does not fit the
+  chart: `ChartData` for a scatter or bubble chart, `XyChartData` for a
+  category chart, or `XyChartData` without bubble sizes for a bubble chart.
 
 ### Fixed
 
+- `Chart#replace_data(ChartData)` on a scatter chart wrote a `c:ser` with
+  both `c:val` and the old `c:xVal`/`c:yVal`, which PowerPoint reports as
+  unreadable content; it now raises instead. With an `XyChartData` it raised
+  `NoMethodError`. ([#1](https://github.com/Largo/ruby_pptx/issues/1))
+- Line series in a combo chart were drawn as smoothed curves: they carried
+  no `c:smooth` of their own, which PowerPoint reads as smoothed regardless
+  of the plot's setting. Each now writes `<c:smooth val="0"/>`, as a plain
+  line chart does; `series.smooth = true` still curves one.
 - The comment on `SlideLayout::LATENT_PLACEHOLDER_TYPES` said PowerPoint
   shows those placeholders from the layout; it does not.
 
@@ -149,6 +175,7 @@ or where matching it cannot be done. Each case is listed, with its reason, in
 - Getters that write to the document in python-pptx -- data-label flags, axis
   and chart titles -- do not here.
 
+[0.3.0]: https://github.com/Largo/ruby_pptx/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Largo/ruby_pptx/releases/tag/v0.2.0
 [0.1.1]: https://github.com/Largo/ruby_pptx/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Largo/ruby_pptx/releases/tag/v0.1.0
