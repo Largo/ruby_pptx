@@ -127,7 +127,7 @@ RSpec.describe Pptx::Connector do
       io = StringIO.new
       presentation.save(io)
       reopened = Pptx::Presentation.open(StringIO.new(io.string))
-      lines = reopened.slides.first.shapes.select { |shape| shape.is_a?(described_class) }
+      lines = reopened.slides.first.shapes.grep(described_class)
       read = lines.map { |l| [[l.begin_x, l.begin_y], [l.end_x, l.end_y]] }
       expect(read).to eq(points.map { |pair| pair.map { |pt| pt.map { |v| Pptx.inches(v) } } })
     end
