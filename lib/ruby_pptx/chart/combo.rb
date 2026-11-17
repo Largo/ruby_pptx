@@ -137,12 +137,21 @@ module Pptx
       <<~XML
         <#{plot_tag(family)}>
         #{indent(body, 2).chomp}
-        #{indent(spec.series.map { |s| series_xml(s) }.join, 2).chomp}
+        #{indent(spec.series.map { |s| plot_series_xml(family, s) }.join, 2).chomp}
         #{indent(plot_tail(family, spec), 2).chomp}
           <c:axId val="#{cat_ax}"/>
           <c:axId val="#{value_ax}"/>
         </#{plot_tag(family)}>
       XML
+    end
+
+    # PowerPoint draws a line series with no c:smooth of its own as a smoothed
+    # curve, whatever the plot-level c:smooth says, so each line series turns
+    # it off explicitly -- as LineChartWriter does for a plain line chart.
+    def plot_series_xml(family, series)
+      return series_xml(series) unless family == :line
+
+      series_xml(series, extra_after_val: %(<c:smooth val="0"/>\n))
     end
 
     def plot_tag(family)

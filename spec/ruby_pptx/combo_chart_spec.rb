@@ -139,6 +139,33 @@ RSpec.describe Pptx::ComboChartBuilder do
       indices = chart.element.xpath("//c:ser/c:idx/@val").map { |a| a.value.to_i }
       expect(indices).to eq([0, 1])
     end
+
+    # PowerPoint smooths a line series that has no c:smooth of its own, so a
+    # straight line has to say so on the series, not only on the plot.
+    it "turns smoothing off on each line series" do
+      bar, line = chart.plots.map { |p| p.element.ser_list }
+      aggregate_failures do
+        expect(line.first.xpath("./c:smooth/@val").map(&:value)).to eq(["0"])
+        expect(line.first.element_children.last.nsptag).to eq("c:smooth")
+        expect(bar.first.xpath("./c:smooth")).to be_empty
+      end
+    end
+
+    # Straight is only the default: a line can still be smoothed per series,
+    # and replacing the data leaves that choice alone.
+    it "lets a line series be smoothed, and keeps that across replace_data" do
+      line = chart.series.last
+      expect(line.smooth?).to be(false)
+      line.smooth = true
+
+      fresh = Pptx::ChartData.new
+      fresh.categories = %w[Jan Feb Mar]
+      fresh.add_series("Rev2", [1, 2, 3])
+      fresh.add_series("Margin2", [0.1, 0.3, 0.2])
+      chart.replace_data(fresh)
+
+      expect(chart.series.last.smooth?).to be(true)
+    end
   end
 
   describe "the secondary axis" do

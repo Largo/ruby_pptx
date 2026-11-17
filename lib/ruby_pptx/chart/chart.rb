@@ -61,9 +61,22 @@ module Pptx
     # Replace this chart's categories and series with those in +chart_data+.
     #
     # Series-level formatting is left alone. If there are more series than
-    # before, the extra ones are cloned from the last series of the last plot
-    # so they inherit its formatting; if fewer, the surplus is removed along
-    # with any plot left empty.
+    # before, the extra ones are cloned from the last series so they inherit
+    # its formatting; if fewer, the surplus is removed from the end.
+    #
+    # The new series are matched to the existing ones in document order, plot
+    # by plot. On a chart with more than one plot (a combo chart) the series
+    # count must therefore stay the same: adding or dropping series would
+    # silently move series between plots or remove a plot with its axis and
+    # formatting, so it raises {Pptx::Error} instead.
+    #
+    # A category chart (bar, line, pie, area, ...) takes {ChartData}; a
+    # scatter chart takes {XyChartData} and a bubble chart {BubbleChartData}.
+    # Passing the wrong kind raises {Pptx::Error} rather than writing a
+    # series PowerPoint cannot read.
+    #
+    # @raise [Pptx::Error] for a data kind the chart cannot hold, or a series
+    #   count change on a multi-plot chart
     def replace_data(chart_data)
       SeriesRewriter.new(chart_data).rewrite(@element)
       part.workbook.replace_with(chart_data.xlsx_blob)
@@ -411,17 +424,62 @@ module Pptx
       # A date category's cached serial depends on the chart's date system.
       @date_1904 = chart_space.date1904&.val || false
       plot_area = chart_space.chart.plotArea
+      check_data_kind(plot_area)
       adjust_series_count(plot_area, @chart_data.series.size)
       plot_area.series_elements.zip(@chart_data.series) do |ser, series_data|
-        rewrite_series(ser, series_data)
+        xy? ? rewrite_xy_series(ser, series_data) : rewrite_series(ser, series_data)
       end
       self
     end
 
     private
 
+    def xy?
+      @chart_data.is_a?(XyChartData)
+    end
+
+    def bubble?
+      @chart_data.is_a?(BubbleChartData)
+    end
+
+    # Scatter and bubble series carry c:xVal/c:yVal(/c:bubbleSize) where a
+    # category series carries c:cat/c:val; writing one kind of data into the
+    # other kind of series leaves a c:ser PowerPoint reports as corrupt.
+    def check_data_kind(plot_area)
+      kinds = plot_area.plot_elements.map { |plot| plot_kind(plot) }.uniq
+      expected = if bubble? then :bubble
+                 elsif xy? then :scatter
+                 else :category
+                 end
+      return if kinds.empty? || kinds == [expected]
+
+      raise Error, "cannot replace the data of a #{kinds.join("/")} chart with " \
+                   "#{@chart_data.class.name}; use #{data_class_for(kinds.first)}"
+    end
+
+    def plot_kind(plot)
+      case plot.nsptag
+      when "c:scatterChart" then :scatter
+      when "c:bubbleChart" then :bubble
+      else :category
+      end
+    end
+
+    def data_class_for(kind)
+      { scatter: "Pptx::XyChartData", bubble: "Pptx::BubbleChartData",
+        category: "Pptx::ChartData" }.fetch(kind)
+    end
+
     def adjust_series_count(plot_area, wanted)
       difference = wanted - plot_area.series_elements.size
+      plots = plot_area.plot_elements.size
+      if difference.nonzero? && plots > 1
+        raise Error, "cannot change the series count of a chart with #{plots} plots " \
+                     "(#{plot_area.series_elements.size} series, #{wanted} given); " \
+                     "series map to plots in document order, so adding or removing them " \
+                     "would move series between plots or drop a plot"
+      end
+
       if difference.positive?
         clone_series(plot_area, difference)
       elsif difference.negative?
@@ -463,6 +521,18 @@ module Pptx
       ser.insert_cat(ser.build_from_xml(cat))
       ser.insert_val(ser.build_from_xml(val))
     end
+
+    def rewrite_xy_series(ser, series_data)
+      ser.remove_tx
+      ser.remove_xVal
+      ser.remove_yVal
+      ser.remove_bubbleSize
+      fragments = SeriesFragments.new(@chart_data, series_data).xy_fragments
+      ser.insert_tx(ser.build_from_xml(fragments[:tx]))
+      ser.insert_xVal(ser.build_from_xml(fragments[:x_val]))
+      ser.insert_yVal(ser.build_from_xml(fragments[:y_val]))
+      ser.insert_bubbleSize(ser.build_from_xml(fragments[:bubble_size])) if fragments[:bubble_size]
+    end
   end
 
   # Builds the `c:tx`, `c:cat` and `c:val` of one series as standalone XML.
@@ -480,6 +550,23 @@ module Pptx
     # @return [Array(String, String, String)] the tx, cat and val fragments
     def fragments
       [namespaced(tx_xml(@series)), namespaced(cat_xml(@series)), namespaced(val_xml(@series))]
+    end
+
+    # The tx, xVal, yVal and (for a bubble series) bubbleSize of a scatter or
+    # bubble series, written exactly as XyBase writes them for a new chart.
+    #
+    # @return [Hash{Symbol => String}]
+    def xy_fragments
+      fragments = {
+        tx: tx_xml(@series),
+        x_val: num_ref_xml("c:xVal", @series.x_values_ref, @series.x_values, @series.number_format),
+        y_val: num_ref_xml("c:yVal", @series.y_values_ref, @series.y_values, @series.number_format)
+      }
+      if @series.respond_to?(:bubble_sizes)
+        fragments[:bubble_size] = num_ref_xml("c:bubbleSize", @series.bubble_sizes_ref,
+                                              @series.bubble_sizes, @series.number_format)
+      end
+      fragments.transform_values { |fragment| namespaced(fragment) }
     end
 
     private

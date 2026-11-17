@@ -85,9 +85,10 @@ RSpec.describe "chart series formatting and data replacement" do
       expect(chart.series.map(&:name)).to eq(["Only"])
     end
 
-    # An empty plot element has nothing to draw and is not valid, so it goes
-    # when its last series does.
-    it "removes a plot left with no series" do
+    # Dropping series from a combo chart used to remove whole plots (and
+    # leave their secondary axis dangling); it is refused now. See
+    # chart_replace_data_spec.rb.
+    it "refuses to drop a plot of a combo chart" do
       combo = slide.shapes.add_combo_chart(
         data_of(%w[A B], [["Bars", [1, 2]], ["Line", [3, 4]]]),
         at: [0, 0], size: [Pptx.inches(6), Pptx.inches(4)]
@@ -96,12 +97,9 @@ RSpec.describe "chart series formatting and data replacement" do
         c.plot :line, series: "Line"
       end.chart
 
+      expect { combo.replace_data(data_of(%w[A], [["Bars", [1]]])) }
+        .to raise_error(Pptx::Error, /series count of a chart with 2 plots/)
       expect(combo.plots.size).to eq(2)
-      combo.replace_data(data_of(%w[A], [["Bars", [1]]]))
-      aggregate_failures do
-        expect(combo.plots.size).to eq(1)
-        expect(combo.plots.first.element.nsptag).to eq("c:barChart")
-      end
     end
 
     it "rewrites the embedded workbook too" do

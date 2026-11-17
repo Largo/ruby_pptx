@@ -148,10 +148,19 @@ data.categories = %w[Q1 Q2 Q3]
 data.add_series("Revenue", [120, 135, 150])
 data.add_series("Margin", [0.21, 0.24, 0.22])
 
-slide.shapes.add_combo_chart(data, at: [x, y], size: [w, h]) do |combo|
+chart = slide.shapes.add_combo_chart(data, at: [x, y], size: [w, h]) do |combo|
   combo.plot :column_clustered, series: "Revenue"
   combo.plot :line, series: "Margin", secondary_axis: true
-end
+end.chart
+
+# Lines are drawn straight. Smoothing is a per-series setting, as in
+# PowerPoint's "Smoothed line" checkbox, and replace_data keeps it.
+chart.series.last.smooth = true
+
+# replace_data matches series to plots in order, so on a combo chart the
+# series count must stay the same; a different count raises Pptx::Error
+# rather than dropping a plot or its secondary axis.
+chart.replace_data(new_data_with_two_series)
 ```
 
 ```ruby
