@@ -671,11 +671,17 @@ module Pptx
         XML
       end
 
+      # The series' own c:smooth decides whether its line is curved;
+      # scatterStyle only names the chart type.
+      def smooth_xml
+        %(<c:smooth val="#{SMOOTH_TYPES.include?(chart_type.name) ? 1 : 0}"/>\n)
+      end
+
       def series_blocks
         all_series_xml do |series|
           xy_series_xml(series,
                         extra_after_tx: line_suppression_xml + marker_none_xml,
-                        extra_after_values: %(<c:smooth val="0"/>\n))
+                        extra_after_values: smooth_xml)
         end
       end
     end

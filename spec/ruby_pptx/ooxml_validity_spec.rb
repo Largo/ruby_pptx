@@ -340,6 +340,19 @@ RSpec.describe "OOXML validity of what the writer produces" do
       end
     end
 
+    # The series' c:smooth, not scatterStyle, decides whether the line curves.
+    it "smooths the series of a smooth scatter chart and only those" do
+      xy = Pptx::XyChartData.new.tap do |data|
+        data.add_series("A", points: [[1, 2], [2, 5]])
+        data.add_series("B", points: [[1, 1], [2, 2]])
+      end
+      types = %i[xy_scatter_smooth xy_scatter_smooth_no_markers
+                 xy_scatter_lines xy_scatter_lines_no_markers xy_scatter]
+      types.each { |type| slide.shapes.add_chart(type, xy, at: [0, 0], size: box) }
+      smooth = (1..5).map { |n| part_xml("ppt/charts/chart#{n}.xml").scan(/<c:smooth val="(\d)"/).flatten }
+      expect(smooth).to eq([%w[1 1], %w[1 1], %w[0 0], %w[0 0], %w[0 0]])
+    end
+
     it "keeps the style it had when given one out of range" do
       chart = add_chart(:column_clustered)
       chart.chart_style = 7
@@ -367,14 +380,15 @@ RSpec.describe "OOXML validity of what the writer produces" do
   end
 
   # The divergences above, from python-pptx's side: each of these writes XML
-  # the schema rejects. Asserted so that an upstream fix shows up here.
+  # the schema rejects, or draws other than asked. Asserted so that an
+  # upstream fix shows up here.
   describe "what python-pptx 1.0.2 writes for the same calls" do
     before { require_oracle! }
 
     def python_xml(body, part)
       script = <<~PY
         from pptx.util import Inches, Emu
-        from pptx.chart.data import CategoryChartData, BubbleChartData
+        from pptx.chart.data import CategoryChartData, BubbleChartData, XyChartData
         from pptx.enum.chart import XL_CHART_TYPE
         prs = pptx.Presentation()
         slide = prs.slides.add_slide(prs.slide_layouts[6])
@@ -418,6 +432,18 @@ RSpec.describe "OOXML validity of what the writer produces" do
       PY
       aggregate_failures do
         expect(xml).to include('<c:axId val="-2112772216">')
+        expect(xml[%r{<c:ser>.*</c:ser>}m]).to include('<c:smooth val="0">')
+      end
+    end
+
+    it "writes c:smooth off in the series of a smooth scatter chart" do
+      xml = python_xml(<<~PY.strip, "ppt/charts/chart1.xml")
+        cd = XyChartData()
+        cd.add_series("S").add_data_point(1, 2)
+        slide.shapes.add_chart(XL_CHART_TYPE.XY_SCATTER_SMOOTH, 0, 0, Inches(4), Inches(3), cd)
+      PY
+      aggregate_failures do
+        expect(xml).to include('<c:scatterStyle val="smoothMarker">')
         expect(xml[%r{<c:ser>.*</c:ser>}m]).to include('<c:smooth val="0">')
       end
     end

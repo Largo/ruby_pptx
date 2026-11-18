@@ -514,6 +514,7 @@ answers.
 | `marker` on a bubble series | inherited from `XySeries`; writes a `c:marker` that `CT_BubbleSer` does not allow | raises `Pptx::Error` |
 | Chart axis ids | some negative (`-2068027336`), which `c:axId`/`c:crossAx` (`xsd:unsignedInt`) exclude | the same ids without the sign |
 | Radar chart series | each ends in `<c:smooth val="0"/>`, which `CT_RadarSer` does not allow | no `c:smooth` |
+| Smooth scatter charts (`XY_SCATTER_SMOOTH`, `..._NO_MARKERS`) | `scatterStyle="smoothMarker"` but `<c:smooth val="0"/>` in every series, and the series flag is what renderers follow: the lines come out straight | `<c:smooth val="1"/>` in every series, as PowerPoint writes it |
 | `major_unit=`/`minor_unit=` given NaN | `val="nan"`: its positive check `value <= 0.0` is false for NaN | `RangeError` |
 
 And reads that write. These python-pptx getters change the document when
@@ -613,8 +614,9 @@ runs found these, every one now pinned in `spec/ruby_pptx/ooxml_validity_spec.rb
 
 Two more came from python-pptx's chart templates: negative axis ids and a
 `c:smooth` in every radar series. They are fixed too and listed with the
-upstream bugs above. The differential specs apply both fixes to
-python-pptx's side before comparing (`without_upstream_chart_bugs` in
+upstream bugs above, along with a third the validator cannot see: smooth
+scatter series written with smoothing off. The differential specs apply
+these fixes to python-pptx's side before comparing (`without_upstream_chart_bugs` in
 `spec/support/differential.rb`), so every other byte is still held to the
 oracle.
 

@@ -131,15 +131,19 @@ module Pptx
         compare_manifests(expected, actual, ignore)
       end
 
-      # python-pptx's chart XML with the invalid bits this port writes
-      # differently put right: negative axis ids lose their sign, and radar
-      # series lose the c:smooth CT_RadarSer does not allow. See "Upstream bugs
-      # this port does not reproduce" in PORTING.md; ooxml_validity_spec.rb
-      # pins what python-pptx writes. Takes the writer's text or its C14N form.
+      # python-pptx's chart XML with the bits this port writes differently
+      # put right: negative axis ids lose their sign, radar series lose the
+      # c:smooth CT_RadarSer does not allow, and smooth scatter series are
+      # smoothed. See "Upstream bugs this port does not reproduce" in
+      # PORTING.md; ooxml_validity_spec.rb pins what python-pptx writes. Takes
+      # the writer's text or its C14N form.
       def without_upstream_chart_bugs(xml)
         xml = xml.gsub(/(<c:(?:axId|crossAx) val=")-/, '\\1')
-        xml.sub(%r{<c:radarChart>.*</c:radarChart>}m) do |plot|
+        xml = xml.sub(%r{<c:radarChart>.*</c:radarChart>}m) do |plot|
           plot.gsub(%r{[ \t]*<c:smooth val="\d"(?:/>|></c:smooth>)\n?}, "")
+        end
+        xml.sub(%r{<c:scatterChart>\s*<c:scatterStyle val="smoothMarker".*</c:scatterChart>}m) do |plot|
+          plot.gsub('<c:smooth val="0"', '<c:smooth val="1"')
         end
       end
 

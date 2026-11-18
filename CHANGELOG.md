@@ -40,6 +40,9 @@ Found by fuzzing the writer against the Open XML SDK's validator
   unsigned. The ids python-pptx writes negative are written without the sign.
 - Radar chart series no longer end in a `c:smooth`, which radar series
   cannot hold.
+- Smooth scatter charts (`:xy_scatter_smooth`,
+  `:xy_scatter_smooth_no_markers`) draw curves: their series now say
+  `<c:smooth val="1"/>`. They said `0`, so the lines came out straight.
 - `major_unit=` and `minor_unit=` refuse NaN with `RangeError`.
 - `brightness=` with any value but 0 raised `ArgumentError` ("wrong number
   of arguments") instead of adding the `a:lumMod`/`a:lumOff` adjustment. It
