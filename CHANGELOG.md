@@ -7,6 +7,8 @@ version may change the public API.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-18
+
 ### Fixed
 
 Found by fuzzing the writer against the Open XML SDK's validator
@@ -38,8 +40,9 @@ Found by fuzzing the writer against the Open XML SDK's validator
   away (`begin_connect`, `end_x=`, ...) raises before anything moves.
 - Chart axis ids are no longer negative; `c:axId` and `c:crossAx` are
   unsigned. The ids python-pptx writes negative are written without the sign.
+  ([#3](https://github.com/Largo/ruby_pptx/issues/3))
 - Radar chart series no longer end in a `c:smooth`, which radar series
-  cannot hold.
+  cannot hold. ([#3](https://github.com/Largo/ruby_pptx/issues/3))
 - Smooth scatter charts (`:xy_scatter_smooth`,
   `:xy_scatter_smooth_no_markers`) draw curves: their series now say
   `<c:smooth val="1"/>`. They said `0`, so the lines came out straight.
@@ -216,6 +219,7 @@ or where matching it cannot be done. Each case is listed, with its reason, in
 - Getters that write to the document in python-pptx -- data-label flags, axis
   and chart titles -- do not here.
 
+[0.3.1]: https://github.com/Largo/ruby_pptx/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Largo/ruby_pptx/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Largo/ruby_pptx/releases/tag/v0.2.0
 [0.1.1]: https://github.com/Largo/ruby_pptx/releases/tag/v0.1.1
