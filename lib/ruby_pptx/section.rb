@@ -57,6 +57,9 @@ module Pptx
     #
     # @return [Section]
     def add(name, slides: [])
+      # Checked before the list is created: a rejected name must not leave
+      # an empty `p14:sectionLst`, which the schema does not allow.
+      Oxml.xml_text(name)
       element = @presentation.element.get_or_add_section_list.add_section(name)
       Section.new(element, @presentation).tap do |section|
         slides.each { |slide| section << slide }

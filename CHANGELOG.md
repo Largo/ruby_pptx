@@ -7,6 +7,34 @@ version may change the public API.
 
 ## [Unreleased]
 
+### Fixed
+
+Found by fuzzing the writer against the Open XML SDK's validator
+(`.claude/skills/ooxml-fuzz`); each wrote XML the schema rejects:
+
+- A new pattern colour (`fore_color`/`back_color` on a patterned fill) and a
+  new gradient stop list (an outline gradient's `gradient_stops`) start from
+  python-pptx's defaults instead of empty.
+- A refused value no longer leaves a half-written element: `theme_color =
+  :MIXED`, a `:MIXED` data-label position, a non-positive `major_unit` and
+  the like raise and leave the XML as it was. `chart_style=` and `bullet=`
+  keep their old value when refused.
+- Control characters and U+FFFE/U+FFFF in names, core properties, notes,
+  sections, chart text and theme names raise `ArgumentError` instead of
+  producing a package PowerPoint cannot open. Run text still escapes them.
+- `gap_width=` and `overlap=` raise `Pptx::Error` on plots other than bar
+  and column (`bubble_scale=` on plots other than bubble), and a bubble
+  series' `marker` raises, instead of writing elements those charts cannot
+  hold.
+- Data labels on a line chart with markers are written in schema order.
+- `chart_style=` on a radar chart replaces its style rather than adding a
+  second one.
+- `bullet=` checks an autonumber scheme against the schema's list.
+- `gradient_angle=` writes a whole turn (720, -360) as 0.
+- A shape, chart, movie or OLE object with a negative size or one past
+  2,147,483,647 EMU raises `ArgumentError` before anything is added, and so
+  does a group that would grow that large.
+
 ## [0.3.0] - 2026-11-17
 
 ### Added

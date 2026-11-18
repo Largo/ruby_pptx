@@ -153,6 +153,7 @@ module Pptx
         return self unless nsptag == "p:grpSp"
 
         x, y, cx, cy = child_extents
+        Oxml.ext_attrs(cx, cy) # a group too big for Office raises before it changes
         chOff.x = self.x = x
         chOff.y = self.y = y
         chExt.cx = self.cx = cx

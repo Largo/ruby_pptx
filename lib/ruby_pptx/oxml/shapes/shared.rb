@@ -298,7 +298,7 @@ module Pptx
 
       def prstDash_val=(value)
         remove_custDash
-        get_or_add_prstDash.val = value
+        set_child(:prstDash, value)
       end
     end
 

@@ -259,6 +259,21 @@ module Pptx
         end
       end
 
+      # `a:buAutoNum@type`: the numbering schemes ISO/IEC 29500-1 lists.
+      class ST_TextAutonumberScheme < XsdStringEnumeration
+        SCHEMES = %w[
+          alphaLcParenBoth alphaUcParenBoth alphaLcParenR alphaUcParenR alphaLcPeriod alphaUcPeriod
+          arabicParenBoth arabicParenR arabicPeriod arabicPlain
+          romanLcParenBoth romanUcParenBoth romanLcParenR romanUcParenR romanLcPeriod romanUcPeriod
+          circleNumDbPlain circleNumWdBlackPlain circleNumWdWhitePlain arabicDbPeriod arabicDbPlain
+          ea1ChsPeriod ea1ChsPlain ea1ChtPeriod ea1ChtPlain ea1JpnChsDbPeriod ea1JpnKorPlain
+          ea1JpnKorPeriod arabic1Minus arabic2Minus hebrew2Minus
+          thaiAlphaPeriod thaiAlphaParenR thaiAlphaParenBoth thaiNumPeriod thaiNumParenR thaiNumParenBoth
+          hindiAlphaPeriod hindiNumPeriod hindiNumParenR hindiAlpha1Period
+        ].freeze
+        values(**SCHEMES.to_h { |s| [s.gsub(/([a-z])([A-Z0-9])/, '\\1_\\2').upcase.to_sym, s] })
+      end
+
       class ST_BarDir < XsdStringEnumeration
         values BAR: "bar", COL: "col"
       end
@@ -488,7 +503,9 @@ module Pptx
           elsif degrees > 0.0
             degrees %= 360
           end
-          round_half_even(degrees * DEGREE_INCREMENTS).to_s
+          # Normalized again after rounding: 720 degrees, or 359.99999, would
+          # otherwise come out as 21600000, which the type excludes.
+          (round_half_even(degrees * DEGREE_INCREMENTS) % (360 * DEGREE_INCREMENTS)).to_s
         end
       end
 

@@ -220,8 +220,8 @@ module Pptx
       end
 
       def horz_offset=(offset)
-        get_or_add_xMode.val = SimpleTypes::ST_LayoutMode::FACTOR
-        get_or_add_x.val = offset
+        set_child(:xMode, SimpleTypes::ST_LayoutMode::FACTOR)
+        set_child(:x, offset)
       end
     end
 
@@ -306,7 +306,7 @@ module Pptx
 
       def maximum=(value)
         remove_max
-        get_or_add_max.val = value unless value.nil?
+        set_child(:max, value) unless value.nil?
       end
 
       def minimum
@@ -315,7 +315,7 @@ module Pptx
 
       def minimum=(value)
         remove_min
-        get_or_add_min.val = value unless value.nil?
+        set_child(:min, value) unless value.nil?
       end
     end
 
@@ -353,7 +353,7 @@ module Pptx
         scaling.remove_orientation
         return unless value == SimpleTypes::ST_Orientation::MAX_MIN
 
-        scaling.get_or_add_orientation.val = value
+        scaling.set_child(:orientation, value)
       end
 
       def new_title
@@ -683,14 +683,19 @@ module Pptx
       tag "c:barChart", "c:lineChart", "c:pieChart", "c:doughnutChart",
           "c:areaChart", "c:radarChart", "c:scatterChart", "c:bubbleChart", "c:area3DChart"
 
-      zero_or_one "c:barDir", successors: %w[c:grouping c:varyColors c:ser c:dLbls
-                                             c:gapWidth c:overlap c:serLines c:axId c:extLst]
-      zero_or_one "c:grouping", successors: %w[c:varyColors c:ser c:dLbls c:gapWidth
-                                               c:overlap c:serLines c:axId c:extLst]
-      zero_or_one "c:varyColors", successors: %w[c:ser c:dLbls c:gapWidth c:overlap
-                                                 c:serLines c:axId c:extLst]
-      zero_or_one "c:dLbls", successors: %w[c:dropLines c:gapWidth c:overlap c:serLines
-                                            c:bubble3D c:bubbleScale c:axId c:extLst]
+      # Everything any plot type allows after its series and data labels.
+      # One list serves them all because no two of these appear in a
+      # different order in different plots; missing `c:marker` and
+      # `c:smooth` put a line chart's labels after them, out of order.
+      AFTER_DLBLS = %w[c:dropLines c:hiLowLines c:upDownBars c:marker c:smooth c:gapWidth
+                       c:gapDepth c:overlap c:serLines c:shape c:firstSliceAng c:holeSize
+                       c:bubble3D c:bubbleScale c:showNegBubbles c:sizeRepresents
+                       c:axId c:extLst].freeze
+
+      zero_or_one "c:barDir", successors: ["c:grouping", "c:varyColors", "c:ser", "c:dLbls", *AFTER_DLBLS]
+      zero_or_one "c:grouping", successors: ["c:varyColors", "c:ser", "c:dLbls", *AFTER_DLBLS]
+      zero_or_one "c:varyColors", successors: ["c:ser", "c:dLbls", *AFTER_DLBLS]
+      zero_or_one "c:dLbls", successors: AFTER_DLBLS
       zero_or_one "c:gapWidth", successors: %w[c:overlap c:serLines c:axId c:extLst]
       zero_or_one "c:overlap", successors: %w[c:serLines c:axId c:extLst]
       zero_or_one "c:bubbleScale", successors: %w[c:showNegBubbles c:sizeRepresents c:axId
@@ -836,6 +841,17 @@ module Pptx
 
       def series_elements
         xpath("./c:chart/c:plotArea/*/c:ser")
+      end
+
+      # The radar template, like PowerPoint, carries its style in an
+      # `mc:AlternateContent` -- `c14:style`, falling back to `c:style`.
+      # Setting a style has to replace that too, or the chart ends up with
+      # two styles and the second is out of schema order.
+      def remove_style_alternate_content
+        element_children
+          .select { |child| child.clark_name.end_with?("}AlternateContent") }
+          .select { |child| child.xpath(".//c:style").any? }
+          .each { |child| remove(child) }
       end
     end
 

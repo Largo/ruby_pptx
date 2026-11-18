@@ -124,7 +124,10 @@ module Pptx
       element.val
     end
 
+    # Raises ArgumentError for a member with no theme colour behind it
+    # (NOT_THEME_COLOR, MIXED) before anything is written.
     def theme_color=(value)
+      Enum::MSO_THEME_COLOR.to_xml(value)
       @parent.get_or_change_to_schemeClr.val = Enum::MSO_THEME_COLOR.fetch(value)
     end
 

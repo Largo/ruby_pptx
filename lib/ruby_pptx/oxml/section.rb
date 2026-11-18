@@ -60,7 +60,7 @@ module Pptx
       end
 
       def escape(text)
-        text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
+        Oxml.xml_text(text).gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
       end
     end
   end

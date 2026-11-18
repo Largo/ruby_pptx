@@ -288,7 +288,7 @@ module Pptx
       end
 
       def escape(text)
-        text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
+        Oxml.xml_text(text).gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
       end
 
       def all_series_xml(&)

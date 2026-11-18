@@ -41,8 +41,10 @@ module Pptx
     end
 
     def chart_style=(value)
+      Oxml::SimpleTypes::ST_Style.validate(value) unless value.nil? # before the old style goes
       @element.remove_style
-      @element.get_or_add_style.val = value unless value.nil?
+      @element.remove_style_alternate_content
+      @element.set_child(:style, value) unless value.nil?
     end
 
     # The default font for all text in the chart, created on first use.
@@ -118,7 +120,7 @@ module Pptx
       case value
       when nil, false
         chart_element.remove_title
-        chart_element.get_or_add_autoTitleDeleted.val = true
+        chart_element.set_child(:autoTitleDeleted, true)
       when true then chart_element.get_or_add_title
       else ChartTitle.new(chart_element.get_or_add_title).text = value
       end
@@ -370,7 +372,7 @@ module Pptx
     end
 
     def invert_if_negative=(value)
-      @element.get_or_add_invertIfNegative.val = value ? true : false
+      @element.set_child(:invertIfNegative, value ? true : false)
     end
   end
 
@@ -385,7 +387,7 @@ module Pptx
     end
 
     def smooth=(value)
-      @element.get_or_add_smooth.val = value ? true : false
+      @element.set_child(:smooth, value ? true : false)
     end
   end
 
@@ -408,6 +410,13 @@ module Pptx
   end
 
   class BubbleSeriesView < XySeriesView
+    # python-pptx's BubbleSeries inherits a marker from XySeries, but a
+    # bubble series (CT_BubbleSer) cannot hold one: writing it made the chart
+    # invalid. The method stays, so the API keeps python-pptx's shape.
+    def marker
+      raise Error, "a bubble series has no marker; its bubbles are sized by the data"
+    end
+
     def points
       counts = [@element.xVal_ptCount_val, @element.yVal_ptCount_val, @element.bubbleSize_ptCount_val]
       ChartPoints.new(@element, counts.min)
@@ -496,8 +505,8 @@ module Pptx
       next_index = plot_area.series_elements.size
       count.times do |offset|
         copy = last.parent.import(last)
-        copy.get_or_add_idx.val = next_index + offset
-        copy.get_or_add_order.val = next_index + offset
+        copy.set_child(:idx, next_index + offset)
+        copy.set_child(:order, next_index + offset)
         last.add_next_sibling(copy)
         last = copy
       end

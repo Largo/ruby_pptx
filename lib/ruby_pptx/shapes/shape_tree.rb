@@ -342,12 +342,27 @@ module Pptx
     #
     # @return [GroupShape]
     def add_group_shape(shapes = [])
+      check_group_extent(shapes)
       grp_sp = @sp_tree.add_grpSp
       shapes.each { |shape| grp_sp.insert_element_before(shape.element, "p:extLst") }
       grp_sp.recalculate_extents unless shapes.empty?
       recalculate_extents
       drawn(grp_sp)
     end
+
+    # A group's size is its members' bounding box, which Office reads as a
+    # 32-bit value. Checked before anything moves, so a refused group leaves
+    # its would-be members where they were.
+    def check_group_extent(shapes)
+      return if shapes.empty?
+
+      lefts = shapes.map { |shape| shape.left.to_i }
+      tops = shapes.map { |shape| shape.top.to_i }
+      rights = shapes.map { |shape| shape.left.to_i + shape.width.to_i }
+      bottoms = shapes.map { |shape| shape.top.to_i + shape.height.to_i }
+      Oxml.ext_attrs(rights.max - lefts.min, bottoms.max - tops.min)
+    end
+    private :check_group_extent
 
     private
 
@@ -395,6 +410,7 @@ module Pptx
                   content_type: Video::UNKNOWN_CONTENT_TYPE)
       left, top = at
       width, height = size
+      Oxml.ext_attrs(width, height) # before any part is added for it
       video = Video.from_file(movie_file, content_type)
       media_r_id, video_r_id = part.get_or_add_video_media_part(video)
       _poster_part, poster_r_id = part.get_or_add_image_part(poster_frame || default_poster_frame)
@@ -413,6 +429,7 @@ module Pptx
     def add_chart(chart_type, chart_data, at:, size:)
       left, top = at
       width, height = size
+      Oxml.ext_attrs(width, height) # before any part is added for it
       r_id = part.add_chart_part(chart_type, chart_data)
       id = next_shape_id
       frame = @sp_tree.add_graphic_frame_chart(id, "Chart #{id - 1}", r_id,
@@ -439,6 +456,7 @@ module Pptx
 
       left, top = at
       width, height = size
+      Oxml.ext_attrs(width, height) # before any part is added for it
       r_id = part.add_combo_chart_part(builder)
       id = next_shape_id
       frame = @sp_tree.add_graphic_frame_chart(id, "Chart #{id - 1}", r_id,
@@ -489,6 +507,7 @@ module Pptx
                                  default_size
                                end)
       icon_width, icon_height = icon_size || default_size
+      Oxml.ext_attrs(width, height) && Oxml.ext_attrs(icon_width, icon_height) # before any part is added
       ole_r_id = part.add_embedded_ole_object_part(prog_id, object_file)
       _icon_part, icon_r_id = part.get_or_add_image_part(icon_file || default_ole_icon(prog_id))
       id = next_shape_id
@@ -582,9 +601,23 @@ module Pptx
     private
 
     # Adding to a group changes where the group sits and how big it is.
+    #
+    # When the new shape would stretch this group, or one around it, past
+    # what Office reads, it is taken out again -- a group it formed gives its
+    # members back -- and the extents return to what they were.
     def recalculate_extents
       @sp_tree.recalculate_extents
       nil
+    rescue ArgumentError
+      newest = @sp_tree.shape_elements.to_a.last
+      if newest.nsptag == "p:grpSp"
+        newest.shape_elements.each do |member|
+          @sp_tree.insert_element_before(member, "p:extLst")
+        end
+      end
+      @sp_tree.remove(newest)
+      @sp_tree.recalculate_extents
+      raise
     end
   end
 

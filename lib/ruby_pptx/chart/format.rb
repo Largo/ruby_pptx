@@ -41,7 +41,7 @@ module Pptx
     end
 
     def position=(value)
-      @element.get_or_add_legendPos.val = Enum::XL_LEGEND_POSITION.fetch(value)
+      @element.set_child(:legendPos, Enum::XL_LEGEND_POSITION.fetch(value))
     end
 
     # How far the legend is shifted sideways, as a fraction of the chart
@@ -65,7 +65,7 @@ module Pptx
       if value.nil?
         @element.remove_overlay
       else
-        @element.get_or_add_overlay.val = value ? true : false
+        @element.set_child(:overlay, value ? true : false)
       end
     end
 
@@ -160,7 +160,7 @@ module Pptx
       @element.remove_lblOffset
       return if value == 100
 
-      @element.get_or_add_lblOffset.val = value
+      @element.set_child(:lblOffset, value)
     end
   end
 
@@ -185,7 +185,7 @@ module Pptx
         raise ArgumentError, "visible must be true or false, got #{value.inspect}"
       end
 
-      @element.get_or_add_delete.val = !value
+      @element.set_child(:delete, !value)
     end
 
     def major_gridlines?
@@ -263,7 +263,7 @@ module Pptx
     end
 
     def tick_label_position=(value)
-      @element.get_or_add_tickLblPos.val = Enum::XL_TICK_LABEL_POSITION.fetch(value)
+      @element.set_child(:tickLblPos, Enum::XL_TICK_LABEL_POSITION.fetch(value))
     end
 
     # The labels along the axis.
@@ -350,9 +350,9 @@ module Pptx
       axis.remove_crosses
       axis.remove_crossesAt
       if member == Enum::XL_AXIS_CROSSES::CUSTOM
-        axis.get_or_add_crossesAt.val = 0.0
+        axis.set_child(:crossesAt, 0.0)
       else
-        axis.get_or_add_crosses.val = member
+        axis.set_child(:crosses, member)
       end
     end
 
@@ -365,7 +365,7 @@ module Pptx
       axis = cross_axis
       axis.remove_crosses
       axis.remove_crossesAt
-      axis.get_or_add_crossesAt.val = value unless value.nil?
+      axis.set_child(:crossesAt, value) unless value.nil?
     end
 
     # The distance between major tick marks, or nil when automatic.
@@ -375,7 +375,7 @@ module Pptx
 
     def major_unit=(value)
       @element.remove_majorUnit
-      @element.get_or_add_majorUnit.val = value unless value.nil?
+      @element.set_child(:majorUnit, value) unless value.nil?
     end
 
     def minor_unit
@@ -384,7 +384,7 @@ module Pptx
 
     def minor_unit=(value)
       @element.remove_minorUnit
-      @element.get_or_add_minorUnit.val = value unless value.nil?
+      @element.set_child(:minorUnit, value) unless value.nil?
     end
 
     private
@@ -457,7 +457,7 @@ module Pptx
       if value.nil?
         @element.remove_dLblPos
       else
-        @element.get_or_add_dLblPos.val = Enum::XL_DATA_LABEL_POSITION.fetch(value)
+        @element.set_child(:dLblPos, Enum::XL_DATA_LABEL_POSITION.fetch(value))
       end
     end
 
@@ -501,7 +501,7 @@ module Pptx
       if value.nil?
         @ser.dLbl_for_point(@idx)&.remove_dLblPos
       else
-        label_element.get_or_add_dLblPos.val = Enum::XL_DATA_LABEL_POSITION.fetch(value)
+        label_element.set_child(:dLblPos, Enum::XL_DATA_LABEL_POSITION.fetch(value))
       end
     end
 
@@ -532,7 +532,7 @@ module Pptx
     def size=(value)
       marker = @element.get_or_add_marker
       marker.remove_size
-      marker.get_or_add_size.val = value unless value.nil?
+      marker.set_child(:size, value) unless value.nil?
     end
 
     # @return [Pptx::Enum::Member, nil] a member of XL_MARKER_STYLE
@@ -543,7 +543,7 @@ module Pptx
     def style=(value)
       marker = @element.get_or_add_marker
       marker.remove_symbol
-      marker.get_or_add_symbol.val = Enum::XL_MARKER_STYLE.fetch(value) unless value.nil?
+      marker.set_child(:symbol, Enum::XL_MARKER_STYLE.fetch(value)) unless value.nil?
     end
   end
 
@@ -629,8 +629,18 @@ module Pptx
       @element.gapWidth&.val || 150
     end
 
+    # Which plots may carry each option. python-pptx puts gap width and
+    # overlap on its BarPlot only and bubble scale on BubblePlot; written
+    # into any other plot they make the chart invalid.
+    OPTION_PLOTS = {
+      gap_width: %w[c:barChart c:bar3DChart c:ofPieChart],
+      overlap: %w[c:barChart],
+      bubble_scale: %w[c:bubbleChart]
+    }.freeze
+
     def gap_width=(value)
-      @element.get_or_add_gapWidth.val = value
+      require_option!(:gap_width)
+      @element.set_child(:gapWidth, value)
     end
 
     # How far bars in a group overlap, -100 to 100. Zero is written by
@@ -640,10 +650,11 @@ module Pptx
     end
 
     def overlap=(value)
+      require_option!(:overlap)
       if value.zero?
         @element.remove_overlap
       else
-        @element.get_or_add_overlap.val = value
+        @element.set_child(:overlap, value)
       end
     end
 
@@ -654,8 +665,9 @@ module Pptx
 
     # nil returns to the default.
     def bubble_scale=(value)
+      require_option!(:bubble_scale)
       @element.remove_bubbleScale
-      @element.get_or_add_bubbleScale.val = value unless value.nil?
+      @element.set_child(:bubbleScale, value) unless value.nil?
     end
 
     # Whether each data point gets its own colour, as a pie does. An absent
@@ -665,7 +677,7 @@ module Pptx
     end
 
     def vary_by_categories=(value)
-      @element.get_or_add_varyColors.val = value ? true : false
+      @element.set_child(:varyColors, value ? true : false)
     end
 
     # Whether this plot shows data labels at all.
@@ -692,6 +704,14 @@ module Pptx
 
     def inspect
       "#<Pptx::ChartPlot #{@element.nsptag}>"
+    end
+
+    private
+
+    def require_option!(option)
+      return if OPTION_PLOTS.fetch(option).include?(@element.nsptag)
+
+      raise Error, "a #{@element.nsptag} plot has no #{option.to_s.tr("_", " ")}"
     end
   end
 

@@ -212,7 +212,7 @@ module Pptx
     end
 
     def escape(value)
-      value.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
+      Oxml.xml_text(value).gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
     end
   end
 end
