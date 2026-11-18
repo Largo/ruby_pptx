@@ -9,6 +9,43 @@ module Pptx
     # - prefixed, `"p:cSld"`               -- how the spec and this code talk
     # - Clark, `"{http://...}cSld"`        -- unambiguous, used as registry keys
     # - a backend node, name + namespace  -- what the parser hands back
+    # Characters XML 1.0 allows in a document. Anything else -- C0 controls
+    # other than tab, newline and carriage return, U+FFFE and U+FFFF -- makes
+    # the part unparseable, and PowerPoint refuses the whole file.
+    XML_CHAR_INVALID = /[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/
+
+    # +text+ unchanged, or ArgumentError when it holds a character XML cannot
+    # carry. lxml raises the same way under python-pptx; run text is the one
+    # place that escapes control characters instead (as `_xHHHH_`).
+    def self.xml_text(text)
+      text = text.to_s
+      unless text.valid_encoding?
+        raise ArgumentError, "not XML compatible: #{text.encoding} string has invalid bytes"
+      end
+
+      if (bad = text[XML_CHAR_INVALID])
+        raise ArgumentError, format("not XML compatible: contains U+%04X in %p", bad.ord, text[0, 60])
+      end
+
+      text
+    end
+
+    # The largest extent Office reads: a shape's width and height are 32-bit
+    # signed in PowerPoint and in the Open XML SDK's schema, though
+    # ST_PositiveCoordinate itself would allow more. 2,349 inches.
+    MAX_EXTENT = 2_147_483_647
+
+    # The `cx="…" cy="…"` attributes of an `a:ext`, or ArgumentError for a
+    # size no consumer can read -- negative, or past {MAX_EXTENT}.
+    def self.ext_attrs(cx, cy)
+      [cx, cy].each do |value|
+        next if value.to_i.between?(0, MAX_EXTENT)
+
+        raise ArgumentError, "shape width and height must be 0 to #{MAX_EXTENT} EMU, got #{value.to_i}"
+      end
+      %(cx="#{cx.to_i}" cy="#{cy.to_i}")
+    end
+
     module Ns
       NSMAP = {
         "a" => "http://schemas.openxmlformats.org/drawingml/2006/main",

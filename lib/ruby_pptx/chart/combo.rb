@@ -90,10 +90,10 @@ module Pptx
   # category axis with it -- a hidden one, since the categories are already
   # drawn by the primary pair.
   class ComboChartWriter < ChartXmlWriter::Base
-    CAT_AX_ID = "-2068027336"
-    VAL_AX_ID = "-2113994440"
-    SECONDARY_CAT_AX_ID = "-2068027337"
-    SECONDARY_VAL_AX_ID = "-2113994441"
+    CAT_AX_ID = "2068027336"
+    VAL_AX_ID = "2113994440"
+    SECONDARY_CAT_AX_ID = "2068027337"
+    SECONDARY_VAL_AX_ID = "2113994441"
 
     def initialize(builder)
       super(nil, builder.chart_data)

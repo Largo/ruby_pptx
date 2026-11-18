@@ -77,6 +77,14 @@ module Pptx
       def self.new_grad_fill(context)
         context.build_from_xml(DEFAULT_XML)
       end
+
+      # python-pptx's `_new_gsLst`: a stop list starts with the default's two
+      # stops, since `a:gsLst` needs at least two. An outline's gradient
+      # starts empty, so asking for its stops is what creates the list.
+      def new_gsLst
+        stops = DEFAULT_XML[%r{<a:gsLst>.*</a:gsLst>}m]
+        build_from_xml(stops.sub("<a:gsLst>", "<a:gsLst #{Ns.nsdecls("a")}>"))
+      end
     end
 
     # `a:blip`, the image reference inside a picture fill.
@@ -136,6 +144,16 @@ module Pptx
       zero_or_one "a:fgClr", successors: %w[a:bgClr]
       zero_or_one "a:bgClr", successors: []
       optional_attr "prst", type: Enum::MSO_PATTERN_TYPE
+
+      # A colour slot must hold a colour, so each starts with python-pptx's:
+      # black in front, white behind. An empty `a:fgClr` is schema-invalid.
+      def new_fgClr
+        build_from_xml(%(<a:fgClr #{Ns.nsdecls("a")}><a:srgbClr val="000000"/></a:fgClr>))
+      end
+
+      def new_bgClr
+        build_from_xml(%(<a:bgClr #{Ns.nsdecls("a")}><a:srgbClr val="FFFFFF"/></a:bgClr>))
+      end
     end
   end
 end

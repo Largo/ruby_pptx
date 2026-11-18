@@ -508,6 +508,14 @@ answers.
 | An empty category label, `<c:v/>` | reads as the string `"None"`: lxml gives the empty text as `None` and the str-subclass `Category` is built from it | `""` |
 | An axis with no `c:delete` at all | reported hidden | reported visible, which is what the schema and PowerPoint mean. python-pptx always writes `c:delete`, so this only shows on files from elsewhere |
 | An EMF image, including the default OLE icons | stored as `imageN.wmf`, `image/x-wmf`: Pillow reports EMF and WMF alike as "WMF" | stored as `imageN.emf`, `image/x-emf`, as PowerPoint stores it. Size and resolution agree with Pillow's |
+| `gradient_angle` a whole turn from zero (720, -360) | `ang="21600000"`, which `ST_PositiveFixedAngle` excludes: it normalizes before rounding | `ang="0"` |
+| A negative shape size, or one past 2,147,483,647 EMU | written as given; the file is invalid | `ArgumentError`, before any shape or part is added; `width=`/`height=` raise `RangeError`, and a connector end moved that far raises before it moves |
+| `chart_style=` on a radar chart | adds a second `c:style` after the template's `mc:AlternateContent` one | replaces it |
+| `marker` on a bubble series | inherited from `XySeries`; writes a `c:marker` that `CT_BubbleSer` does not allow | raises `Pptx::Error` |
+| Chart axis ids | some negative (`-2068027336`), which `c:axId`/`c:crossAx` (`xsd:unsignedInt`) exclude | the same ids without the sign |
+| Radar chart series | each ends in `<c:smooth val="0"/>`, which `CT_RadarSer` does not allow | no `c:smooth` |
+| Smooth scatter charts (`XY_SCATTER_SMOOTH`, `..._NO_MARKERS`) | `scatterStyle="smoothMarker"` but `<c:smooth val="0"/>` in every series, and the series flag is what renderers follow: the lines come out straight | `<c:smooth val="1"/>` in every series, as PowerPoint writes it |
+| `major_unit=`/`minor_unit=` given NaN | `val="nan"`: its positive check `value <= 0.0` is false for NaN | `RangeError` |
 
 And reads that write. These python-pptx getters change the document when
 called, which this gem's never do; the value read is the same, the file is
@@ -559,6 +567,58 @@ at the output:
   axis without error.
 - **Two tags each had two classes** -- `c:tx` and `a:ext` -- and whichever
   loaded last won. The registry now refuses a second class for a tag.
+
+## Bugs found by fuzzing against the Open XML SDK
+
+`.claude/skills/ooxml-fuzz` builds seeded random decks through the public
+API and validates each with the Open XML SDK's `OpenXmlValidator`. The
+differential specs only see call sequences someone wrote down; its first
+runs found these, every one now pinned in `spec/ruby_pptx/ooxml_validity_spec.rb`:
+
+- **Ports left out python-pptx's minimum subtrees.** A new `a:fgClr`/`a:bgClr`
+  starts black/white and a new `a:gsLst` with the two default stops in
+  python-pptx; here they were empty, which the schema rejects. Asking for a
+  pattern's back colour, or an outline gradient's stops, wrote invalid XML.
+- **A refused value left half an element behind.** `get_or_add_X.val = v`
+  creates the child, then the value conversion raises: `theme_color = :MIXED`
+  left `<a:schemeClr/>`, a data-label position of `:MIXED` an empty
+  `c:dLblPos`, a negative `major_unit` an empty `c:majorUnit`. Every such
+  call now goes through `Element#set_child`, which removes a child it created
+  when the value is refused. `chart_style=` and `bullet=` check before they
+  remove the old value.
+- **Characters XML cannot carry reached the package.** Control characters
+  and U+FFFE/U+FFFF in a name, a core property, notes, a section, a chart
+  category or a theme made the part unparseable; Nokogiri then failed when
+  the library re-read its own XML. They now raise `ArgumentError` where text
+  and attributes are set and where XML is assembled from strings, as lxml
+  raises `ValueError` under python-pptx. Run text still escapes them as
+  `_xHHHH_`, as python-pptx does.
+- **One plot class allowed every option on every plot.** `gap_width=` and
+  `overlap=` wrote into line, pie, area, radar, scatter and bubble plots;
+  they now raise `Pptx::Error` there, as python-pptx has them on `BarPlot`
+  only (`bubble_scale=` likewise on bubble plots).
+- **`c:dLbls` went after `c:marker`/`c:smooth` in a line chart**, which
+  follow it in the schema; the plot's successor list now names every element
+  any plot type allows after its labels.
+- **`bullet = :anything` was written as given**; it is now checked against
+  `ST_TextAutonumberScheme`.
+- **Groups could outgrow what Office reads**: a group's members, or a shape
+  added into a group, can no longer stretch it past 2,147,483,647 EMU.
+- **`brightness=` never worked.** `zero_or_one` skips a method that is
+  already defined, so `BaseColorElement#add_lumMod(value)` replaced the
+  generated adder, and the generated `get_or_add_lumMod` called it with no
+  argument. The fuzzer had filed the `ArgumentError` as a refused value; it
+  now treats "wrong number of arguments" as a crash.
+- **A NaN axis unit was written as `val="NaN"`**: `ST_AxisUnit` tested
+  `value <= 0.0`, which NaN passes.
+
+Two more came from python-pptx's chart templates: negative axis ids and a
+`c:smooth` in every radar series. They are fixed too and listed with the
+upstream bugs above, along with a third the validator cannot see: smooth
+scatter series written with smoothing off. The differential specs apply
+these fixes to python-pptx's side before comparing (`without_upstream_chart_bugs` in
+`spec/support/differential.rb`), so every other byte is still held to the
+oracle.
 
 ## Packaging: the gem owns `lib/ruby_pptx`
 

@@ -34,15 +34,21 @@ module Pptx
 
       private
 
+      # Built, given its value, then inserted, so a refused value adds
+      # nothing. Not through get_or_add_*: that calls add_lumMod with no
+      # argument, which is the one-argument method above, not the generated
+      # adder.
       def add_lumMod_element(value)
-        el = get_or_add_lumMod
+        el = new_lumMod
         el.val = value
+        insert_lumMod(el)
         el
       end
 
       def add_lumOff_element(value)
-        el = get_or_add_lumOff
+        el = new_lumOff
         el.val = value
+        insert_lumOff(el)
         el
       end
     end

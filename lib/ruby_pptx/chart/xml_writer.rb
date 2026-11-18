@@ -288,7 +288,7 @@ module Pptx
       end
 
       def escape(text)
-        text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
+        Oxml.xml_text(text).gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
       end
 
       def all_series_xml(&)
@@ -298,8 +298,12 @@ module Pptx
 
     # `c:barChart`: clustered, stacked and 100% stacked bars and columns.
     class BarChartWriter < Base
-      CAT_AX_ID = "-2068027336"
-      VAL_AX_ID = "-2113994440"
+      # The axis ids here and in every other family are python-pptx's with
+      # the sign dropped. python-pptx writes some negative, which `c:axId` and
+      # `c:crossAx` (xsd:unsignedInt, at most 2**31 - 1 in Office) do not
+      # allow. Only the pairing of each axId with its crossAx matters.
+      CAT_AX_ID = "2068027336"
+      VAL_AX_ID = "2113994440"
 
       BAR_TYPES = %i[BAR_CLUSTERED BAR_STACKED BAR_STACKED_100].freeze
 
@@ -606,8 +610,8 @@ module Pptx
 
     # `c:scatterChart`, points at (x, y) with optional lines.
     class XyChartWriter < XyBase
-      X_AX_ID = "-2128940872"
-      Y_AX_ID = "-2129643912"
+      X_AX_ID = "2128940872"
+      Y_AX_ID = "2129643912"
 
       SMOOTH_TYPES = %i[XY_SCATTER_SMOOTH XY_SCATTER_SMOOTH_NO_MARKERS].freeze
       NO_MARKER_TYPES = %i[XY_SCATTER_LINES_NO_MARKERS XY_SCATTER_SMOOTH_NO_MARKERS].freeze
@@ -667,19 +671,25 @@ module Pptx
         XML
       end
 
+      # The series' own c:smooth decides whether its line is curved;
+      # scatterStyle only names the chart type.
+      def smooth_xml
+        %(<c:smooth val="#{SMOOTH_TYPES.include?(chart_type.name) ? 1 : 0}"/>\n)
+      end
+
       def series_blocks
         all_series_xml do |series|
           xy_series_xml(series,
                         extra_after_tx: line_suppression_xml + marker_none_xml,
-                        extra_after_values: %(<c:smooth val="0"/>\n))
+                        extra_after_values: smooth_xml)
         end
       end
     end
 
     # `c:bubbleChart`, points at (x, y) sized by a third value.
     class BubbleChartWriter < XyBase
-      X_AX_ID = "-2115720072"
-      Y_AX_ID = "-2115723560"
+      X_AX_ID = "2115720072"
+      Y_AX_ID = "2115723560"
 
       def xml
         <<~XML
@@ -736,8 +746,8 @@ module Pptx
 
     # `c:areaChart`, filled bands under each series.
     class AreaChartWriter < Base
-      CAT_AX_ID = "-2101159928"
-      VAL_AX_ID = "-2100718248"
+      CAT_AX_ID = "2101159928"
+      VAL_AX_ID = "2100718248"
 
       GROUPINGS = {
         AREA: "standard", AREA_STACKED: "stacked", AREA_STACKED_100: "percentStacked"
@@ -835,7 +845,7 @@ module Pptx
     # `c:radarChart`, values plotted on spokes around a centre.
     class RadarChartWriter < Base
       CAT_AX_ID = "2073612648"
-      VAL_AX_ID = "-2112772216"
+      VAL_AX_ID = "2112772216"
 
       # A radar chart carries a style hint PowerPoint 2007 did not understand,
       # so it is written inside an AlternateContent block with a plain
@@ -934,8 +944,7 @@ module Pptx
 
       def series_blocks
         all_series_xml do |series|
-          series_xml(series, extra_before_cat: marker_none_xml,
-                             extra_after_val: %(<c:smooth val="0"/>\n))
+          series_xml(series, extra_before_cat: marker_none_xml)
         end
       end
     end

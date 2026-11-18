@@ -112,7 +112,7 @@ module Pptx
             <p:spPr>
               <a:xfrm>
                 <a:off x="#{x.to_i}" y="#{y.to_i}"/>
-                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+                <a:ext #{Oxml.ext_attrs(cx, cy)}/>
               </a:xfrm>
               <a:prstGeom prst="rect">
                 <a:avLst/>
@@ -156,7 +156,7 @@ module Pptx
             <p:spPr>
               <a:xfrm>
                 <a:off x="#{x.to_i}" y="#{y.to_i}"/>
-                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+                <a:ext #{Oxml.ext_attrs(cx, cy)}/>
               </a:xfrm>
               <a:prstGeom prst="rect">
                 <a:avLst/>
@@ -167,7 +167,7 @@ module Pptx
       end
 
       def self.escape(text)
-        text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
+        Oxml.xml_text(text).gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;").gsub('"', "&quot;")
       end
 
       private
@@ -238,7 +238,7 @@ module Pptx
             <p:spPr>
               <a:xfrm#{flip}>
                 <a:off x="#{x.to_i}" y="#{y.to_i}"/>
-                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+                <a:ext #{Oxml.ext_attrs(cx, cy)}/>
               </a:xfrm>
               <a:prstGeom prst="#{prst}">
                 <a:avLst/>
@@ -346,7 +346,7 @@ module Pptx
               </p:nvGraphicFramePr>
               <p:xfrm>
                 <a:off x="#{x.to_i}" y="#{y.to_i}"/>
-                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+                <a:ext #{Oxml.ext_attrs(cx, cy)}/>
               </p:xfrm>
               <a:graphic>
                 <a:graphicData uri="#{URI_OLE_OBJECT}">
@@ -367,7 +367,7 @@ module Pptx
                       <p:spPr>
                         <a:xfrm>
                           <a:off x="#{x.to_i}" y="#{y.to_i}"/>
-                          <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+                          <a:ext #{Oxml.ext_attrs(cx, cy)}/>
                         </a:xfrm>
                         <a:prstGeom prst="rect">
                           <a:avLst/>
@@ -395,7 +395,7 @@ module Pptx
               </p:nvGraphicFramePr>
               <p:xfrm>
                 <a:off x="#{x.to_i}" y="#{y.to_i}"/>
-                <a:ext cx="#{cx.to_i}" cy="#{cy.to_i}"/>
+                <a:ext #{Oxml.ext_attrs(cx, cy)}/>
               </p:xfrm>
               <a:graphic>
                 <a:graphicData/>

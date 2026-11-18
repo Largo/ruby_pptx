@@ -255,7 +255,7 @@ module Pptx
       end
 
       def text=(value)
-        BACKEND.set_text(@node, value.to_s)
+        BACKEND.set_text(@node, Oxml.xml_text(value))
       end
 
       # Declare +prefix+ on this element even if nothing uses it yet.
@@ -282,8 +282,24 @@ module Pptx
         BACKEND.get_attribute_ns(@node, local, Ns.nsuri(pfx))
       end
 
+      # Set attribute +attr+ of optional child +name+, creating the child if
+      # it is absent. When the value is refused -- out of range, not a member
+      # of the enumeration -- a child created for it is removed again, so a
+      # rejected assignment never leaves an element without its required
+      # attribute behind.
+      def set_child(name, value, attr: :val)
+        existing = public_send(name)
+        child = existing || public_send("get_or_add_#{name}")
+        child.public_send("#{attr}=", value)
+        child
+      rescue StandardError
+        public_send("remove_#{name}") if existing.nil? && child
+        raise
+      end
+
       def set(attr_name, value)
         pfx, local = prefixed_attr_parts(attr_name)
+        Oxml.xml_text(value)
         if pfx
           BACKEND.set_attribute_ns(@node, pfx, local, Ns.nsuri(pfx), value.to_s)
         else

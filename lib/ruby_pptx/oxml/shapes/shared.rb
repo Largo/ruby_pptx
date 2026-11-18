@@ -156,8 +156,8 @@ module Pptx
     # only its own half.
     class CT_PositiveSize2D < Element
       tag "a:ext", "a:chExt"
-      required_attr "cx", type: SimpleTypes::ST_PositiveCoordinate
-      required_attr "cy", type: SimpleTypes::ST_PositiveCoordinate
+      required_attr "cx", type: SimpleTypes::ST_Extent
+      required_attr "cy", type: SimpleTypes::ST_Extent
       # -- the extension-list form --
       optional_attr "uri", type: SimpleTypes::XsdString
     end
@@ -298,7 +298,7 @@ module Pptx
 
       def prstDash_val=(value)
         remove_custDash
-        get_or_add_prstDash.val = value
+        set_child(:prstDash, value)
       end
     end
 

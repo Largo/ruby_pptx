@@ -167,13 +167,13 @@ module Pptx
       # Spacing as a multiple of line height, e.g. 1.75 lines.
       def set_spc_pct(value)
         remove_spcPts
-        get_or_add_spcPct.val = value
+        set_child(:spcPct, value)
       end
 
       # Spacing as a fixed distance.
       def set_spc_pts(value)
         remove_spcPct
-        get_or_add_spcPts.val = value
+        set_child(:spcPts, value)
       end
     end
 
@@ -185,7 +185,7 @@ module Pptx
     # `a:buAutoNum`, an automatically numbered bullet ("1.", "a)", ...).
     class CT_TextAutonumberBullet < Element
       tag "a:buAutoNum"
-      required_attr "type", type: SimpleTypes::XsdString
+      required_attr "type", type: SimpleTypes::ST_TextAutonumberScheme
     end
 
     # `a:buChar`, a character bullet.
@@ -262,6 +262,8 @@ module Pptx
       end
 
       def bullet=(value)
+        # Checked first, so a refused scheme leaves the old bullet in place.
+        SimpleTypes::ST_TextAutonumberScheme.validate(value.to_s) if value.is_a?(Symbol) && value != :none
         remove_buNone
         remove_buAutoNum
         remove_buChar

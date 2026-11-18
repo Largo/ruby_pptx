@@ -255,8 +255,24 @@ module Pptx
       class ST_AxisUnit < XsdDouble
         def self.validate(value)
           super
-          raise RangeError, "must be positive numeric value, got #{value}" if value <= 0.0
+          # Written as a negated test so NaN, which compares false either way, is refused.
+          raise RangeError, "must be positive numeric value, got #{value}" unless value > 0.0
         end
+      end
+
+      # `a:buAutoNum@type`: the numbering schemes ISO/IEC 29500-1 lists.
+      class ST_TextAutonumberScheme < XsdStringEnumeration
+        SCHEMES = %w[
+          alphaLcParenBoth alphaUcParenBoth alphaLcParenR alphaUcParenR alphaLcPeriod alphaUcPeriod
+          arabicParenBoth arabicParenR arabicPeriod arabicPlain
+          romanLcParenBoth romanUcParenBoth romanLcParenR romanUcParenR romanLcPeriod romanUcPeriod
+          circleNumDbPlain circleNumWdBlackPlain circleNumWdWhitePlain arabicDbPeriod arabicDbPlain
+          ea1ChsPeriod ea1ChsPlain ea1ChtPeriod ea1ChtPlain ea1JpnChsDbPeriod ea1JpnKorPlain
+          ea1JpnKorPeriod arabic1Minus arabic2Minus hebrew2Minus
+          thaiAlphaPeriod thaiAlphaParenR thaiAlphaParenBoth thaiNumPeriod thaiNumParenR thaiNumParenBoth
+          hindiAlphaPeriod hindiNumPeriod hindiNumParenR hindiAlpha1Period
+        ].freeze
+        values(**SCHEMES.to_h { |s| [s.gsub(/([a-z])([A-Z0-9])/, '\\1_\\2').upcase.to_sym, s] })
       end
 
       class ST_BarDir < XsdStringEnumeration
@@ -480,6 +496,14 @@ module Pptx
         end
       end
 
+      # `cx`/`cy` of `a:ext` and `a:chExt`: an ST_PositiveCoordinate no
+      # larger than Office reads ({Oxml::MAX_EXTENT}).
+      class ST_Extent < ST_PositiveCoordinate
+        def self.validate(value)
+          validate_int_in_range(value, 0, Oxml::MAX_EXTENT)
+        end
+      end
+
       # `a:lin@ang`: positive angles less than 360 degrees.
       class ST_PositiveFixedAngle < ST_Angle
         def self.convert_to_xml(degrees)
@@ -488,7 +512,9 @@ module Pptx
           elsif degrees > 0.0
             degrees %= 360
           end
-          round_half_even(degrees * DEGREE_INCREMENTS).to_s
+          # Normalized again after rounding: 720 degrees, or 359.99999, would
+          # otherwise come out as 21600000, which the type excludes.
+          (round_half_even(degrees * DEGREE_INCREMENTS) % (360 * DEGREE_INCREMENTS)).to_s
         end
       end
 

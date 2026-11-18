@@ -1,0 +1,6 @@
+# Validator findings the fuzzer reports as "known" instead of new.
+#
+# One Ruby regexp per line, matched against a finding's signature:
+#   "<error id> <part with numbers as N> <parent/element> <description with values masked>"
+# Every entry needs a comment saying why it is accepted and what would
+# remove it. Delete the entry once the cause is fixed.
