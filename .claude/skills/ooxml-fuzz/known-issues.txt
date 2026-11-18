@@ -1,0 +1,17 @@
+# Validator findings the fuzzer reports as "known" instead of new.
+#
+# One Ruby regexp per line, matched against a finding's signature:
+#   "<error id> <part with numbers as N> <parent/element> <description with values masked>"
+# Every entry needs a comment saying why it is accepted and what would
+# remove it. Delete the entry once the cause is fixed.
+
+# Axis ids are python-pptx's constants (-2068027336 and friends), kept so the
+# chart XML matches the python-pptx oracle part for part. CT_UnsignedInt
+# makes them schema-invalid; PowerPoint opens them. Changing them means
+# changing the differential specs' expectations too.
+^Sch_AttributeValueDataTypeDetailed /ppt/charts/chartN\.xml <\w+/(axId|crossAx)> The attribute
+
+# python-pptx's radar template ends every series with <c:smooth val="0"/>,
+# which CT_RadarSer does not allow. Kept for byte parity with the oracle,
+# like the axis ids; PowerPoint opens it.
+^Sch_InvalidElementContentExpectingComplex /ppt/charts/chartN\.xml <radarChart/ser> The element has invalid child element '…'\.$
