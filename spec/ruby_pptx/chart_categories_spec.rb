@@ -126,7 +126,7 @@ RSpec.describe "chart categories: grouped, dated and numeric" do
       out, err, status = Open3.capture3("python3", "-c", script)
       raise "xml oracle failed: #{err}" unless status.success?
 
-      out
+      without_upstream_chart_bugs(out)
     end
 
     def ours(type)

@@ -119,6 +119,36 @@ RSpec.describe "OOXML validity of what the writer produces" do
         expect(part_xml("ppt/slides/slide1.xml")).not_to match(/<a:schemeClr(?![^>]*val=)/)
       end
     end
+
+    # Any non-zero brightness used to raise "wrong number of arguments": the
+    # generated get_or_add_lumMod called the one-argument add_lumMod.
+    it "matches python-pptx for a lightened theme colour and a darkened RGB one" do
+      require_oracle!
+      expect_same_package(
+        python: <<~PY,
+          from pptx.util import Inches
+          from pptx.dml.color import RGBColor
+          from pptx.enum.dml import MSO_THEME_COLOR
+          prs = pptx.Presentation()
+          slide = prs.slides.add_slide(prs.slide_layouts[6])
+          shape = slide.shapes.add_shape(1, 0, 0, Inches(1), Inches(1))
+          shape.fill.solid()
+          shape.fill.fore_color.theme_color = MSO_THEME_COLOR.ACCENT_1
+          shape.fill.fore_color.brightness = 0.4
+          shape.line.color.rgb = RGBColor(0x1F, 0x49, 0x7D)
+          shape.line.color.brightness = -0.25
+          prs.save(out)
+        PY
+        ruby: lambda { |path|
+          shape.fill.solid
+          shape.fill.fore_color.theme_color = :ACCENT_1
+          shape.fill.fore_color.brightness = 0.4
+          shape.line.color.rgb = "1F497D"
+          shape.line.color.brightness = -0.25
+          deck.save(path)
+        }
+      )
+    end
   end
 
   describe "characters XML cannot carry" do
@@ -162,6 +192,25 @@ RSpec.describe "OOXML validity of what the writer produces" do
         expect { shapes.add_shape(:rectangle, at: [0, 0], size: [Pptx.emu(-1), Pptx.emu(1)]) }
           .to raise_error(ArgumentError, /width and height/)
         expect(shapes.size).to eq(0)
+      end
+    end
+
+    it "refuses a width or height past what Office reads and keeps the old one" do
+      aggregate_failures do
+        expect { shape.width = 2**31 }.to raise_error(RangeError)
+        expect { shape.height = -1 }.to raise_error(RangeError)
+        expect([shape.width, shape.height]).to eq(box)
+      end
+    end
+
+    it "refuses to connect to a point too far away and leaves the connector as it was" do
+      wide = slide.shapes.add_textbox(at: [Pptx.inches(8), 0], size: [(2**31) - 1, Pptx.inches(1)])
+      connector = slide.shapes.add_connector(:STRAIGHT, begin_at: [Pptx.inches(7), 0], end_at: [0, 0])
+      before = connector.element.to_xml
+      aggregate_failures do
+        expect { connector.begin_connect(wide, 3) }.to raise_error(ArgumentError)
+        expect(connector.element.to_xml).to eq(before)
+        expect(connector).not_to be_begin_connected
       end
     end
 
@@ -257,6 +306,40 @@ RSpec.describe "OOXML validity of what the writer produces" do
       end
     end
 
+    # python-pptx's templates carry negative axis ids, which c:axId and
+    # c:crossAx (xsd:unsignedInt) do not allow; Office reads at most 2**31 - 1.
+    it "writes every axis id as an unsigned int Office reads" do
+      xy = Pptx::XyChartData.new.tap { |data| data.add_series("S", points: [[1, 2]]) }
+      bubbles = Pptx::BubbleChartData.new.tap { |data| data.add_series("S", points: [[1, 2, 3]]) }
+      %i[column_clustered line area radar].each { |type| add_chart(type) }
+      slide.shapes.add_chart(:xy_scatter, xy, at: [0, 0], size: box)
+      slide.shapes.add_chart(:bubble, bubbles, at: [0, 0], size: box)
+      combo = Pptx::ChartData.new.tap do |data|
+        data.categories = %w[East West]
+        data.add_series("A", [1, 2])
+        data.add_series("B", [3, 4])
+      end
+      slide.shapes.add_combo_chart(combo, at: [0, 0], size: box) do |c|
+        c.plot :column_clustered, series: "A"
+        c.plot :line, series: "B", secondary_axis: true
+      end
+      ids = (1..7).flat_map do |n|
+        part_xml("ppt/charts/chart#{n}.xml").scan(/<c:(?:axId|crossAx) val="([^"]*)"/).flatten
+      end
+      expect(ids).to all(match(/\A\d+\z/).and(satisfy { |id| id.to_i <= (2**31) - 1 }))
+    end
+
+    # CT_RadarSer has no c:smooth; python-pptx's radar template copies the
+    # line chart's series and ends each with one.
+    it "writes no c:smooth in a radar series" do
+      %i[radar radar_markers radar_filled].each { |type| add_chart(type) }
+      xml = (1..3).map { |n| part_xml("ppt/charts/chart#{n}.xml") }.join
+      aggregate_failures do
+        expect(xml.scan("<c:ser>").size).to eq(3)
+        expect(xml).not_to include("<c:smooth")
+      end
+    end
+
     it "keeps the style it had when given one out of range" do
       chart = add_chart(:column_clustered)
       chart.chart_style = 7
@@ -274,9 +357,11 @@ RSpec.describe "OOXML validity of what the writer produces" do
       aggregate_failures do
         expect { labels.position = :MIXED }.to raise_error(ArgumentError)
         expect { chart.value_axis.major_unit = -1 }.to raise_error(RangeError)
+        expect { chart.value_axis.minor_unit = Float::NAN }.to raise_error(RangeError)
         xml = part_xml("ppt/charts/chart1.xml")
         expect(xml).not_to include("<c:dLblPos")
         expect(xml).not_to include("<c:majorUnit")
+        expect(xml).not_to include("<c:minorUnit")
       end
     end
   end
@@ -322,6 +407,30 @@ RSpec.describe "OOXML validity of what the writer produces" do
         chart.chart_style = 7
       PY
       expect(xml.scan("<c:style ").size).to eq(2)
+    end
+
+    it "writes negative axis ids and a c:smooth in each radar series" do
+      xml = python_xml(<<~PY.strip, "ppt/charts/chart1.xml")
+        cd = CategoryChartData()
+        cd.categories = ["East", "West"]
+        cd.add_series("Q1", (1, 2))
+        slide.shapes.add_chart(XL_CHART_TYPE.RADAR, 0, 0, Inches(4), Inches(3), cd)
+      PY
+      aggregate_failures do
+        expect(xml).to include('<c:axId val="-2112772216">')
+        expect(xml[%r{<c:ser>.*</c:ser>}m]).to include('<c:smooth val="0">')
+      end
+    end
+
+    it "writes a NaN axis unit" do
+      xml = python_xml(<<~PY.strip, "ppt/charts/chart1.xml")
+        cd = CategoryChartData()
+        cd.categories = ["East", "West"]
+        cd.add_series("Q1", (1, 2))
+        chart = slide.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, 0, 0, Inches(4), Inches(3), cd).chart
+        chart.value_axis.major_unit = float("nan")
+      PY
+      expect(xml).to include('<c:majorUnit val="nan">')
     end
 
     it "writes a marker into a bubble series" do

@@ -255,7 +255,8 @@ module Pptx
       class ST_AxisUnit < XsdDouble
         def self.validate(value)
           super
-          raise RangeError, "must be positive numeric value, got #{value}" if value <= 0.0
+          # Written as a negated test so NaN, which compares false either way, is refused.
+          raise RangeError, "must be positive numeric value, got #{value}" unless value > 0.0
         end
       end
 
@@ -492,6 +493,14 @@ module Pptx
           def validate(value)
             validate_int_in_range(value, 0, 27_273_042_316_900)
           end
+        end
+      end
+
+      # `cx`/`cy` of `a:ext` and `a:chExt`: an ST_PositiveCoordinate no
+      # larger than Office reads ({Oxml::MAX_EXTENT}).
+      class ST_Extent < ST_PositiveCoordinate
+        def self.validate(value)
+          validate_int_in_range(value, 0, Oxml::MAX_EXTENT)
         end
       end
 

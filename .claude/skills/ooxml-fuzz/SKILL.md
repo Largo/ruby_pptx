@@ -75,7 +75,8 @@ There are three kinds of result, and they mean different things:
      relationship, content type, or zip).
 2. **Crash, `library`**: an exception that is not a deliberate rejection,
    raised from inside `lib/` (a `NoMethodError` on nil, a Nokogiri
-   `SyntaxError` while the library re-parses its own XML). A bug: the
+   `SyntaxError` while the library re-parses its own XML, an `ArgumentError`
+   for the wrong number of arguments). A bug: the
    library should either succeed or raise `ArgumentError`/`Pptx::Error`.
 3. **Crash, `harness?`**, or a sub-step logged as `n/a`: the fuzzer called
    something that does not exist. That is a fuzzer bug. Fix `fuzz.rb` and do
@@ -142,7 +143,7 @@ the basis of the regression spec.
 
 ### 6. Accept on purpose, rarely
 
-When a finding is deliberate (see the axis-id entry), add a regexp to
+When a finding is deliberate, add a regexp to
 `known-issues.txt` with a comment that says why it is accepted and what would
 remove it. `run` then lists it under "known issue signatures suppressed"
 instead of failing. Never suppress a finding just to get a green run.
@@ -172,7 +173,8 @@ same `fuzz.rb`.
 - `OpenXmlValidator` is not PowerPoint. A file it passes can still trigger
   the repair dialog (dangling relationship ids inside extLst, duplicate
   shape ids, inconsistent chart caches). A file it fails sometimes opens
-  fine (the axis ids). When it matters, open the minimized deck in PowerPoint.
+  fine, because PowerPoint reads more than the schema allows. When it
+  matters, open the minimized deck in PowerPoint.
 - The validator checks the XML parts and package structure. It does not
   open the embedded chart workbooks or OLE payloads, and it does not check
   images.

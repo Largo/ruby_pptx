@@ -36,6 +36,15 @@ FONT_FILE = ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
 # one of these is "rejected", which is fine. Anything else is a crash.
 REJECTIONS = [ArgumentError, TypeError, RangeError, IndexError, NotImplementedError, Pptx::Error].freeze
 
+# Matches a deliberate refusal, for `rescue REJECTION`. An arity error is an
+# ArgumentError too, but it means a call went wrong, not that a value was
+# refused: a crash when the library made it, a fuzzer bug when the harness did.
+REJECTION = Module.new do
+  def self.===(error)
+    REJECTIONS.any? { |klass| klass === error } && !error.message.start_with?("wrong number of arguments")
+  end
+end
+
 E = Pptx::Enum
 
 # ---------------------------------------------------------------------------
@@ -408,7 +417,7 @@ class Executor
       begin
         send(:"op_#{op['op']}", op)
         @log << { "i" => i, "op" => op["op"], "status" => "ok", "notes" => @notes.to_a }
-      rescue *REJECTIONS => e
+      rescue REJECTION => e
         @log << { "i" => i, "op" => op["op"], "status" => "rejected", "error" => "#{e.class}: #{e.message[0, 300]}" }
       rescue StandardError, SystemStackError => e
         @log << { "i" => i, "op" => op["op"], "status" => "crash", "error" => "#{e.class}: #{e.message[0, 300]}",
@@ -438,7 +447,7 @@ class Executor
   # the rest of the op, so one refused value does not hide later ones.
   def try(label)
     yield
-  rescue *REJECTIONS => e
+  rescue REJECTION => e
     (@notes ||= []) << "#{label} rejected: #{e.class}: #{e.message[0, 160]}"
   rescue NoMethodError => e
     # The API this op reached for does not exist on this kind of object (no

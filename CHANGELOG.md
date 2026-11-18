@@ -33,7 +33,17 @@ Found by fuzzing the writer against the Open XML SDK's validator
 - `gradient_angle=` writes a whole turn (720, -360) as 0.
 - A shape, chart, movie or OLE object with a negative size or one past
   2,147,483,647 EMU raises `ArgumentError` before anything is added, and so
-  does a group that would grow that large.
+  does a group that would grow that large. `width=` and `height=` raise
+  `RangeError` for such a size, and a connector end that would land that far
+  away (`begin_connect`, `end_x=`, ...) raises before anything moves.
+- Chart axis ids are no longer negative; `c:axId` and `c:crossAx` are
+  unsigned. The ids python-pptx writes negative are written without the sign.
+- Radar chart series no longer end in a `c:smooth`, which radar series
+  cannot hold.
+- `major_unit=` and `minor_unit=` refuse NaN with `RangeError`.
+- `brightness=` with any value but 0 raised `ArgumentError` ("wrong number
+  of arguments") instead of adding the `a:lumMod`/`a:lumOff` adjustment. It
+  now writes what python-pptx writes.
 
 ## [0.3.0] - 2026-11-17
 

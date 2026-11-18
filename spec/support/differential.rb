@@ -121,7 +121,7 @@ module Pptx
       def expect_same_package(python:, ruby:, ignore: [])
         skip "python-pptx not importable" unless Differential.oracle_available?
 
-        expected = python_pptx_manifest(python)
+        expected = without_upstream_bugs(python_pptx_manifest(python))
         actual = Tempfile.create(["ruby_pptx", ".pptx"]) do |file|
           file.close
           ruby.call(file.path)
@@ -129,6 +129,27 @@ module Pptx
         end
 
         compare_manifests(expected, actual, ignore)
+      end
+
+      # python-pptx's chart XML with the invalid bits this port writes
+      # differently put right: negative axis ids lose their sign, and radar
+      # series lose the c:smooth CT_RadarSer does not allow. See "Upstream bugs
+      # this port does not reproduce" in PORTING.md; ooxml_validity_spec.rb
+      # pins what python-pptx writes. Takes the writer's text or its C14N form.
+      def without_upstream_chart_bugs(xml)
+        xml = xml.gsub(/(<c:(?:axId|crossAx) val=")-/, '\\1')
+        xml.sub(%r{<c:radarChart>.*</c:radarChart>}m) do |plot|
+          plot.gsub(%r{[ \t]*<c:smooth val="\d"(?:/>|></c:smooth>)\n?}, "")
+        end
+      end
+
+      def without_upstream_bugs(manifest)
+        manifest["parts"].each do |name, part|
+          next unless name.start_with?("ppt/charts/") && part["kind"] == "xml"
+
+          part["c14n"] = without_upstream_chart_bugs(part["c14n"])
+        end
+        manifest
       end
 
       def compare_manifests(expected, actual, ignore)

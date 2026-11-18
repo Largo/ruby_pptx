@@ -509,9 +509,12 @@ answers.
 | An axis with no `c:delete` at all | reported hidden | reported visible, which is what the schema and PowerPoint mean. python-pptx always writes `c:delete`, so this only shows on files from elsewhere |
 | An EMF image, including the default OLE icons | stored as `imageN.wmf`, `image/x-wmf`: Pillow reports EMF and WMF alike as "WMF" | stored as `imageN.emf`, `image/x-emf`, as PowerPoint stores it. Size and resolution agree with Pillow's |
 | `gradient_angle` a whole turn from zero (720, -360) | `ang="21600000"`, which `ST_PositiveFixedAngle` excludes: it normalizes before rounding | `ang="0"` |
-| A negative shape size, or one past 2,147,483,647 EMU | written as given; the file is invalid | `ArgumentError`, before any shape or part is added |
+| A negative shape size, or one past 2,147,483,647 EMU | written as given; the file is invalid | `ArgumentError`, before any shape or part is added; `width=`/`height=` raise `RangeError`, and a connector end moved that far raises before it moves |
 | `chart_style=` on a radar chart | adds a second `c:style` after the template's `mc:AlternateContent` one | replaces it |
 | `marker` on a bubble series | inherited from `XySeries`; writes a `c:marker` that `CT_BubbleSer` does not allow | raises `Pptx::Error` |
+| Chart axis ids | some negative (`-2068027336`), which `c:axId`/`c:crossAx` (`xsd:unsignedInt`) exclude | the same ids without the sign |
+| Radar chart series | each ends in `<c:smooth val="0"/>`, which `CT_RadarSer` does not allow | no `c:smooth` |
+| `major_unit=`/`minor_unit=` given NaN | `val="nan"`: its positive check `value <= 0.0` is false for NaN | `RangeError` |
 
 And reads that write. These python-pptx getters change the document when
 called, which this gem's never do; the value read is the same, the file is
@@ -600,12 +603,20 @@ runs found these, every one now pinned in `spec/ruby_pptx/ooxml_validity_spec.rb
   `ST_TextAutonumberScheme`.
 - **Groups could outgrow what Office reads**: a group's members, or a shape
   added into a group, can no longer stretch it past 2,147,483,647 EMU.
+- **`brightness=` never worked.** `zero_or_one` skips a method that is
+  already defined, so `BaseColorElement#add_lumMod(value)` replaced the
+  generated adder, and the generated `get_or_add_lumMod` called it with no
+  argument. The fuzzer had filed the `ArgumentError` as a refused value; it
+  now treats "wrong number of arguments" as a crash.
+- **A NaN axis unit was written as `val="NaN"`**: `ST_AxisUnit` tested
+  `value <= 0.0`, which NaN passes.
 
-Two findings are kept on purpose, both inherited from python-pptx and both
-opened by PowerPoint: chart axis ids are its negative constants
-(`-2068027336`), which `CT_UnsignedInt` rejects, and its radar series end in
-a `c:smooth` that `CT_RadarSer` does not allow. Changing either breaks byte
-parity with the oracle. The skill's `known-issues.txt` lists them.
+Two more came from python-pptx's chart templates: negative axis ids and a
+`c:smooth` in every radar series. They are fixed too and listed with the
+upstream bugs above. The differential specs apply both fixes to
+python-pptx's side before comparing (`without_upstream_chart_bugs` in
+`spec/support/differential.rb`), so every other byte is still held to the
+oracle.
 
 ## Packaging: the gem owns `lib/ruby_pptx`
 

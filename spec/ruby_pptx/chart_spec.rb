@@ -197,7 +197,7 @@ RSpec.describe Pptx::Chart do
       out, err, status = Open3.capture3("python3", "-c", script)
       raise "chart xml oracle failed: #{err}" unless status.success?
 
-      out
+      without_upstream_chart_bugs(out)
     end
 
     # Built point by point rather than all at once, the XML must not differ.
@@ -221,7 +221,7 @@ RSpec.describe Pptx::Chart do
       theirs, err, status = Open3.capture3("python3", "-c", script)
       raise "oracle failed: #{err}" unless status.success?
 
-      expect(ours).to eq(theirs)
+      expect(ours).to eq(without_upstream_chart_bugs(theirs))
     end
 
     # The cached values in this XML are what PowerPoint renders from, so it has

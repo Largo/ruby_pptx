@@ -199,24 +199,12 @@ module Pptx
     # centre and going counter-clockwise. That is a convention rather than a
     # rule, so the result is only predictable for rectangular shapes.
     def begin_connect(shape, connection_point)
-      connection = @element.nvCxnSpPr.cNvCxnSpPr.get_or_add_stCxn
-      connection.id = shape.shape_id
-      connection.idx = connection_point
-      x, y = connection_point_of(shape, connection_point)
-      self.begin_x = x
-      self.begin_y = y
-      self
+      connect(shape, connection_point, begin_point: true)
     end
 
     # As {#begin_connect}, for the far end.
     def end_connect(shape, connection_point)
-      connection = @element.nvCxnSpPr.cNvCxnSpPr.get_or_add_endCxn
-      connection.id = shape.shape_id
-      connection.idx = connection_point
-      x, y = connection_point_of(shape, connection_point)
-      self.end_x = x
-      self.end_y = y
-      self
+      connect(shape, connection_point, begin_point: false)
     end
 
     def begin_connected?
@@ -233,6 +221,22 @@ module Pptx
     end
 
     private
+
+    # Moves the end first, so a point too far away for Office raises before
+    # the connection is recorded; the size is checked for both axes before
+    # either moves.
+    def connect(shape, connection_point, begin_point:)
+      x, y = connection_point_of(shape, connection_point)
+      fixed_x, fixed_y = begin_point ? [end_x.emu, end_y.emu] : [begin_x.emu, begin_y.emu]
+      Oxml.ext_attrs((x - fixed_x).abs, (y - fixed_y).abs)
+      move_x(x, begin_point:)
+      move_y(y, begin_point:)
+      cxn = @element.nvCxnSpPr.cNvCxnSpPr
+      connection = begin_point ? cxn.get_or_add_stCxn : cxn.get_or_add_endCxn
+      connection.id = shape.shape_id
+      connection.idx = connection_point
+      self
+    end
 
     # The four points PowerPoint puts on a rectangle: top, left, bottom, right.
     def connection_point_of(shape, index)
@@ -254,17 +258,20 @@ module Pptx
     #
     # The box has no notion of direction, so pulling an end past the other one
     # flips the box rather than giving it a negative size.
+    #
+    # The size is set first: one too large for Office raises before anything
+    # has moved.
     def move_x(new_value, begin_point:)
       fixed = begin_point ? end_x.emu : begin_x.emu
-      @element.x = [new_value, fixed].min
       @element.cx = (new_value - fixed).abs
+      @element.x = [new_value, fixed].min
       @element.flipH = begin_point ? new_value > fixed : new_value < fixed
     end
 
     def move_y(new_value, begin_point:)
       fixed = begin_point ? end_y.emu : begin_y.emu
-      @element.y = [new_value, fixed].min
       @element.cy = (new_value - fixed).abs
+      @element.y = [new_value, fixed].min
       @element.flipV = begin_point ? new_value > fixed : new_value < fixed
     end
   end
